@@ -1,1 +1,311 @@
-<h1>Beacon funktioniert</h1>
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sparkle Beacon</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #98d857;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 35%, rgba(196, 255, 148, 0.8), transparent 35%),
+          linear-gradient(135deg, #a4df58 0%, #8fd04c 48%, #74ba48 100%);
+      }
+
+      #app {
+        position: fixed;
+        inset: 0;
+      }
+
+      .brand {
+        position: fixed;
+        top: clamp(18px, 3vw, 34px);
+        right: 0;
+        z-index: 3;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        width: 100vw;
+        max-width: 100vw;
+        padding-right: clamp(18px, 4vw, 52px);
+        color: #f5fff2;
+        font-size: clamp(24px, 4vw, 52px);
+        font-weight: 900;
+        letter-spacing: 0;
+        text-shadow:
+          0 3px 0 rgba(33, 92, 54, 0.24),
+          0 14px 35px rgba(36, 103, 61, 0.38),
+          0 0 24px rgba(145, 255, 238, 0.55);
+        user-select: none;
+      }
+
+      .brand::before {
+        content: "";
+        width: 0.44em;
+        height: 0.44em;
+        display: block;
+        background: #eaffff;
+        clip-path: polygon(50% 0, 62% 36%, 100% 50%, 62% 64%, 50% 100%, 38% 64%, 0 50%, 38% 36%);
+        filter: drop-shadow(0 0 12px rgba(129, 255, 239, 0.95));
+        animation: twinkle 1.7s ease-in-out infinite;
+      }
+
+      .hint {
+        position: fixed;
+        left: clamp(16px, 3vw, 36px);
+        bottom: clamp(16px, 3vw, 30px);
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        min-height: 36px;
+        padding: 0 14px;
+        border: 1px solid rgba(245, 255, 242, 0.35);
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.84);
+        background: rgba(22, 82, 51, 0.2);
+        backdrop-filter: blur(10px);
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .loader {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: #f6fff4;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-shadow: 0 3px 18px rgba(21, 81, 48, 0.45);
+        pointer-events: none;
+      }
+
+      .loader.is-hidden {
+        opacity: 0;
+        transition: opacity 300ms ease;
+      }
+
+      canvas {
+        display: block;
+      }
+
+      @keyframes twinkle {
+        0%,
+        100% {
+          transform: rotate(0deg) scale(0.9);
+          opacity: 0.78;
+        }
+        50% {
+          transform: rotate(45deg) scale(1.16);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 1000px) {
+        .brand {
+          font-size: 28px;
+          width: 390px;
+          padding-right: 18px;
+        }
+
+        .hint {
+          right: 16px;
+          justify-content: center;
+        }
+      }
+
+      @media (orientation: portrait) {
+        .brand {
+          transform: translateX(-128px);
+        }
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.166.1/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.166.1/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main id="app" aria-label="Interaktives 3D Sparkle Beacon"></main>
+    <div class="brand">Sparkle</div>
+    <div class="hint">ziehen zum Drehen</div>
+    <div class="loader" id="loader">Beacon wird geladen</div>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+      const app = document.querySelector("#app");
+      const loaderEl = document.querySelector("#loader");
+
+      const scene = new THREE.Scene();
+      scene.background = null;
+      scene.fog = new THREE.Fog(0x98d857, 10, 24);
+
+      const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(4.2, 3.3, 5.2);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.1;
+      app.appendChild(renderer.domElement);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 1.0;
+      controls.enablePan = false;
+      controls.minDistance = 4.2;
+      controls.maxDistance = 8.5;
+      controls.target.set(0, 1.1, 0);
+
+      scene.add(new THREE.HemisphereLight(0xf6fff0, 0x3c7d48, 2.8));
+      const key = new THREE.DirectionalLight(0xffffff, 2.4);
+      key.position.set(4, 6, 3);
+      scene.add(key);
+
+      const floor = new THREE.Mesh(
+        new THREE.CircleGeometry(3.15, 72),
+        new THREE.MeshBasicMaterial({ color: 0x6ab34a, transparent: true, opacity: 0.18 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -0.02;
+      scene.add(floor);
+
+      const glow = new THREE.Mesh(
+        new THREE.CircleGeometry(1.5, 72),
+        new THREE.MeshBasicMaterial({
+          color: 0x8ffff0,
+          transparent: true,
+          opacity: 0.22,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+      );
+      glow.rotation.x = -Math.PI / 2;
+      glow.position.y = 0.03;
+      scene.add(glow);
+
+      const sparkleGroup = new THREE.Group();
+      scene.add(sparkleGroup);
+
+      function makeSpark(radius, y, delay) {
+        const shape = new THREE.Shape();
+        shape.moveTo(0, radius);
+        shape.lineTo(radius * 0.17, radius * 0.18);
+        shape.lineTo(radius, 0);
+        shape.lineTo(radius * 0.17, -radius * 0.18);
+        shape.lineTo(0, -radius);
+        shape.lineTo(-radius * 0.17, -radius * 0.18);
+        shape.lineTo(-radius, 0);
+        shape.lineTo(-radius * 0.17, radius * 0.18);
+        shape.closePath();
+
+        const mesh = new THREE.Mesh(
+          new THREE.ShapeGeometry(shape),
+          new THREE.MeshBasicMaterial({
+            color: 0xf3ffff,
+            transparent: true,
+            opacity: 0.82,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide,
+            depthWrite: false
+          })
+        );
+        mesh.position.set(Math.sin(delay) * 1.05, y, Math.cos(delay) * 1.05);
+        mesh.userData.delay = delay;
+        sparkleGroup.add(mesh);
+      }
+
+      makeSpark(0.18, 2.2, 0.2);
+      makeSpark(0.12, 2.58, 2.0);
+      makeSpark(0.09, 1.95, 3.8);
+
+      const modelRoot = new THREE.Group();
+      modelRoot.rotation.y = Math.PI * 0.08;
+      scene.add(modelRoot);
+
+      new GLTFLoader().load(
+        "assets/sparkle_beacon.glb",
+        (gltf) => {
+          const model = gltf.scene;
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = false;
+              child.receiveShadow = false;
+              if (child.material?.transparent) {
+                child.material.depthWrite = false;
+              }
+            }
+          });
+          modelRoot.add(model);
+          loaderEl.classList.add("is-hidden");
+        },
+        undefined,
+        () => {
+          loaderEl.textContent = "Beacon konnte nicht geladen werden";
+        }
+      );
+
+      const clock = new THREE.Clock();
+      function animate() {
+        const t = clock.getElapsedTime();
+        modelRoot.position.y = Math.sin(t * 1.45) * 0.04;
+        glow.scale.setScalar(1 + Math.sin(t * 2.2) * 0.05);
+        sparkleGroup.children.forEach((spark) => {
+          spark.lookAt(camera.position);
+          spark.rotation.z = t * 1.6 + spark.userData.delay;
+          spark.material.opacity = 0.46 + Math.sin(t * 2.8 + spark.userData.delay) * 0.32;
+        });
+        controls.update();
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+
+      function resize() {
+        const aspect = window.innerWidth / window.innerHeight;
+        camera.aspect = aspect;
+        if (aspect < 0.68) {
+          camera.fov = 52;
+          camera.position.set(5.4, 4.1, 7.4);
+          controls.minDistance = 5.7;
+          controls.maxDistance = 10.0;
+        } else {
+          camera.fov = 38;
+          camera.position.set(4.2, 3.3, 5.2);
+          controls.minDistance = 4.2;
+          controls.maxDistance = 8.5;
+        }
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+      animate();
+    </script>
+  </body>
+</html>
