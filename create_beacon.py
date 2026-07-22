@@ -122,6 +122,48 @@ def add_sparkle_cross(name, location, size, material):
     )
 
 
+def add_base_inlays(etched, metal):
+    for side in (-1, 1):
+        for offset in (-0.54, 0, 0.54):
+            cube("front back cyan rune slot", (offset, side * 1.175, 0.325), (0.22, 0.018, 0.035), etched, bevel=0.004)
+            cube("left right cyan rune slot", (side * 1.175, offset, 0.325), (0.018, 0.22, 0.035), etched, bevel=0.004)
+        cube("thin front back metal lip", (0, side * 1.025, 0.51), (1.62, 0.045, 0.08), metal, bevel=0.01)
+        cube("thin left right metal lip", (side * 1.025, 0, 0.51), (0.045, 1.62, 0.08), metal, bevel=0.01)
+
+
+def add_floating_shards(material):
+    shard_data = [
+        (-0.92, 0.18, 1.96, 0.22, 0.035, 0.12, 18),
+        (0.72, -0.52, 2.18, 0.18, 0.026, 0.1, -24),
+        (0.18, 0.96, 1.86, 0.14, 0.024, 0.08, 41),
+        (-0.18, -1.0, 1.54, 0.12, 0.022, 0.07, -38),
+        (0.98, 0.16, 1.42, 0.1, 0.02, 0.06, 12),
+        (-0.78, -0.72, 2.28, 0.16, 0.024, 0.1, 63),
+    ]
+    for i, (x, y, z, sx, sy, sz, rz) in enumerate(shard_data):
+        cube(
+            f"floating translucent prism shard {i + 1}",
+            (x, y, z),
+            (sx, sy, sz),
+            material,
+            bevel=0.01,
+            rotation=(math.radians(22), math.radians(12), math.radians(rz)),
+        )
+
+
+def add_face_glyphs(material):
+    glyphs = [
+        (0, -0.872, 1.12, 0.035, 0.018, 0.38),
+        (0, 0.872, 1.12, 0.035, 0.018, 0.38),
+        (0.872, 0, 1.12, 0.018, 0.035, 0.38),
+        (-0.872, 0, 1.12, 0.018, 0.035, 0.38),
+    ]
+    for i, (x, y, z, sx, sy, sz) in enumerate(glyphs):
+        cube(f"vertical face glyph stroke {i + 1}", (x, y, z), (sx, sy, sz), material, bevel=0.004)
+        cube(f"upper face glyph tick {i + 1}", (x, y, z + 0.2), (sx * 5, sy, sz * 0.12), material, bevel=0.004)
+        cube(f"lower face glyph tick {i + 1}", (x, y, z - 0.2), (sx * 5, sy, sz * 0.12), material, bevel=0.004)
+
+
 def create_model():
     clear_scene()
 
@@ -202,6 +244,8 @@ def create_model():
 
     add_corner_hardware(metal)
     add_panel_marks(etched)
+    add_base_inlays(etched, metal)
+    add_face_glyphs(etched)
 
     cube("thin top glass plate", (0, 0, 1.91), (1.28, 1.28, 0.055), prism, bevel=0.035)
     cube("rotated top glyph square", (0, 0, 1.955), (0.9, 0.9, 0.035), etched, bevel=0.025, rotation=(0, 0, math.radians(45)))
@@ -222,6 +266,7 @@ def create_model():
         ]
     ):
         add_sparkle_cross(f"floating sparkle {i + 1}", (x, y, z), s, sparkle_mat)
+    add_floating_shards(prism)
 
     for i in range(20):
         angle = i * math.tau / 20
@@ -235,6 +280,17 @@ def create_model():
             etched,
             bevel=0.004,
             rotation=(math.radians(20), 0, angle),
+        )
+
+    for i in range(16):
+        angle = i * math.tau / 16 + math.radians(11)
+        cube(
+            f"top crown cyan pixel {i + 1}",
+            (math.cos(angle) * 0.68, math.sin(angle) * 0.68, 2.075 + (i % 2) * 0.045),
+            (0.045, 0.045, 0.045),
+            sparkle_mat if i % 4 == 0 else etched,
+            bevel=0.006,
+            rotation=(math.radians(26), math.radians(15), angle),
         )
 
     bpy.ops.object.light_add(type="AREA", location=(0, -4.8, 5.4))

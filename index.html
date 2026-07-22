@@ -189,7 +189,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.1;
+      renderer.toneMappingExposure = 0.72;
       app.appendChild(renderer.domElement);
 
       const controls = new OrbitControls(camera, renderer.domElement);
@@ -201,10 +201,16 @@
       controls.maxDistance = 8.5;
       controls.target.set(0, 1.1, 0);
 
-      scene.add(new THREE.HemisphereLight(0xf6fff0, 0x3c7d48, 2.8));
+      scene.add(new THREE.HemisphereLight(0xf6fff0, 0x3c7d48, 3.15));
       const key = new THREE.DirectionalLight(0xffffff, 2.4);
       key.position.set(4, 6, 3);
       scene.add(key);
+      const rim = new THREE.DirectionalLight(0x8ffff0, 1.7);
+      rim.position.set(-4, 3.2, -3);
+      scene.add(rim);
+      const coreLight = new THREE.PointLight(0x9ffff4, 1.25, 7, 1.6);
+      coreLight.position.set(0, 1.65, 0);
+      scene.add(coreLight);
 
       const floor = new THREE.Mesh(
         new THREE.CircleGeometry(3.15, 72),
@@ -282,6 +288,8 @@
       makeSpark(0.18, 2.2, 0.2);
       makeSpark(0.12, 2.58, 2.0);
       makeSpark(0.09, 1.95, 3.8);
+      makeSpark(0.075, 2.82, 5.1);
+      makeSpark(0.11, 1.72, 6.4);
 
       const pixelGroup = new THREE.Group();
       scene.add(pixelGroup);
@@ -309,12 +317,32 @@
         pixelGroup.add(pixel);
       }
 
+      const beamVeils = new THREE.Group();
+      scene.add(beamVeils);
+      for (let i = 0; i < 5; i += 1) {
+        const veil = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.46 + i * 0.12, 7.2),
+          new THREE.MeshBasicMaterial({
+            color: i % 2 ? 0xdcfff8 : 0x83fff0,
+            transparent: true,
+            opacity: 0.08 - i * 0.006,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            side: THREE.DoubleSide
+          })
+        );
+        veil.position.y = 3.65;
+        veil.rotation.y = (Math.PI / 5) * i;
+        veil.userData.speed = 0.06 + i * 0.018;
+        beamVeils.add(veil);
+      }
+
       const modelRoot = new THREE.Group();
       modelRoot.rotation.y = Math.PI * 0.08;
       scene.add(modelRoot);
 
       new GLTFLoader().load(
-        "assets/sparkle_beacon.glb",
+        "assets/sparkle_beacon.glb?v=5",
         (gltf) => {
           const model = gltf.scene;
           model.traverse((child) => {
@@ -323,6 +351,16 @@
               child.receiveShadow = false;
               if (child.material?.transparent) {
                 child.material.depthWrite = false;
+              }
+              const materialName = child.material?.name?.toLowerCase() || "";
+              const objectName = child.name?.toLowerCase() || "";
+              if (materialName.includes("beam") || objectName.includes("beam")) {
+                child.material.opacity = 0.08;
+                child.material.emissiveIntensity = 0.15;
+                child.renderOrder = -1;
+              }
+              if (materialName.includes("heart") || materialName.includes("core")) {
+                child.material.emissiveIntensity = Math.min(child.material.emissiveIntensity || 1, 1.8);
               }
             }
           });
@@ -339,7 +377,12 @@
       function animate() {
         const t = clock.getElapsedTime();
         modelRoot.position.y = Math.sin(t * 1.45) * 0.04;
+        coreLight.intensity = 1.05 + Math.sin(t * 2.4) * 0.28;
         glow.scale.setScalar(1 + Math.sin(t * 2.2) * 0.05);
+        beamVeils.children.forEach((veil, index) => {
+          veil.rotation.y += veil.userData.speed * 0.01;
+          veil.material.opacity = 0.045 + Math.sin(t * 1.7 + index) * 0.022;
+        });
         haloGroup.children.forEach((ring, index) => {
           ring.rotation.z = Math.PI / 4 + t * ring.userData.speed;
           ring.scale.setScalar(1 + Math.sin(t * 2 + index) * 0.06);
