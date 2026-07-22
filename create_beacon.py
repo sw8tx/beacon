@@ -2,7 +2,6 @@ from pathlib import Path
 import math
 
 import bpy
-from mathutils import Vector
 
 
 ROOT = Path(__file__).resolve().parent
@@ -33,102 +32,224 @@ def mat(name, color, roughness=0.35, metallic=0.0, alpha=1.0, emission=None, str
     return material
 
 
-def cube(name, location, scale, material, bevel=0.0):
-    bpy.ops.mesh.primitive_cube_add(size=1, location=location)
+def cube(name, location, scale, material, bevel=0.0, rotation=(0, 0, 0)):
+    bpy.ops.mesh.primitive_cube_add(size=1, location=location, rotation=rotation)
     obj = bpy.context.object
     obj.name = name
     obj.dimensions = scale
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     obj.data.materials.append(material)
     if bevel:
-        bevel_mod = obj.modifiers.new("soft beveled voxel edges", "BEVEL")
+        bevel_mod = obj.modifiers.new("small polished bevels", "BEVEL")
         bevel_mod.width = bevel
         bevel_mod.segments = 2
         bevel_mod.affect = "EDGES"
-        obj.modifiers.new("weighted highlights", "WEIGHTED_NORMAL")
+        obj.modifiers.new("weighted crisp normals", "WEIGHTED_NORMAL")
     return obj
 
 
-def add_bar(name, location, scale, material):
-    return cube(name, location, scale, material, bevel=0.035)
+def cylinder(name, location, radius, depth, material, vertices=48, bevel=False):
+    bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=depth, location=location)
+    obj = bpy.context.object
+    obj.name = name
+    obj.data.materials.append(material)
+    if bevel:
+        bevel_mod = obj.modifiers.new("rounded rim", "BEVEL")
+        bevel_mod.width = 0.025
+        bevel_mod.segments = 2
+        obj.modifiers.new("weighted normals", "WEIGHTED_NORMAL")
+    return obj
+
+
+def rail(name, location, scale, material):
+    return cube(name, location, scale, material, bevel=0.025)
+
+
+def add_square_frame(prefix, z, size, thickness, material):
+    rail(f"{prefix} north rail", (0, -size / 2, z), (size + thickness, thickness, thickness), material)
+    rail(f"{prefix} south rail", (0, size / 2, z), (size + thickness, thickness, thickness), material)
+    rail(f"{prefix} east rail", (size / 2, 0, z), (thickness, size + thickness, thickness), material)
+    rail(f"{prefix} west rail", (-size / 2, 0, z), (thickness, size + thickness, thickness), material)
+
+
+def add_voxel_ring(prefix, z, outer, inset, height, material, bevel=0.018):
+    cube(f"{prefix} north slab", (0, -outer / 2 + inset / 2, z), (outer, inset, height), material, bevel)
+    cube(f"{prefix} south slab", (0, outer / 2 - inset / 2, z), (outer, inset, height), material, bevel)
+    cube(f"{prefix} east slab", (outer / 2 - inset / 2, 0, z), (inset, outer, height), material, bevel)
+    cube(f"{prefix} west slab", (-outer / 2 + inset / 2, 0, z), (inset, outer, height), material, bevel)
+
+
+def add_panel_marks(material):
+    marks = [
+        (-0.61, -0.825, 1.05, 0.22, 0.012, 0.035),
+        (-0.18, -0.825, 1.38, 0.32, 0.012, 0.026),
+        (0.42, -0.825, 0.74, 0.18, 0.012, 0.03),
+        (0.825, -0.34, 1.17, 0.012, 0.22, 0.035),
+        (0.825, 0.32, 1.47, 0.012, 0.28, 0.026),
+        (-0.825, 0.46, 0.88, 0.012, 0.25, 0.028),
+        (0.24, 0.825, 1.18, 0.3, 0.012, 0.03),
+        (-0.48, 0.825, 1.5, 0.2, 0.012, 0.026),
+    ]
+    for i, (x, y, z, sx, sy, sz) in enumerate(marks):
+        cube(f"tiny cyan glass etching {i + 1}", (x, y, z), (sx, sy, sz), material, bevel=0.004)
+
+
+def add_corner_hardware(material):
+    for x in (-1.0, 1.0):
+        for y in (-1.0, 1.0):
+            cube("obsidian corner foot", (x, y, 0.32), (0.28, 0.28, 0.18), material, bevel=0.018)
+            cube("obsidian corner cap", (x, y, 1.83), (0.24, 0.24, 0.16), material, bevel=0.018)
+
+
+def add_sparkle_cross(name, location, size, material):
+    x, y, z = location
+    cube(f"{name} vertical ray", (x, y, z), (size * 0.16, size * 0.16, size), material, bevel=0.01)
+    cube(
+        f"{name} horizontal ray",
+        (x, y, z),
+        (size * 0.16, size, size * 0.16),
+        material,
+        bevel=0.01,
+        rotation=(0, 0, math.radians(45)),
+    )
+    cube(
+        f"{name} diagonal ray",
+        (x, y, z),
+        (size * 0.12, size * 0.72, size * 0.12),
+        material,
+        bevel=0.008,
+        rotation=(math.radians(35), 0, math.radians(-35)),
+    )
 
 
 def create_model():
     clear_scene()
 
-    glass = mat("aqua stained glass", (0.24, 0.95, 0.92, 0.35), roughness=0.08, alpha=0.35)
-    glass_edge = mat("mint glass edges", (0.50, 1.0, 0.82, 0.55), roughness=0.12, alpha=0.55)
-    core = mat(
-        "sparkle core",
-        (0.45, 1.0, 1.0, 0.95),
-        roughness=0.16,
-        emission=(0.25, 0.95, 1.0, 1.0),
-        strength=3.5,
+    obsidian = mat("layered obsidian black", (0.008, 0.014, 0.026, 1.0), roughness=0.5, metallic=0.05)
+    obsidian_hi = mat("blue obsidian highlights", (0.025, 0.055, 0.085, 1.0), roughness=0.32, metallic=0.2)
+    metal = mat("dark prism metal", (0.035, 0.075, 0.095, 1.0), roughness=0.2, metallic=0.55)
+    glass = mat("thick aqua stained glass", (0.25, 1.0, 0.92, 0.28), roughness=0.05, alpha=0.28)
+    glass_edge = mat("bright mint glass trim", (0.63, 1.0, 0.88, 0.64), roughness=0.08, alpha=0.64)
+    etched = mat(
+        "etched cyan details",
+        (0.75, 1.0, 0.94, 0.82),
+        roughness=0.12,
+        alpha=0.82,
+        emission=(0.25, 1.0, 0.9, 1.0),
+        strength=1.2,
     )
-    top_glow = mat(
-        "top beacon glow",
-        (0.67, 1.0, 0.96, 0.9),
-        roughness=0.2,
-        alpha=0.9,
-        emission=(0.32, 1.0, 0.95, 1.0),
-        strength=5.5,
+    core_outer = mat(
+        "glowing outer energy cube",
+        (0.38, 1.0, 0.96, 0.68),
+        roughness=0.1,
+        alpha=0.68,
+        emission=(0.18, 0.92, 1.0, 1.0),
+        strength=2.0,
+    )
+    core_inner = mat(
+        "white hot beacon heart",
+        (0.86, 1.0, 1.0, 0.96),
+        roughness=0.1,
+        alpha=0.96,
+        emission=(0.56, 1.0, 1.0, 1.0),
+        strength=7.0,
+    )
+    prism = mat(
+        "cyan prism lens",
+        (0.76, 1.0, 0.97, 0.78),
+        roughness=0.04,
+        alpha=0.78,
+        emission=(0.3, 1.0, 0.95, 1.0),
+        strength=3.6,
     )
     beam_mat = mat(
-        "soft vertical light beam",
-        (0.25, 1.0, 0.95, 0.18),
-        roughness=0.05,
-        alpha=0.18,
-        emission=(0.18, 0.85, 0.9, 1.0),
-        strength=1.6,
+        "wide translucent beacon beam",
+        (0.28, 1.0, 0.9, 0.14),
+        roughness=0.02,
+        alpha=0.14,
+        emission=(0.18, 0.9, 0.92, 1.0),
+        strength=2.2,
     )
-    base = mat("obsidian base", (0.015, 0.025, 0.04, 1.0), roughness=0.45, metallic=0.05)
-    trim = mat("dark prism trim", (0.035, 0.055, 0.09, 1.0), roughness=0.28, metallic=0.25)
-
-    cube("black obsidian plinth", (0, 0, 0.08), (2.25, 2.25, 0.16), base, bevel=0.025)
-    cube("raised dark lower plate", (0, 0, 0.22), (1.95, 1.95, 0.18), trim, bevel=0.025)
-
-    cube("inner glowing cube", (0, 0, 0.92), (1.25, 1.25, 1.25), core, bevel=0.04)
-    cube("outer transparent cube", (0, 0, 0.92), (1.55, 1.55, 1.55), glass, bevel=0.03)
-
-    # Minecraft-like frame: four bottom rails, four top rails, and four vertical posts.
-    z_bottom = 0.32
-    z_top = 1.72
-    for z, prefix in [(z_bottom, "bottom"), (z_top, "top")]:
-        add_bar(f"{prefix} north rail", (0, -0.86, z), (1.85, 0.11, 0.11), glass_edge)
-        add_bar(f"{prefix} south rail", (0, 0.86, z), (1.85, 0.11, 0.11), glass_edge)
-        add_bar(f"{prefix} east rail", (0.86, 0, z), (0.11, 1.85, 0.11), glass_edge)
-        add_bar(f"{prefix} west rail", (-0.86, 0, z), (0.11, 1.85, 0.11), glass_edge)
-
-    for x in (-0.86, 0.86):
-        for y in (-0.86, 0.86):
-            add_bar("vertical glass corner", (x, y, 1.02), (0.12, 0.12, 1.46), glass_edge)
-
-    cube("cyan light cap", (0, 0, 1.78), (1.1, 1.1, 0.08), top_glow, bevel=0.06)
-    bpy.ops.mesh.primitive_cylinder_add(vertices=64, radius=0.48, depth=5.2, location=(0, 0, 4.35))
-    beam = bpy.context.object
-    beam.name = "transparent beacon beam"
-    beam.data.materials.append(beam_mat)
-
-    # A few tiny glowing facets on top so the model reads as "Sparkle" up close.
     sparkle_mat = mat(
-        "white cyan sparkle glints",
-        (0.9, 1.0, 1.0, 1),
-        emission=(0.8, 1.0, 1.0, 1.0),
-        strength=4,
+        "white cyan sparkle shards",
+        (0.95, 1.0, 1.0, 1),
+        emission=(0.9, 1.0, 1.0, 1.0),
+        strength=6,
     )
+
+    add_voxel_ring("lowest stepped obsidian", 0.07, 2.7, 0.26, 0.14, obsidian, bevel=0.02)
+    cube("deep center shadow underplate", (0, 0, 0.075), (1.86, 1.86, 0.13), obsidian, bevel=0.02)
+    add_voxel_ring("blue black chamfered second step", 0.22, 2.34, 0.22, 0.16, obsidian_hi, bevel=0.018)
+    cube("dark central raised square", (0, 0, 0.31), (1.86, 1.86, 0.14), metal, bevel=0.018)
+    add_voxel_ring("thin cyan base glow channel", 0.42, 2.02, 0.08, 0.05, etched, bevel=0.01)
+
+    cube("outer transparent glass shell", (0, 0, 1.12), (1.72, 1.72, 1.5), glass, bevel=0.035)
+    cube("floating aqua inner shell", (0, 0, 1.12), (1.38, 1.38, 1.18), core_outer, bevel=0.045)
+    cube("white cyan inner cube core", (0, 0, 1.12), (0.98, 0.98, 0.98), core_inner, bevel=0.05)
+    cube("rotated internal prism", (0, 0, 1.12), (0.84, 0.84, 0.84), prism, bevel=0.035, rotation=(0, 0, math.radians(45)))
+
+    for z, prefix, size, thickness in [
+        (0.46, "lower reinforced", 1.98, 0.13),
+        (1.12, "middle suspended", 1.88, 0.075),
+        (1.78, "upper reinforced", 1.98, 0.13),
+    ]:
+        add_square_frame(prefix, z, size, thickness, glass_edge)
+
+    for x in (-0.93, 0.93):
+        for y in (-0.93, 0.93):
+            rail("thick luminous vertical corner post", (x, y, 1.12), (0.14, 0.14, 1.52), glass_edge)
+            rail("dark inner corner spine", (x * 0.96, y * 0.96, 1.12), (0.055, 0.055, 1.3), metal)
+
+    add_corner_hardware(metal)
+    add_panel_marks(etched)
+
+    cube("thin top glass plate", (0, 0, 1.91), (1.28, 1.28, 0.055), prism, bevel=0.035)
+    cube("rotated top glyph square", (0, 0, 1.955), (0.9, 0.9, 0.035), etched, bevel=0.025, rotation=(0, 0, math.radians(45)))
+    cylinder("round hot light lens", (0, 0, 2.0), 0.48, 0.045, core_inner, vertices=80, bevel=True)
+    cylinder("narrow inner lens ring", (0, 0, 2.035), 0.31, 0.035, prism, vertices=80, bevel=True)
+
+    cylinder("wide square-like beacon light beam", (0, 0, 4.85), 0.54, 5.65, beam_mat, vertices=4)
+    bpy.context.object.rotation_euler.z = math.radians(45)
+    cylinder("soft round center beam", (0, 0, 4.9), 0.29, 5.75, beam_mat, vertices=72)
+
     for i, (x, y, z, s) in enumerate(
-        [(-0.38, 0.28, 1.9, 0.08), (0.32, -0.22, 1.94, 0.06), (0.05, 0.45, 1.88, 0.045)]
+        [
+            (-0.5, 0.36, 2.15, 0.28),
+            (0.42, -0.22, 2.26, 0.18),
+            (0.08, 0.62, 2.07, 0.14),
+            (-0.74, -0.28, 1.73, 0.12),
+            (0.68, 0.43, 1.68, 0.1),
+        ]
     ):
-        obj = cube(f"sparkle glint {i + 1}", (x, y, z), (s, s, s), sparkle_mat, bevel=0.01)
-        obj.rotation_euler = (math.radians(45), math.radians(0), math.radians(45))
+        add_sparkle_cross(f"floating sparkle {i + 1}", (x, y, z), s, sparkle_mat)
 
-    bpy.ops.object.light_add(type="AREA", location=(0, -4, 5))
+    for i in range(20):
+        angle = i * math.tau / 20
+        radius = 0.76 + (i % 3) * 0.1
+        z = 0.72 + (i % 5) * 0.25
+        size = 0.035 + (i % 4) * 0.006
+        cube(
+            f"orbiting cyan pixel {i + 1}",
+            (math.cos(angle) * radius, math.sin(angle) * radius, z),
+            (size, size, size),
+            etched,
+            bevel=0.004,
+            rotation=(math.radians(20), 0, angle),
+        )
+
+    bpy.ops.object.light_add(type="AREA", location=(0, -4.8, 5.4))
     light = bpy.context.object
-    light.name = "large softbox"
-    light.data.energy = 400
-    light.data.size = 5
+    light.name = "huge softbox reflection"
+    light.data.energy = 600
+    light.data.size = 5.5
 
-    bpy.ops.object.camera_add(location=(3.3, -4.0, 3.0), rotation=(math.radians(60), 0, math.radians(39)))
+    bpy.ops.object.light_add(type="POINT", location=(0, 0, 2.1))
+    point = bpy.context.object
+    point.name = "cyan core point glow"
+    point.data.energy = 260
+    point.data.color = (0.55, 1.0, 0.95)
+
+    bpy.ops.object.camera_add(location=(3.7, -4.7, 3.1), rotation=(math.radians(60), 0, math.radians(39)))
     bpy.context.scene.camera = bpy.context.object
 
     world = bpy.context.scene.world or bpy.data.worlds.new("World")
@@ -136,7 +257,7 @@ def create_model():
     world.color = (0.55, 0.84, 0.28)
 
     bpy.context.scene.render.engine = "CYCLES"
-    bpy.context.scene.cycles.samples = 64
+    bpy.context.scene.cycles.samples = 96
     bpy.context.scene.render.resolution_x = 1280
     bpy.context.scene.render.resolution_y = 900
     bpy.context.scene.view_settings.view_transform = "Filmic"

@@ -21,13 +21,32 @@
         min-height: 100vh;
         overflow: hidden;
         background:
+          linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
           radial-gradient(circle at 50% 35%, rgba(196, 255, 148, 0.8), transparent 35%),
           linear-gradient(135deg, #a4df58 0%, #8fd04c 48%, #74ba48 100%);
+        background-size:
+          52px 52px,
+          52px 52px,
+          100% 100%,
+          100% 100%;
       }
 
       #app {
         position: fixed;
         inset: 0;
+      }
+
+      #app::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(circle at 50% 56%, rgba(71, 255, 224, 0.32), transparent 22%),
+          radial-gradient(circle at 48% 28%, rgba(245, 255, 255, 0.22), transparent 18%),
+          linear-gradient(90deg, rgba(21, 102, 54, 0.05), transparent 18%, transparent 82%, rgba(21, 102, 54, 0.09));
+        mix-blend-mode: screen;
       }
 
       .brand {
@@ -209,6 +228,26 @@
       glow.position.y = 0.03;
       scene.add(glow);
 
+      const haloMaterial = new THREE.MeshBasicMaterial({
+        color: 0xbaffef,
+        transparent: true,
+        opacity: 0.28,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const haloGroup = new THREE.Group();
+      scene.add(haloGroup);
+      for (let i = 0; i < 4; i += 1) {
+        const ring = new THREE.Mesh(new THREE.RingGeometry(0.72 + i * 0.18, 0.76 + i * 0.18, 4), haloMaterial.clone());
+        ring.rotation.x = -Math.PI / 2;
+        ring.rotation.z = Math.PI / 4;
+        ring.position.y = 1.78 + i * 0.08;
+        ring.material.opacity = 0.26 - i * 0.035;
+        ring.userData.speed = 0.35 + i * 0.17;
+        haloGroup.add(ring);
+      }
+
       const sparkleGroup = new THREE.Group();
       scene.add(sparkleGroup);
 
@@ -244,6 +283,32 @@
       makeSpark(0.12, 2.58, 2.0);
       makeSpark(0.09, 1.95, 3.8);
 
+      const pixelGroup = new THREE.Group();
+      scene.add(pixelGroup);
+      const pixelGeometry = new THREE.BoxGeometry(0.045, 0.045, 0.045);
+      const pixelMaterials = [0xcffff7, 0x74ffee, 0xffffff].map(
+        (color) =>
+          new THREE.MeshBasicMaterial({
+            color,
+            transparent: true,
+            opacity: 0.74,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+          })
+      );
+      for (let i = 0; i < 52; i += 1) {
+        const angle = i * 2.399963;
+        const radius = 0.7 + (i % 9) * 0.085;
+        const pixel = new THREE.Mesh(pixelGeometry, pixelMaterials[i % pixelMaterials.length].clone());
+        pixel.position.set(Math.cos(angle) * radius, 0.55 + (i % 17) * 0.095, Math.sin(angle) * radius);
+        pixel.rotation.set(angle * 0.2, angle * 0.35, angle);
+        pixel.userData.angle = angle;
+        pixel.userData.radius = radius;
+        pixel.userData.lift = i % 17;
+        pixel.userData.speed = 0.25 + (i % 5) * 0.045;
+        pixelGroup.add(pixel);
+      }
+
       const modelRoot = new THREE.Group();
       modelRoot.rotation.y = Math.PI * 0.08;
       scene.add(modelRoot);
@@ -275,6 +340,19 @@
         const t = clock.getElapsedTime();
         modelRoot.position.y = Math.sin(t * 1.45) * 0.04;
         glow.scale.setScalar(1 + Math.sin(t * 2.2) * 0.05);
+        haloGroup.children.forEach((ring, index) => {
+          ring.rotation.z = Math.PI / 4 + t * ring.userData.speed;
+          ring.scale.setScalar(1 + Math.sin(t * 2 + index) * 0.06);
+        });
+        pixelGroup.children.forEach((pixel, index) => {
+          const angle = pixel.userData.angle + t * pixel.userData.speed;
+          const pulse = Math.sin(t * 2.3 + index) * 0.04;
+          pixel.position.x = Math.cos(angle) * (pixel.userData.radius + pulse);
+          pixel.position.z = Math.sin(angle) * (pixel.userData.radius + pulse);
+          pixel.position.y = 0.52 + ((pixel.userData.lift + t * 1.4) % 17) * 0.096;
+          pixel.rotation.y += 0.018;
+          pixel.material.opacity = 0.36 + Math.sin(t * 3.2 + index) * 0.28;
+        });
         sparkleGroup.children.forEach((spark) => {
           spark.lookAt(camera.position);
           spark.rotation.z = t * 1.6 + spark.userData.delay;
