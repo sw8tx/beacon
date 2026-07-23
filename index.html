@@ -118,6 +118,15 @@
         backdrop-filter: blur(14px);
       }
 
+      .stats-title {
+        grid-column: 1 / -1;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 950;
+        letter-spacing: 0;
+        text-shadow: 0 8px 24px rgba(20, 80, 50, 0.3);
+      }
+
       .stat {
         min-width: 0;
         padding: 9px 10px;
@@ -241,21 +250,22 @@
   </head>
   <body>
     <main id="app" aria-label="Interaktives 3D Sparkle Beacon"></main>
-    <div class="brand">Sparkle</div>
+        <div class="brand">Sparkle</div>
     <section class="stats" aria-label="Discord Bot Stats">
+      <div class="stats-title">Discord Bot Live Stats</div>
       <div class="stat">
         <span>Server</span>
-        <strong id="stat-guilds">--</strong>
+        <strong id="stat-guilds">0</strong>
       </div>
       <div class="stat">
         <span>User</span>
-        <strong id="stat-users">--</strong>
+        <strong id="stat-users">0</strong>
       </div>
       <div class="stat">
         <span>Ping</span>
-        <strong id="stat-ping">--</strong>
+        <strong id="stat-ping">0ms</strong>
       </div>
-      <div class="status" id="stat-status">warte auf Bot Sync</div>
+      <div class="status" id="stat-status">Bot noch nicht verbunden</div>
     </section>
     <div class="hint">ziehen zum Drehen</div>
     <div class="loader" id="loader">Beacon wird geladen</div>
@@ -293,8 +303,8 @@
 
           statGuilds.textContent = compactNumber.format(stats.guilds || 0);
           statUsers.textContent = compactNumber.format(stats.users || 0);
-          statPing.textContent = stats.ping ? `${Math.round(stats.ping)}ms` : "--";
-          statStatus.textContent = stats.online ? formatUptime(stats.uptime) : "warte auf Bot Sync";
+          statPing.textContent = `${Math.round(stats.ping || 0)}ms`;
+          statStatus.textContent = stats.online ? formatUptime(stats.uptime) : "Bot noch nicht verbunden";
           statStatus.classList.toggle("is-online", Boolean(stats.online));
         } catch {
           statStatus.textContent = "Stats API nicht erreichbar";

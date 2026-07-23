@@ -59,7 +59,11 @@ export async function onRequestGet({ env }) {
 export async function onRequestPost({ request, env }) {
   const auth = request.headers.get("authorization");
 
-  if (!env.STATS_SECRET || auth !== `Bearer ${env.STATS_SECRET}`) {
+  if (!env.STATS_SECRET) {
+    return new Response("Server missing STATS_SECRET", { status: 503 });
+  }
+
+  if (auth !== `Bearer ${env.STATS_SECRET}`) {
     return new Response("Unauthorized", { status: 401 });
   }
 
