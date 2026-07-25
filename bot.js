@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 const fs = require("fs");
 const path = require("path");
 const {
@@ -23,9 +21,10 @@ const {
   TextInputStyle,
 } = require("discord.js");
 
-const TOKEN = process.env.DISCORD_TOKEN;
-const CLIENT_ID = process.env.CLIENT_ID;
-const DEV_GUILD_ID = process.env.DEV_GUILD_ID || ""; // Optional: test server ID for instant slash command updates.
+const TOKEN = "PASTE_NEW_DISCORD_BOT_TOKEN_HERE";
+const CLIENT_ID = "1529195963787251784";
+const DEV_GUILD_ID = "1529195462735696053"; // Optional: test server ID for instant slash command updates.
+const STATS_SECRET = "PASTE_THE_SAME_CLOUDFLARE_STATS_SECRET_HERE";
 const DASHBOARD_URL = "https://beacon-bot.site";
 const STATS_SYNC_ENDPOINT = "https://beacon-bot.site/api/discord-stats";
 const STATS_SYNC_INTERVAL_MS = 60_000;
@@ -38,7 +37,7 @@ const BRAND_THUMBNAIL_URL = `attachment://${LOGO_ATTACHMENT_NAME}`;
 const BRAND_COLOR = 0xf5b301;
 
 if (!TOKEN || !CLIENT_ID) {
-  console.error("Missing DISCORD_TOKEN or CLIENT_ID in .env.");
+  console.error("Set TOKEN and CLIENT_ID at the top of bot.js.");
   process.exit(1);
 }
 
@@ -134,7 +133,7 @@ function buildStatsPayload() {
 let warnedMissingStatsSecret = false;
 
 async function syncDiscordStats() {
-  if (!process.env.STATS_SECRET) {
+  if (!STATS_SECRET || STATS_SECRET.startsWith("PASTE_")) {
     if (!warnedMissingStatsSecret) {
       console.warn("[stats-sync] STATS_SECRET is not set. Discord stats sync is disabled.");
       warnedMissingStatsSecret = true;
@@ -148,7 +147,7 @@ async function syncDiscordStats() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.STATS_SECRET}`,
+        Authorization: `Bearer ${STATS_SECRET}`,
       },
       body: JSON.stringify(buildStatsPayload()),
     });
