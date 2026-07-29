@@ -1,427 +1,119 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Sparkle Beacon</title>
+    <title>Beacon - Community Discord Bot</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5b301' rx='8'/%3E%3Ctext x='50' y='65' font-size='70' font-weight='900' text-anchor='middle' fill='white' font-family='Arial'%3EB%3C/text%3E%3C/svg%3E" />
     <style>
-      :root {
-        color-scheme: dark;
-        font-family:
-          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background: #98d857;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-        min-height: 100vh;
-        overflow: hidden;
-        background:
-          linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-          radial-gradient(circle at 50% 35%, rgba(196, 255, 148, 0.8), transparent 35%),
-          linear-gradient(135deg, #a4df58 0%, #8fd04c 48%, #74ba48 100%);
-        background-size:
-          52px 52px,
-          52px 52px,
-          100% 100%,
-          100% 100%;
-      }
-
-      #app {
-        position: fixed;
-        inset: 0;
-      }
-
-      #app::after {
-        content: "";
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        background:
-          radial-gradient(circle at 50% 56%, rgba(71, 255, 224, 0.32), transparent 22%),
-          radial-gradient(circle at 48% 28%, rgba(245, 255, 255, 0.22), transparent 18%),
-          linear-gradient(90deg, rgba(21, 102, 54, 0.05), transparent 18%, transparent 82%, rgba(21, 102, 54, 0.09));
-        mix-blend-mode: screen;
-      }
-
-      .brand {
-        position: fixed;
-        top: clamp(18px, 3vw, 34px);
-        right: 0;
-        z-index: 20;
-        display: inline-flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 10px;
-        width: 100vw;
-        max-width: 100vw;
-        padding-right: clamp(18px, 4vw, 52px);
-        color: #f5fff2;
-        font-size: clamp(24px, 4vw, 52px);
-        font-weight: 900;
-        letter-spacing: 0;
-        text-shadow:
-          0 3px 0 rgba(33, 92, 54, 0.24),
-          0 14px 35px rgba(36, 103, 61, 0.38),
-          0 0 24px rgba(145, 255, 238, 0.55);
-        user-select: none;
-      }
-
-      .brand::before {
-        content: "";
-        width: 0.44em;
-        height: 0.44em;
-        display: block;
-        background: #eaffff;
-        clip-path: polygon(50% 0, 62% 36%, 100% 50%, 62% 64%, 50% 100%, 38% 64%, 0 50%, 38% 36%);
-        filter: drop-shadow(0 0 12px rgba(129, 255, 239, 0.95));
-        animation: twinkle 1.7s ease-in-out infinite;
-      }
-
-      .hint {
-        position: fixed;
-        left: clamp(16px, 3vw, 36px);
-        bottom: clamp(16px, 3vw, 30px);
-        z-index: 2;
-        display: inline-flex;
-        align-items: center;
-        min-height: 36px;
-        padding: 0 14px;
-        border: 1px solid rgba(245, 255, 242, 0.35);
-        border-radius: 8px;
-        color: rgba(255, 255, 255, 0.84);
-        background: rgba(22, 82, 51, 0.2);
-        backdrop-filter: blur(10px);
-        font-size: 13px;
-        font-weight: 650;
-      }
-
-      .stats {
-        position: fixed;
-        left: clamp(16px, 3vw, 36px);
-        top: clamp(18px, 3vw, 34px);
-        z-index: 30;
-        display: grid;
-        grid-template-columns: repeat(3, minmax(82px, 1fr));
-        gap: 8px;
-        width: min(360px, calc(100vw - 32px));
-        padding: 10px;
-        border: 1px solid rgba(236, 255, 241, 0.32);
-        border-radius: 8px;
-        background: rgba(13, 63, 43, 0.42);
-        box-shadow: 0 18px 55px rgba(25, 86, 51, 0.26);
-        backdrop-filter: blur(14px);
-      }
-
-      .stats-title {
-        grid-column: 1 / -1;
-        color: #ffffff;
-        font-size: 13px;
-        font-weight: 950;
-        letter-spacing: 0;
-        text-shadow: 0 8px 24px rgba(20, 80, 50, 0.3);
-      }
-
-      .stat {
-        min-width: 0;
-        padding: 9px 10px;
-        border: 1px solid rgba(234, 255, 245, 0.18);
-        border-radius: 6px;
-        background: rgba(255, 255, 255, 0.1);
-      }
-
-      .stat span {
-        display: block;
-        color: rgba(247, 255, 246, 0.72);
-        font-size: 10px;
-        font-weight: 850;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .stat strong {
-        display: block;
-        margin-top: 3px;
-        color: #ffffff;
-        font-size: 18px;
-        font-weight: 950;
-        letter-spacing: 0;
-        text-shadow: 0 8px 20px rgba(20, 80, 50, 0.24);
-        white-space: nowrap;
-      }
-
-      .status {
-        grid-column: 1 / -1;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-height: 24px;
-        color: rgba(250, 255, 248, 0.86);
-        font-size: 12px;
-        font-weight: 750;
-      }
-
-      .status::before {
-        content: "";
-        width: 8px;
-        height: 8px;
-        border-radius: 999px;
-        background: #c8d2c3;
-        box-shadow: 0 0 16px rgba(255, 255, 255, 0.55);
-      }
-
-      .status.is-online::before {
-        background: #65ffe0;
-        box-shadow: 0 0 16px rgba(101, 255, 224, 0.95);
-      }
-
-      .loader {
-        position: fixed;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        color: #f6fff4;
-        font-size: 15px;
-        font-weight: 800;
-        letter-spacing: 0;
-        text-shadow: 0 3px 18px rgba(21, 81, 48, 0.45);
-        pointer-events: none;
-      }
-
-      .loader.is-hidden {
-        opacity: 0;
-        transition: opacity 300ms ease;
-      }
-
-      canvas {
-        display: block;
-      }
-
-      @keyframes twinkle {
-        0%,
-        100% {
-          transform: rotate(0deg) scale(0.9);
-          opacity: 0.78;
-        }
-        50% {
-          transform: rotate(45deg) scale(1.16);
-          opacity: 1;
-        }
-      }
-
-      @media (max-width: 1000px) {
-        .brand {
-          font-size: 28px;
-          width: 390px;
-          padding-right: 18px;
-        }
-
-        .hint {
-          right: 16px;
-          justify-content: center;
-        }
-
-        .stats {
-          top: auto;
-          bottom: 60px;
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-
-      @media (orientation: portrait) {
-        .brand {
-          transform: translateX(-128px);
-        }
-      }
-
-      .footer {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 10;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        min-height: 48px;
-        padding: 12px clamp(16px, 3vw, 36px);
-        border-top: 1px solid rgba(236, 255, 241, 0.15);
-        background: rgba(13, 63, 43, 0.32);
-        backdrop-filter: blur(10px);
-        font-size: 12px;
-        font-weight: 600;
-      }
-
-      .footer-left {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-      }
-
-      .footer-logo {
-        width: 28px;
-        height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 4px;
-        background: rgba(245, 179, 1, 0.15);
-        color: #f5b301;
-        font-weight: 900;
-        font-size: 14px;
-      }
-
-      .footer-brand {
-        color: rgba(255, 255, 255, 0.78);
-        font-weight: 700;
-      }
-
-      .footer-links {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        margin-left: 16px;
-        padding-left: 16px;
-        border-left: 1px solid rgba(236, 255, 241, 0.15);
-      }
-
-      .footer-link {
-        color: rgba(255, 255, 255, 0.64);
-        text-decoration: none;
-        transition: color 200ms ease;
-      }
-
-      .footer-link:hover {
-        color: rgba(255, 255, 255, 0.95);
-      }
-
-      .footer-right {
-        color: rgba(255, 255, 255, 0.48);
-      }
-
-      @media (max-width: 768px) {
-        .footer {
-          flex-direction: column;
-          gap: 10px;
-          justify-content: center;
-          text-align: center;
-          min-height: auto;
-          padding: 12px;
-        }
-
-        .footer-left {
-          width: 100%;
-          justify-content: center;
-        }
-
-        .footer-links {
-          margin-left: 0;
-          padding-left: 0;
-          border-left: none;
-          flex-wrap: wrap;
-          gap: 12px;
-          font-size: 11px;
-        }
-
-        .footer-right {
-          width: 100%;
-          font-size: 11px;
-        }
-      }
+      :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: linear-gradient(135deg, #a4df58 0%, #8fd04c 48%, #74ba48 100%); color: #333; }
+      #app { position: fixed; inset: 0; }
+      header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: rgba(255,255,255,0.1); backdrop-filter: blur(8px); }
+      .logo { display: flex; gap: 10px; align-items: center; font-weight: 900; color: white; font-size: 20px; }
+      .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #f5b301, #ffd700); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; }
+      .nav { display: flex; gap: 20px; align-items: center; }
+      .nav a { color: rgba(255,255,255,0.8); text-decoration: none; font-weight: 600; }
+      .nav a:hover { color: white; }
+      .btn { padding: 10px 20px; background: #f5b301; color: white; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; }
+      .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(245,179,1,0.4); }
+      .hero { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 1; }
+      .hero h1 { font-size: 56px; color: white; margin: 0 0 20px 0; text-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+      .hero p { font-size: 20px; color: rgba(255,255,255,0.9); margin: 0 0 30px 0; }
+      .hero-btns { display: flex; gap: 16px; justify-content: center; }
+      .hero-btns button { padding: 14px 32px; border: none; border-radius: 8px; font-weight: 700; font-size: 16px; cursor: pointer; }
+      .hero-btns .primary { background: linear-gradient(135deg, #f5b301, #ffd700); color: white; }
+      .hero-btns .secondary { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(8px); }
+      .features { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 60px 40px; background: rgba(255,255,255,0.95); }
+      .feature { padding: 30px; background: #f9f9f9; border-radius: 12px; text-align: center; }
+      .feature-icon { font-size: 40px; margin-bottom: 16px; }
+      .feature h3 { margin: 0 0 12px 0; color: #333; }
+      .feature p { margin: 0; color: #666; font-size: 14px; line-height: 1.6; }
+      footer { position: relative; z-index: 2; background: rgba(20,60,40,0.95); color: white; padding: 30px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+      .footer-left { display: flex; gap: 30px; align-items: center; }
+      .footer-logo { width: 28px; height: 28px; background: rgba(245,179,1,0.2); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #f5b301; font-weight: 900; }
+      .footer-links a { color: rgba(255,255,255,0.7); text-decoration: none; margin: 0 15px; }
+      .footer-links a:hover { color: white; }
+      @media (max-width: 768px) { .nav { display: none; } .hero h1 { font-size: 32px; } .features { grid-template-columns: 1fr; } footer { flex-direction: column; gap: 20px; } }
     </style>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.166.1/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.166.1/examples/jsm/"
-        }
-      }
-    </script>
   </head>
   <body>
-    <main id="app" aria-label="Interaktives 3D Sparkle Beacon"></main>
-    <div class="brand">Sparkle</div>
-    <section class="stats" aria-label="Discord Bot Stats">
-      <div class="stats-title">Discord Bot Live Stats</div>
-      <div class="stat">
-        <span>Server</span>
-        <strong id="stat-guilds">0</strong>
+    <div id="app"></div>
+    
+    <header>
+      <div class="logo">
+        <div class="logo-icon">B</div>
+        <div>Beacon</div>
       </div>
-      <div class="stat">
-        <span>User</span>
-        <strong id="stat-users">0</strong>
-      </div>
-      <div class="stat">
-        <span>Ping</span>
-        <strong id="stat-ping">0ms</strong>
-      </div>
-      <div class="status" id="stat-status">Bot noch nicht verbunden</div>
-    </section>
-    <div class="hint">ziehen zum Drehen</div>
-    <div class="loader" id="loader">Beacon wird geladen</div>
+      <nav class="nav">
+        <a href="#features">Features</a>
+        <a href="https://github.com/sw8tx/beacon">GitHub</a>
+        <button class="btn">Add Bot</button>
+      </nav>
+    </header>
 
-    <footer class="footer">
+    <section class="hero">
+      <h1>Community Health, Powered by Beacon</h1>
+      <p>Advanced Discord bot for analytics, onboarding, tickets & community tracking</p>
+      <div class="hero-btns">
+        <button class="primary">Add to Discord</button>
+        <button class="secondary">View Docs</button>
+      </div>
+    </section>
+
+    <section class="features" id="features">
+      <div class="feature">
+        <div class="feature-icon">📊</div>
+        <h3>Health Analytics</h3>
+        <p>Real-time community health scoring with activity, retention & engagement</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎯</div>
+        <h3>Smart Onboarding</h3>
+        <p>Automated welcome flows, role selection & member introductions</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎫</div>
+        <h3>Ticket System</h3>
+        <p>Customizable support tickets with transcripts & team assignment</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📢</div>
+        <h3>Announcements</h3>
+        <p>Beautiful embeds with customizable branding & targeting</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">👥</div>
+        <h3>Member Tracking</h3>
+        <p>Detailed profiles with activity history & engagement scoring</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎉</div>
+        <h3>Event Management</h3>
+        <p>Create events with RSVP tracking & attendance management</p>
+      </div>
+    </section>
+
+    <footer>
       <div class="footer-left">
         <div class="footer-logo">B</div>
-        <span class="footer-brand">Beacon</span>
+        <span>Beacon</span>
         <div class="footer-links">
-          <a href="#privacy" class="footer-link">Datenschutz</a>
-          <a href="#terms" class="footer-link">Nutzungsbedingungen</a>
-          <a href="#impressum" class="footer-link">Impressum</a>
-          <a href="https://github.com" class="footer-link">GitHub</a>
+          <a href="#privacy">Privacy</a>
+          <a href="#terms">Terms</a>
+          <a href="https://github.com/sw8tx/beacon">GitHub</a>
         </div>
       </div>
-      <div class="footer-right">© 2026 Beacon Community OS. All rights reserved.</div>
+      <div>© 2026 Beacon Community OS. All rights reserved.</div>
     </footer>
 
     <script type="module">
-      import * as THREE from "three";
-      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import * as THREE from "https://unpkg.com/three@0.166.1/build/three.module.js";
+      import { OrbitControls } from "https://unpkg.com/three@0.166.1/examples/jsm/controls/OrbitControls.js";
+      import { GLTFLoader } from "https://unpkg.com/three@0.166.1/examples/jsm/loaders/GLTFLoader.js";
 
       const app = document.querySelector("#app");
-      const loaderEl = document.querySelector("#loader");
-      const statGuilds = document.querySelector("#stat-guilds");
-      const statUsers = document.querySelector("#stat-users");
-      const statPing = document.querySelector("#stat-ping");
-      const statStatus = document.querySelector("#stat-status");
-
-      const compactNumber = new Intl.NumberFormat("de-DE", {
-        notation: "compact",
-        maximumFractionDigits: 1
-      });
-
-      function formatUptime(seconds) {
-        if (!seconds) return "kein Sync";
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        if (hours > 0) return `${hours}h ${minutes}m uptime`;
-        return `${minutes}m uptime`;
-      }
-
-      async function loadDiscordStats() {
-        try {
-          const response = await fetch("/api/discord-stats", { cache: "no-store" });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const stats = await response.json();
-
-          statGuilds.textContent = compactNumber.format(stats.guilds || 0);
-          statUsers.textContent = compactNumber.format(stats.users || 0);
-          statPing.textContent = `${Math.round(stats.ping || 0)}ms`;
-          statStatus.textContent = stats.online ? formatUptime(stats.uptime) : "Bot noch nicht verbunden";
-          statStatus.classList.toggle("is-online", Boolean(stats.online));
-        } catch {
-          statStatus.textContent = "Stats API nicht erreichbar";
-          statStatus.classList.remove("is-online");
-        }
-      }
-
       const scene = new THREE.Scene();
       scene.background = null;
       scene.fog = new THREE.Fog(0x98d857, 10, 24);
@@ -453,9 +145,6 @@
       const rim = new THREE.DirectionalLight(0x8ffff0, 1.7);
       rim.position.set(-4, 3.2, -3);
       scene.add(rim);
-      const coreLight = new THREE.PointLight(0x9ffff4, 1.25, 7, 1.6);
-      coreLight.position.set(0, 1.65, 0);
-      scene.add(coreLight);
 
       const floor = new THREE.Mesh(
         new THREE.CircleGeometry(3.15, 72),
@@ -499,181 +188,36 @@
         haloGroup.add(ring);
       }
 
-      const sparkleGroup = new THREE.Group();
-      scene.add(sparkleGroup);
-
-      function makeSpark(radius, y, delay) {
-        const shape = new THREE.Shape();
-        shape.moveTo(0, radius);
-        shape.lineTo(radius * 0.17, radius * 0.18);
-        shape.lineTo(radius, 0);
-        shape.lineTo(radius * 0.17, -radius * 0.18);
-        shape.lineTo(0, -radius);
-        shape.lineTo(-radius * 0.17, -radius * 0.18);
-        shape.lineTo(-radius, 0);
-        shape.lineTo(-radius * 0.17, radius * 0.18);
-        shape.closePath();
-
-        const mesh = new THREE.Mesh(
-          new THREE.ShapeGeometry(shape),
-          new THREE.MeshBasicMaterial({
-            color: 0xf3ffff,
-            transparent: true,
-            opacity: 0.82,
-            blending: THREE.AdditiveBlending,
-            side: THREE.DoubleSide,
-            depthWrite: false
-          })
-        );
-        mesh.position.set(Math.sin(delay) * 1.05, y, Math.cos(delay) * 1.05);
-        mesh.userData.delay = delay;
-        sparkleGroup.add(mesh);
-      }
-
-      makeSpark(0.18, 2.2, 0.2);
-      makeSpark(0.12, 2.58, 2.0);
-      makeSpark(0.09, 1.95, 3.8);
-      makeSpark(0.075, 2.82, 5.1);
-      makeSpark(0.11, 1.72, 6.4);
-
-      const pixelGroup = new THREE.Group();
-      scene.add(pixelGroup);
-      const pixelGeometry = new THREE.BoxGeometry(0.045, 0.045, 0.045);
-      const pixelMaterials = [0xcffff7, 0x74ffee, 0xffffff].map(
-        (color) =>
-          new THREE.MeshBasicMaterial({
-            color,
-            transparent: true,
-            opacity: 0.74,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-          })
-      );
-      for (let i = 0; i < 52; i += 1) {
-        const angle = i * 2.399963;
-        const radius = 0.7 + (i % 9) * 0.085;
-        const pixel = new THREE.Mesh(pixelGeometry, pixelMaterials[i % pixelMaterials.length].clone());
-        pixel.position.set(Math.cos(angle) * radius, 0.55 + (i % 17) * 0.095, Math.sin(angle) * radius);
-        pixel.rotation.set(angle * 0.2, angle * 0.35, angle);
-        pixel.userData.angle = angle;
-        pixel.userData.radius = radius;
-        pixel.userData.lift = i % 17;
-        pixel.userData.speed = 0.25 + (i % 5) * 0.045;
-        pixelGroup.add(pixel);
-      }
-
-      const beamVeils = new THREE.Group();
-      scene.add(beamVeils);
-      for (let i = 0; i < 5; i += 1) {
-        const veil = new THREE.Mesh(
-          new THREE.PlaneGeometry(0.46 + i * 0.12, 7.2),
-          new THREE.MeshBasicMaterial({
-            color: i % 2 ? 0xdcfff8 : 0x83fff0,
-            transparent: true,
-            opacity: 0.08 - i * 0.006,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false,
-            side: THREE.DoubleSide
-          })
-        );
-        veil.position.y = 3.65;
-        veil.rotation.y = (Math.PI / 5) * i;
-        veil.userData.speed = 0.06 + i * 0.018;
-        beamVeils.add(veil);
-      }
-
       const modelRoot = new THREE.Group();
       modelRoot.rotation.y = Math.PI * 0.08;
       scene.add(modelRoot);
 
-      new GLTFLoader().load(
-        "assets/sparkle_beacon.glb?v=5",
-        (gltf) => {
-          const model = gltf.scene;
-          model.traverse((child) => {
-            if (child.isMesh) {
-              child.castShadow = false;
-              child.receiveShadow = false;
-              if (child.material?.transparent) {
-                child.material.depthWrite = false;
-              }
-              const materialName = child.material?.name?.toLowerCase() || "";
-              const objectName = child.name?.toLowerCase() || "";
-              if (materialName.includes("beam") || objectName.includes("beam")) {
-                child.material.opacity = 0.08;
-                child.material.emissiveIntensity = 0.15;
-                child.renderOrder = -1;
-              }
-              if (materialName.includes("heart") || materialName.includes("core")) {
-                child.material.emissiveIntensity = Math.min(child.material.emissiveIntensity || 1, 1.8);
-              }
-            }
-          });
-          modelRoot.add(model);
-          loaderEl.classList.add("is-hidden");
-        },
-        undefined,
-        () => {
-          loaderEl.textContent = "Beacon konnte nicht geladen werden";
-        }
-      );
+      new GLTFLoader().load("assets/sparkle_beacon.glb?v=5", (gltf) => {
+        const model = gltf.scene;
+        model.traverse((child) => {
+          if (child.isMesh && child.material?.transparent) {
+            child.material.depthWrite = false;
+          }
+        });
+        modelRoot.add(model);
+      });
 
-      const clock = new THREE.Clock();
       function animate() {
-        const t = clock.getElapsedTime();
-        modelRoot.position.y = Math.sin(t * 1.45) * 0.04;
-        coreLight.intensity = 1.05 + Math.sin(t * 2.4) * 0.28;
-        glow.scale.setScalar(1 + Math.sin(t * 2.2) * 0.05);
-        beamVeils.children.forEach((veil, index) => {
-          veil.rotation.y += veil.userData.speed * 0.01;
-          veil.material.opacity = 0.045 + Math.sin(t * 1.7 + index) * 0.022;
-        });
-        haloGroup.children.forEach((ring, index) => {
-          ring.rotation.z = Math.PI / 4 + t * ring.userData.speed;
-          ring.scale.setScalar(1 + Math.sin(t * 2 + index) * 0.06);
-        });
-        pixelGroup.children.forEach((pixel, index) => {
-          const angle = pixel.userData.angle + t * pixel.userData.speed;
-          const pulse = Math.sin(t * 2.3 + index) * 0.04;
-          pixel.position.x = Math.cos(angle) * (pixel.userData.radius + pulse);
-          pixel.position.z = Math.sin(angle) * (pixel.userData.radius + pulse);
-          pixel.position.y = 0.52 + ((pixel.userData.lift + t * 1.4) % 17) * 0.096;
-          pixel.rotation.y += 0.018;
-          pixel.material.opacity = 0.36 + Math.sin(t * 3.2 + index) * 0.28;
-        });
-        sparkleGroup.children.forEach((spark) => {
-          spark.lookAt(camera.position);
-          spark.rotation.z = t * 1.6 + spark.userData.delay;
-          spark.material.opacity = 0.46 + Math.sin(t * 2.8 + spark.userData.delay) * 0.32;
-        });
-        controls.update();
-        renderer.render(scene, camera);
         requestAnimationFrame(animate);
+        controls.update();
+        haloGroup.children.forEach((ring) => {
+          ring.rotation.z += ring.userData.speed * 0.0016;
+        });
+        renderer.render(scene, camera);
       }
 
-      function resize() {
-        const aspect = window.innerWidth / window.innerHeight;
-        camera.aspect = aspect;
-        if (aspect < 0.68) {
-          camera.fov = 52;
-          camera.position.set(5.4, 4.1, 7.4);
-          controls.minDistance = 5.7;
-          controls.maxDistance = 10.0;
-        } else {
-          camera.fov = 38;
-          camera.position.set(4.2, 3.3, 5.2);
-          controls.minDistance = 4.2;
-          controls.maxDistance = 8.5;
-        }
+      animate();
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-      }
-
-      window.addEventListener("resize", resize);
-      resize();
-      loadDiscordStats();
-      setInterval(loadDiscordStats, 30000);
-      animate();
+      });
     </script>
   </body>
 </html>
