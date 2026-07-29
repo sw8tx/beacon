@@ -238,6 +238,101 @@
           transform: translateX(-128px);
         }
       }
+
+      .footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 48px;
+        padding: 12px clamp(16px, 3vw, 36px);
+        border-top: 1px solid rgba(236, 255, 241, 0.15);
+        background: rgba(13, 63, 43, 0.32);
+        backdrop-filter: blur(10px);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .footer-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .footer-logo {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        background: rgba(245, 179, 1, 0.15);
+        color: #f5b301;
+        font-weight: 900;
+        font-size: 14px;
+      }
+
+      .footer-brand {
+        color: rgba(255, 255, 255, 0.78);
+        font-weight: 700;
+      }
+
+      .footer-links {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-left: 16px;
+        padding-left: 16px;
+        border-left: 1px solid rgba(236, 255, 241, 0.15);
+      }
+
+      .footer-link {
+        color: rgba(255, 255, 255, 0.64);
+        text-decoration: none;
+        transition: color 200ms ease;
+      }
+
+      .footer-link:hover {
+        color: rgba(255, 255, 255, 0.95);
+      }
+
+      .footer-right {
+        color: rgba(255, 255, 255, 0.48);
+      }
+
+      @media (max-width: 768px) {
+        .footer {
+          flex-direction: column;
+          gap: 10px;
+          justify-content: center;
+          text-align: center;
+          min-height: auto;
+          padding: 12px;
+        }
+
+        .footer-left {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .footer-links {
+          margin-left: 0;
+          padding-left: 0;
+          border-left: none;
+          flex-wrap: wrap;
+          gap: 12px;
+          font-size: 11px;
+        }
+
+        .footer-right {
+          width: 100%;
+          font-size: 11px;
+        }
+      }
     </style>
     <script type="importmap">
       {
@@ -250,7 +345,7 @@
   </head>
   <body>
     <main id="app" aria-label="Interaktives 3D Sparkle Beacon"></main>
-        <div class="brand">Sparkle</div>
+    <div class="brand">Sparkle</div>
     <section class="stats" aria-label="Discord Bot Stats">
       <div class="stats-title">Discord Bot Live Stats</div>
       <div class="stat">
@@ -269,6 +364,20 @@
     </section>
     <div class="hint">ziehen zum Drehen</div>
     <div class="loader" id="loader">Beacon wird geladen</div>
+
+    <footer class="footer">
+      <div class="footer-left">
+        <div class="footer-logo">B</div>
+        <span class="footer-brand">Beacon</span>
+        <div class="footer-links">
+          <a href="#privacy" class="footer-link">Datenschutz</a>
+          <a href="#terms" class="footer-link">Nutzungsbedingungen</a>
+          <a href="#impressum" class="footer-link">Impressum</a>
+          <a href="https://github.com" class="footer-link">GitHub</a>
+        </div>
+      </div>
+      <div class="footer-right">© 2026 Beacon Community OS. All rights reserved.</div>
+    </footer>
 
     <script type="module">
       import * as THREE from "three";

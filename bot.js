@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+require("dotenv").config();
 const {
   ActionRowBuilder,
   AttachmentBuilder,
@@ -21,23 +22,23 @@ const {
   TextInputStyle,
 } = require("discord.js");
 
-const TOKEN = "PASTE_NEW_DISCORD_BOT_TOKEN_HERE";
-const CLIENT_ID = "1529195963787251784";
-const DEV_GUILD_ID = "1529195462735696053"; // Optional: test server ID for instant slash command updates.
-const STATS_SECRET = "PASTE_THE_SAME_CLOUDFLARE_STATS_SECRET_HERE";
-const DASHBOARD_URL = "https://beacon-bot.site";
-const STATS_SYNC_ENDPOINT = "https://beacon-bot.site/api/discord-stats";
-const STATS_SYNC_INTERVAL_MS = 60_000;
-const BOT_STATUS = "Community health";
-const BOT_STATUS_TYPE = 3; // 0 = Playing, 2 = Listening, 3 = Watching, 5 = Competing
+const TOKEN = process.env.DISCORD_TOKEN || process.env.TOKEN || "PASTE_NEW_DISCORD_BOT_TOKEN_HERE";
+const CLIENT_ID = process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID || "1529195963787251784";
+const DEV_GUILD_ID = process.env.DEV_GUILD_ID || "";
+const STATS_SECRET = process.env.STATS_SECRET || "PASTE_THE_SAME_CLOUDFLARE_STATS_SECRET_HERE";
+const DASHBOARD_URL = process.env.DASHBOARD_URL || "https://beacon-bot.site";
+const STATS_SYNC_ENDPOINT = process.env.STATS_SYNC_ENDPOINT || "https://beacon-bot.site/api/discord-stats";
+const STATS_SYNC_INTERVAL_MS = Number(process.env.STATS_SYNC_INTERVAL_MS || 60_000);
+const BOT_STATUS = process.env.BOT_STATUS || "Community health";
+const BOT_STATUS_TYPE = Number(process.env.BOT_STATUS_TYPE || 3); // 0 = Playing, 2 = Listening, 3 = Watching, 5 = Competing
 const DATA_FILE = path.join(__dirname, "beacon-data.json");
 const LOGO_FILE = path.join(__dirname, "beacon-logo.png");
 const LOGO_ATTACHMENT_NAME = "beacon-logo.png";
 const BRAND_THUMBNAIL_URL = `attachment://${LOGO_ATTACHMENT_NAME}`;
 const BRAND_COLOR = 0xf5b301;
 
-if (!TOKEN || !CLIENT_ID) {
-  console.error("Set TOKEN and CLIENT_ID at the top of bot.js.");
+if (!TOKEN || TOKEN.startsWith("PASTE_")) {
+  console.error("Missing Discord bot token. Set DISCORD_TOKEN in your .env file or in your hosting environment.");
   process.exit(1);
 }
 
@@ -122,9 +123,13 @@ async function getFetch() {
 }
 
 function buildStatsPayload() {
+  const totalUsers = client.guilds.cache.reduce((sum, guild) => {
+    return sum + (guild.memberCount || guild.members.cache.size || 0);
+  }, 0);
+
   return {
     guilds: client.guilds.cache.size,
-    users: client.guilds.cache.reduce((sum, guild) => sum + (guild.memberCount || 0), 0),
+    users: totalUsers,
     ping: Math.round(client.ws.ping),
     uptime: Math.floor(process.uptime()),
   };
@@ -811,8 +816,36 @@ client.once("ready", async () => {
     activities: [{ name: BOT_STATUS, type: BOT_STATUS_TYPE }],
     status: "online",
   });
+
+  try {
+    await registerCommands();
+  } catch (err) {
+    console.error(`[commands] Failed to register slash commands: ${err.message}`);
+  }
+
   startStatsSync();
 });
+
+client.on("guildCreate", async (guild) => {
+  console.log(`[guild-join] Joined new guild: ${guild.name} (${guild.id}) with ${guild.memberCount} members`);
+  guildData(guild.id); // Initialize guild data
+  saveData();
+  await syncDiscordStats(); // Immediately sync stats
+});
+
+client.on("guildDelete", async (guild) => {
+  console.log(`[guild-leave] Left guild: ${guild.name} (${guild.id})`);
+  await syncDiscordStats(); // Immediately sync stats
+});
+
+let memberSyncTimeout;
+
+function debounceMemberSync() {
+  clearTimeout(memberSyncTimeout);
+  memberSyncTimeout = setTimeout(() => {
+    syncDiscordStats();
+  }, 2000);
+}
 
 client.on("guildMemberAdd", async (member) => {
   const data = guildData(member.guild.id);
@@ -849,6 +882,7 @@ client.on("guildMemberAdd", async (member) => {
   }
 
   await log(member.guild, "Member joined", `${member.user.tag} joined the server.`);
+  debounceMemberSync(); // Sync stats after member join
 });
 
 client.on("guildMemberRemove", async (member) => {
@@ -856,6 +890,7 @@ client.on("guildMemberRemove", async (member) => {
   data.stats.leavesWeek += 1;
   saveData();
   await log(member.guild, "Member left", `${member.user.tag} left the server.`);
+  debounceMemberSync(); // Sync stats after member leave
 });
 
 client.on("messageCreate", async (message) => {
