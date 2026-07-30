@@ -4,23 +4,54 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Beacon</title>
-    <link rel="icon" type="image/png" href="assets/beacon-logo.png?v=82" />
-    <link rel="shortcut icon" href="assets/beacon-logo.png?v=82" />
-    <link rel="stylesheet" href="styles.css?v=82" />
+    <link rel="icon" type="image/png" href="assets/beacon-logo.png?v=83" />
+    <link rel="shortcut icon" href="assets/beacon-logo.png?v=83" />
+    <link rel="stylesheet" href="styles.css?v=83" />
     <meta name="theme-color" content="#000000" />
   </head>
   <body>
-    <nav class="site-taskbar" aria-label="Beacon navigation">
-      <a class="taskbar-brand" href="/" aria-label="Sparkle home">
-        <span class="taskbar-logo"><img src="assets/beacon-logo.png?v=82" alt="" /></span>
-        <span class="taskbar-name">Sparkle</span>
+    <nav class="site-navbar" aria-label="Beacon navigation">
+      <a class="navbar-brand" href="/" aria-label="Beacon home">
+        <span class="navbar-logo"><img src="assets/beacon-logo.png?v=83" alt="" /></span>
+        <span class="navbar-name">Beacon</span>
       </a>
 
-      <div class="taskbar-links">
-        <a class="taskbar-link is-active" href="/">Home</a>
-        <a class="taskbar-link" href="/dashboard">Dashboard</a>
-        <a class="taskbar-link" href="/api/discord-stats">Live Stats</a>
-        <a class="taskbar-link taskbar-link--accent" href="https://discord.com" target="_blank" rel="noreferrer">Discord</a>
+      <div class="navbar-links">
+        <a class="navbar-link" href="/">Beacon Bot</a>
+        <a class="navbar-link" href="https://discord.com" target="_blank" rel="noreferrer">Support Server</a>
+        <a class="navbar-link" href="https://discord.com" target="_blank" rel="noreferrer">Join our Discord</a>
+        <a class="navbar-link" href="/help">Help</a>
+        <a class="navbar-link" href="/commands">Commands</a>
+        <a class="navbar-link" href="/status">Status</a>
+        <a class="navbar-link" href="/api/discord-stats">Ping</a>
+        <a class="navbar-prestige" href="/prestige">
+          <span class="prestige-shine" aria-hidden="true"></span>
+          <span>Beacon Prestige</span>
+          <span class="prestige-badge">New!</span>
+        </a>
+      </div>
+
+      <div class="navbar-actions">
+        <details class="language-menu">
+          <summary>
+            <span>DE</span>
+            <span>DE</span>
+          </summary>
+          <div class="language-options">
+            <a href="#" lang="en"><span>US</span>English</a>
+            <a href="#" lang="fr"><span>FR</span>Francais</a>
+            <a href="#" lang="es"><span>ES</span>Espanol</a>
+            <a class="is-selected" href="#" lang="de"><span>DE</span>Deutsch</a>
+            <a href="#" lang="tr"><span>TR</span>Turkce</a>
+            <a href="#" lang="ar"><span>SA</span>Arabic</a>
+            <a href="#" lang="pt"><span>PT</span>Portugues</a>
+            <a href="#" lang="pt-BR"><span>BR</span>Portugues (BR)</a>
+            <a href="#" lang="it"><span>IT</span>Italiano</a>
+            <a href="#" lang="nl"><span>NL</span>Nederlands</a>
+          </div>
+        </details>
+        <a class="navbar-button navbar-button--server" href="https://discord.com" target="_blank" rel="noreferrer">Add to Server</a>
+        <a class="navbar-button navbar-button--login" href="https://discord.com" target="_blank" rel="noreferrer">Login with Discord</a>
       </div>
     </nav>
   </body>
