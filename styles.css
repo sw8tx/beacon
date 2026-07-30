@@ -68,6 +68,7 @@ a.button:focus-visible {
 .page-shell {
   position: relative;
   overflow: hidden;
+  background: #000000;
 }
 
 .topbar {
@@ -81,8 +82,8 @@ a.button:focus-visible {
   margin: 0 auto;
   padding: 20px 0;
   backdrop-filter: blur(20px);
-  background: rgba(10, 10, 10, 0.8);
-  border-bottom: 1px solid var(--border);
+  background: #000000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .brand {
@@ -229,7 +230,7 @@ main {
 .stat-card {
   padding: 24px;
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.04);
+  background: #000000;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: var(--shadow);
 }
@@ -258,8 +259,7 @@ main {
   aspect-ratio: 1 / 1;
   border-radius: 34px;
   overflow: hidden;
-  background: radial-gradient(circle, rgba(255, 156, 27, 0.14), transparent 42%),
-    linear-gradient(180deg, rgba(25, 16, 11, 0.9), #070707 100%);
+  background: #000000;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: var(--shadow);
   transform: rotateX(var(--hero-tilt-x, 0)) rotateY(var(--hero-tilt-y, 0));
@@ -272,10 +272,7 @@ main {
 }
 
 .hero-panel__glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(circle at 50% 28%, rgba(255, 156, 27, 0.18), transparent 35%);
+  display: none;
 }
 
 .hero-panel__label {
@@ -325,9 +322,9 @@ main {
 .feature-card {
   padding: 28px;
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.03);
+  background: #000000;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(255, 156, 27, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
 .feature-card h3 {
@@ -370,18 +367,13 @@ main {
   position: relative;
   padding: 28px;
   border-radius: 32px;
-  background: rgba(255, 255, 255, 0.035);
+  background: #000000;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: var(--shadow);
 }
 
 .preview-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 156, 27, 0.08), transparent 40%);
-  pointer-events: none;
+  display: none;
 }
 
 .preview-top {
@@ -416,7 +408,7 @@ main {
 .mock-panel {
   padding: 22px;
   border-radius: 22px;
-  background: rgba(0, 0, 0, 0.6);
+  background: #000000;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -461,7 +453,7 @@ main {
 .command-panel {
   padding: 28px;
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.03);
+  background: #000000;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: var(--shadow);
 }
