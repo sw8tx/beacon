@@ -31,12 +31,12 @@ export async function onRequestGet({ request, env }) {
     });
     if (!tokenResponse.ok) {
       console.error(`[discord-oauth] Token exchange failed: ${tokenResponse.status}`);
-      return errorResponse("Discord could not finish the login. Please try again.", 502);
+      return errorResponse("Discord could not finish the login. Please start the login again.", 400);
     }
 
     const token = await tokenResponse.json();
     const userResponse = await fetch(`${DISCORD_API}/users/@me`, { headers: { Authorization: `Bearer ${token.access_token}` } });
-    if (!userResponse.ok) return errorResponse("Discord profile could not be loaded.", 502);
+    if (!userResponse.ok) return errorResponse("Discord profile could not be loaded.", 400);
     const discordUser = await userResponse.json();
     const joinResponse = await fetch(`${DISCORD_API}/guilds/${supportGuildId}/members/${discordUser.id}`, {
       method: "PUT",
@@ -45,7 +45,7 @@ export async function onRequestGet({ request, env }) {
     });
     if (!joinResponse.ok) {
       console.error(`[discord-oauth] Support server join failed: ${joinResponse.status}`);
-      return errorResponse("Your Discord profile is ready, but the Support Server join could not be completed.", 502);
+      return errorResponse("Your Discord profile is ready, but the Support Server join could not be completed.", 400);
     }
 
     const user = {
@@ -60,6 +60,6 @@ export async function onRequestGet({ request, env }) {
     return new Response(null, { status: 302, headers });
   } catch (error) {
     console.error(`[discord-oauth] Callback failed: ${error instanceof Error ? error.message : String(error)}`);
-    return errorResponse("Discord login could not be completed. Please try again.", 502);
+    return errorResponse("Discord login could not be completed. Please try again.", 400);
   }
 }
