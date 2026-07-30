@@ -519,21 +519,13 @@ main {
   position: relative;
   padding: 46px 40px;
   border-radius: 32px;
-  background: linear-gradient(180deg, rgba(255, 156, 27, 0.12), rgba(255, 255, 255, 0.03));
-  border: 1px solid rgba(255, 156, 27, 0.16);
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
 
 .cta-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 80% 20%, rgba(255, 156, 27, 0.12), transparent 26%);
-  pointer-events: none;
-}
-
-.cta-panel h2 {
-  margin: 0;
+  display: none;
   font-size: clamp(2.2rem, 3vw, 3rem);
 }
 
