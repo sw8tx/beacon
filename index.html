@@ -1,111 +1,704 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Beacon - Community Discord Bot</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5b301' rx='8'/%3E%3Ctext x='50' y='65' font-size='70' font-weight='900' text-anchor='middle' fill='white' font-family='Arial'%3EB%3C/text%3E%3C/svg%3E" />
+    <title>Beacon • Discord Community Intelligence</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23f5b301'/%3E%3Cstop offset='100%25' stop-color='%23ff9b00'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='url(%23g)'/%3E%3Ctext x='50' y='62' font-size='64' font-weight='900' text-anchor='middle' fill='white' font-family='Inter,Arial,sans-serif'%3EB%3C/text%3E%3C/svg%3E" />
     <style>
-      :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      * { box-sizing: border-box; }
-      body { margin: 0; background: linear-gradient(135deg, #a4df58 0%, #8fd04c 48%, #74ba48 100%); color: #333; }
-      #app { position: fixed; inset: 0; }
-      header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: rgba(255,255,255,0.1); backdrop-filter: blur(8px); }
-      .logo { display: flex; gap: 10px; align-items: center; font-weight: 900; color: white; font-size: 20px; }
-      .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #f5b301, #ffd700); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; }
-      .nav { display: flex; gap: 20px; align-items: center; }
-      .nav a { color: rgba(255,255,255,0.8); text-decoration: none; font-weight: 600; }
-      .nav a:hover { color: white; }
-      .btn { padding: 10px 20px; background: #f5b301; color: white; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; }
-      .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(245,179,1,0.4); }
-      .hero { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 1; }
-      .hero h1 { font-size: 56px; color: white; margin: 0 0 20px 0; text-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-      .hero p { font-size: 20px; color: rgba(255,255,255,0.9); margin: 0 0 30px 0; }
-      .hero-btns { display: flex; gap: 16px; justify-content: center; }
-      .hero-btns button { padding: 14px 32px; border: none; border-radius: 8px; font-weight: 700; font-size: 16px; cursor: pointer; }
-      .hero-btns .primary { background: linear-gradient(135deg, #f5b301, #ffd700); color: white; }
-      .hero-btns .secondary { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(8px); }
-      .features { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 60px 40px; background: rgba(255,255,255,0.95); }
-      .feature { padding: 30px; background: #f9f9f9; border-radius: 12px; text-align: center; }
-      .feature-icon { font-size: 40px; margin-bottom: 16px; }
-      .feature h3 { margin: 0 0 12px 0; color: #333; }
-      .feature p { margin: 0; color: #666; font-size: 14px; line-height: 1.6; }
-      footer { position: relative; z-index: 2; background: rgba(20,60,40,0.95); color: white; padding: 30px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
-      .footer-left { display: flex; gap: 30px; align-items: center; }
-      .footer-logo { width: 28px; height: 28px; background: rgba(245,179,1,0.2); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #f5b301; font-weight: 900; }
-      .footer-links a { color: rgba(255,255,255,0.7); text-decoration: none; margin: 0 15px; }
-      .footer-links a:hover { color: white; }
-      @media (max-width: 768px) { .nav { display: none; } .hero h1 { font-size: 32px; } .features { grid-template-columns: 1fr; } footer { flex-direction: column; gap: 20px; } }
+      :root {
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color-scheme: dark;
+        color: #f3f5f8;
+        background: #07140f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: radial-gradient(circle at top, rgba(119, 220, 135, 0.16), transparent 28%),
+          radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.12), transparent 20%),
+          linear-gradient(135deg, #0b1811 0%, #0c2116 40%, #0a190f 100%);
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+        background-size: 72px 72px;
+        opacity: 0.18;
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 22px 36px;
+        backdrop-filter: blur(18px);
+        background: rgba(9, 16, 11, 0.68);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .brand-mark {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(145deg, #f5b301 0%, #ffb300 100%);
+        box-shadow: 0 16px 40px rgba(245, 179, 1, 0.2);
+      }
+
+      .brand-mark span {
+        font-size: 24px;
+        font-weight: 900;
+        color: white;
+        line-height: 1;
+      }
+
+      .brand-text {
+        display: grid;
+        gap: 4px;
+      }
+
+      .brand-text strong {
+        font-size: 1rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .brand-text small {
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      nav {
+        display: flex;
+        gap: 24px;
+        align-items: center;
+      }
+
+      nav a,
+      nav button {
+        color: rgba(255, 255, 255, 0.78);
+      }
+
+      nav a:hover,
+      nav button:hover {
+        color: #ffffff;
+      }
+
+      nav button {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        padding: 12px 18px;
+        background: rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .button-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .lang-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 700;
+      }
+
+      .lang-menu {
+        position: absolute;
+        top: 68px;
+        right: 36px;
+        display: grid;
+        gap: 6px;
+        padding: 10px;
+        min-width: 170px;
+        border-radius: 18px;
+        background: rgba(2, 8, 4, 0.96);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.26);
+        z-index: 30;
+      }
+
+      .lang-menu.hidden {
+        display: none;
+      }
+
+      .lang-option {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        border: none;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.8);
+        padding: 12px 14px;
+        border-radius: 14px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        text-align: left;
+      }
+
+      .lang-option.active,
+      .lang-option:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #ffffff;
+      }
+
+      .btn-primary,
+      .btn-secondary {
+        border: none;
+        border-radius: 14px;
+        padding: 16px 28px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #f5b301 0%, #ffb300 100%);
+        color: #09140b;
+        box-shadow: 0 20px 45px rgba(245, 179, 1, 0.28);
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.08);
+        color: #f3f5f8;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
+
+      .btn-primary:hover,
+      .btn-secondary:hover {
+        transform: translateY(-2px);
+      }
+
+      main {
+        width: min(1240px, calc(100% - 36px));
+        margin: 0 auto;
+        padding: 32px 0 80px;
+        position: relative;
+        z-index: 5;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+        gap: 40px;
+        align-items: center;
+        margin-top: 24px;
+      }
+
+      .hero-copy {
+        max-width: 640px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 22px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        color: #b9f2cc;
+        font-size: 0.92rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      .hero-copy h1 {
+        font-size: clamp(3.2rem, 4.2vw, 5.2rem);
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+        margin: 0;
+      }
+
+      .hero-copy p {
+        margin: 28px 0 0;
+        max-width: 620px;
+        font-size: 1.08rem;
+        line-height: 1.8;
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-top: 36px;
+      }
+
+      .btn-primary,
+      .btn-secondary {
+        border: none;
+        border-radius: 14px;
+        padding: 16px 28px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #f5b301 0%, #ffb300 100%);
+        color: #09140b;
+        box-shadow: 0 20px 45px rgba(245, 179, 1, 0.28);
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.08);
+        color: #f3f5f8;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
+
+      .btn-primary:hover,
+      .btn-secondary:hover {
+        transform: translateY(-2px);
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 42px;
+      }
+
+      .stat-card {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+      }
+
+      .stat-card strong {
+        display: block;
+        font-size: 1.7rem;
+        color: #ffffff;
+      }
+
+      .stat-card span {
+        display: block;
+        margin-top: 10px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+
+      .visual-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 34px;
+        min-height: 620px;
+        background: linear-gradient(180deg, rgba(6, 22, 16, 0.95), rgba(10, 26, 17, 0.83));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 30px 80px rgba(3, 10, 6, 0.45);
+        animation: float 10s ease-in-out infinite;
+      }
+
+      .scene-label {
+        position: absolute;
+        top: 24px;
+        left: 24px;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: rgba(3, 10, 6, 0.76);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+      }
+
+      .scene-label img {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        object-fit: cover;
+      }
+
+      .scene-label strong {
+        display: block;
+      }
+
+      .canvas-panel {
+        position: absolute;
+        inset: 0;
+      }
+
+      .visual-copy {
+        position: absolute;
+        left: 24px;
+        bottom: 24px;
+        right: 24px;
+        z-index: 2;
+        display: grid;
+        gap: 10px;
+        padding: 20px;
+        border-radius: 26px;
+        background: rgba(4, 11, 7, 0.76);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .visual-copy h2 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+
+      .visual-copy p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.75);
+        line-height: 1.7;
+      }
+
+      .visual-copy .pill {
+        width: fit-content;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(245, 179, 1, 0.12);
+        color: #f8f3e4;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .section-headline {
+        margin: 80px 0 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .section-headline h2 {
+        margin: 0;
+        font-size: clamp(2rem, 2.9vw, 3.2rem);
+      }
+
+      .section-headline p {
+        margin: 0;
+        max-width: 560px;
+        color: rgba(255, 255, 255, 0.74);
+      }
+
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 22px;
+      }
+
+      .card {
+        background: rgba(7, 20, 14, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 24px;
+        padding: 28px;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+        transition: transform 0.25s ease, border-color 0.25s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-6px);
+        border-color: rgba(245, 179, 1, 0.18);
+      }
+
+      .card h3 {
+        margin: 0 0 14px;
+        font-size: 1.25rem;
+      }
+
+      .card p,
+      .card li {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.72);
+        line-height: 1.75;
+        font-size: 0.98rem;
+      }
+
+      .card ul {
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .card li::marker {
+        color: #8ef1cc;
+      }
+
+      .grid-split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 22px;
+      }
+
+      .faq-list {
+        display: grid;
+        gap: 18px;
+      }
+
+      .faq-item {
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 24px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .faq-item h3 {
+        margin: 0 0 10px;
+        font-size: 1.08rem;
+      }
+
+      .faq-item p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.74);
+      }
+
+      footer {
+        margin-top: 64px;
+        padding: 32px 0 16px;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+
+        50% {
+          transform: translateY(-12px);
+        }
+      }
+
+      @media (max-width: 980px) {
+        .hero-grid,
+        .grid-split {
+          grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 700px) {
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+          padding: 20px;
+        }
+
+        .hero-grid {
+          gap: 24px;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .visual-card {
+          min-height: 520px;
+        }
+      }
     </style>
   </head>
   <body>
-    <div id="app"></div>
-    
     <header>
-      <div class="logo">
-        <div class="logo-icon">B</div>
-        <div>Beacon</div>
-      </div>
-      <nav class="nav">
-        <a href="#features">Features</a>
-        <a href="https://github.com/sw8tx/beacon">GitHub</a>
-        <button class="btn">Add Bot</button>
-      </nav>
-    </header>
-
-    <section class="hero">
-      <h1>Community Health, Powered by Beacon</h1>
-      <p>Advanced Discord bot for analytics, onboarding, tickets & community tracking</p>
-      <div class="hero-btns">
-        <button class="primary">Add to Discord</button>
-        <button class="secondary">View Docs</button>
-      </div>
-    </section>
-
-    <section class="features" id="features">
-      <div class="feature">
-        <div class="feature-icon">📊</div>
-        <h3>Health Analytics</h3>
-        <p>Real-time community health scoring with activity, retention & engagement</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">🎯</div>
-        <h3>Smart Onboarding</h3>
-        <p>Automated welcome flows, role selection & member introductions</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">🎫</div>
-        <h3>Ticket System</h3>
-        <p>Customizable support tickets with transcripts & team assignment</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">📢</div>
-        <h3>Announcements</h3>
-        <p>Beautiful embeds with customizable branding & targeting</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">👥</div>
-        <h3>Member Tracking</h3>
-        <p>Detailed profiles with activity history & engagement scoring</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">🎉</div>
-        <h3>Event Management</h3>
-        <p>Create events with RSVP tracking & attendance management</p>
-      </div>
-    </section>
-
-    <footer>
-      <div class="footer-left">
-        <div class="footer-logo">B</div>
-        <span>Beacon</span>
-        <div class="footer-links">
-          <a href="#privacy">Privacy</a>
-          <a href="#terms">Terms</a>
-          <a href="https://github.com/sw8tx/beacon">GitHub</a>
+      <div class="brand">
+        <div class="brand-mark"><span>B</span></div>
+        <div class="brand-text">
+          <strong>Beacon</strong>
+          <small>Community intelligence for Discord</small>
         </div>
       </div>
-      <div>© 2026 Beacon Community OS. All rights reserved.</div>
+
+      <div class="header-actions">
+        <nav>
+          <a id="nav-features" href="#features">Features</a>
+          <a id="nav-commands" href="#commands">Commands</a>
+          <a id="nav-faq" href="#faq">FAQ</a>
+        </nav>
+
+        <div class="button-group">
+          <button id="language-toggle" class="lang-toggle" type="button" aria-expanded="false">EN ▾</button>
+          <a id="login-btn" class="btn-secondary" href="#invite">Login</a>
+          <a id="invite-btn" class="btn-primary" href="#invite">Invite</a>
+        </div>
+      </div>
+
+      <div id="language-menu" class="lang-menu hidden" role="menu" aria-label="Select language">
+        <button class="lang-option active" type="button" data-lang="en">US English</button>
+        <button class="lang-option" type="button" data-lang="de">Deutsch</button>
+        <button class="lang-option" type="button" data-lang="fr">Français</button>
+        <button class="lang-option" type="button" data-lang="es">Español</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow">Live server health + growth engine</div>
+          <h1>Bring your Discord community to the next level.</h1>
+          <p>Beacon tracks activity, member growth, and support workflows with precision. Use the 3D model-powered brand experience to show your server a premium presence.</p>
+
+          <div class="hero-actions">
+            <button id="btn-add" class="btn-primary" type="button">Add Beacon</button>
+            <button id="btn-guide" class="btn-secondary" type="button">View guide</button>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <strong id="stat1-title">120+</strong>
+              <span id="stat1-body">Communities already running Beacon with smarter onboarding.</span>
+            </div>
+            <div class="stat-card">
+              <strong id="stat2-title">Live</strong>
+              <span id="stat2-body">Realtime Discord stats sync through Cloudflare and bot events.</span>
+            </div>
+            <div class="stat-card">
+              <strong id="stat3-title">Model + logo</strong>
+              <span id="stat3-body">3D visual showcase and brand mark included on the homepage.</span>
+            </div>
+          </div>
+        </div>
+
+        <article class="visual-card">
+          <div class="scene-label">
+            <img src="assets/sparkle_beacon_preview.png" alt="Beacon logo preview" />
+            <div>
+              <strong>Beacon Logo</strong>
+              <span>3D model powered visual</span>
+            </div>
+          </div>
+          <div class="canvas-panel" id="app"></div>
+          <div class="visual-copy">
+            <div class="pill">Animated 3D brand object</div>
+            <h2>Preview your community's pulse in motion.</h2>
+            <p>Use the embedded 3D model to give Beacon a refined, modern landing page that feels premium and human.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="section-headline" id="features">
+        <div>
+          <h2>Powerful tools for every Discord server</h2>
+          <p id="features-intro">Beacon combines analytics, onboarding, moderation, and support into one polished community OS.</p>
+        </div>
+      </section>
+
+      <div class="cards-grid">
+        <article class="card">
+          <h3>Server Health</h3>
+          <p>Watch member activity, retention, and engagement metrics in real time so your community never loses momentum.</p>
+        </article>
+        <article class="card">
+          <h3>Onboarding Flow</h3>
+          <p>Create welcome steps, role selection, and intro prompts that onboard new members with confidence.</p>
+        </article>
+        <article class="card">
+          <h3>Support Tickets</h3>
+          <p>Handle requests with structured tickets, automatic tags, and trackable follow-up so nothing slips through.</p>
+        </article>
+        <article class="card">
+          <h3>Announcements</h3>
+          <p>Manage announcements, countdowns, and targeted broadcasts with branding that matches your server.</p>
+        </article>
+      </div>
+
+      <section class="section-headline" id="commands">
+        <div>
+          <h2>Quick commands</h2>
+          <p id="commands-intro">Start with the commands your community needs instantly.</p>
+        </div>
+      </section>
+
+      <div class="grid-split">
+        <article class="card">
+          <h3>Essential slash commands</h3>
+          <ul>
+            <li><strong>/quickstart</strong> — begin Beacon setup automatically.</li>
+            <li><strong>/health</strong> — view server health and engagement scores.</li>
+            <li><strong>/settings</strong> — adjust notifications, channels, and roles.</li>
+            <li><strong>/support</strong> — open a ticket or ask for help directly.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Brand & connection</h3>
+          <p>Use Beacon to keep your community connected with smart onboarding, event reminders, and analytics that let you act faster.</p>
+        </article>
+      </div>
+
+      <section class="section-headline" id="faq">
+        <div>
+          <h2>Frequently asked questions</h2>
+          <p>Clear answers for set up, branding, and how Beacon works inside your Discord server.</p>
+        </div>
+      </section>
+
+      <div class="faq-list">
+        <article class="faq-item">
+          <h3>Wie verwende ich das 3D-Modell?</h3>
+          <p>Das 3D-Modell ist direkt auf der Startseite eingebettet. Es zeigt deine Marke im Fokus und lädt Besucher visuell ein.</p>
+        </article>
+        <article class="faq-item">
+          <h3>Ist mein Logo hier sichtbar?</h3>
+          <p>Ja. Der obere Bereich verwendet das Beacon-Branding mit einem starken Markenzeichen. Du kannst das Bild im Abschnitt "Logo" direkt anpassen, falls ein eigenes Asset verfügbar ist.</p>
+        </article>
+        <article class="faq-item">
+          <h3>Wie lade ich Beacon ein?</h3>
+          <p>Nutze den "Invite"-Button oben, um Beacon zu deinem Server hinzuzufügen. Danach startet der Onboarding-Flow automatisch.</p>
+        </article>
+      </div>
+    </main>
+
+    <footer>
+      <p id="footer-copy">© 2026 Beacon Community OS. Crafted for Discord growth and community success.</p>
     </footer>
 
     <script type="module">
@@ -113,90 +706,308 @@
       import { OrbitControls } from "https://unpkg.com/three@0.166.1/examples/jsm/controls/OrbitControls.js";
       import { GLTFLoader } from "https://unpkg.com/three@0.166.1/examples/jsm/loaders/GLTFLoader.js";
 
+      const container = document.querySelector("#app");
+      const translations = {
+        en: {
+          features: "Powerful tools for every Discord server",
+          featuresIntro: "Beacon combines analytics, onboarding, moderation, and support into one polished community OS.",
+          commands: "Quick commands",
+          commandsIntro: "Start with the commands your community needs instantly.",
+          faq: "Frequently asked questions",
+          faqIntro: "Clear answers for set up, branding, and how Beacon works inside your Discord server.",
+          heroEyebrow: "Live server health + growth engine",
+          heroHeading: "Bring your Discord community to the next level.",
+          heroBody: "Beacon tracks activity, member growth, and support workflows with precision. Use the 3D model-powered brand experience to show your server a premium presence.",
+          heroPrimary: "Add Beacon",
+          heroSecondary: "View guide",
+          stat1Title: "120+",
+          stat1Body: "Communities already running Beacon with smarter onboarding.",
+          stat2Title: "Live",
+          stat2Body: "Realtime Discord stats sync through Cloudflare and bot events.",
+          stat3Title: "Model + logo",
+          stat3Body: "3D visual showcase and brand mark included on the homepage.",
+          card1Title: "Server Health",
+          card1Body: "Watch member activity, retention, and engagement metrics in real time so your community never loses momentum.",
+          card2Title: "Onboarding Flow",
+          card2Body: "Create welcome steps, role selection, and intro prompts that onboard new members with confidence.",
+          card3Title: "Support Tickets",
+          card3Body: "Handle requests with structured tickets, automatic tags, and trackable follow-up so nothing slips through.",
+          card4Title: "Announcements",
+          card4Body: "Manage announcements, countdowns, and targeted broadcasts with branding that matches your server.",
+          commandListTitle: "Essential slash commands",
+          commandListItems: [
+            "/quickstart — begin Beacon setup automatically.",
+            "/health — view server health and engagement scores.",
+            "/settings — adjust notifications, channels, and roles.",
+            "/support — open a ticket or ask for help directly.",
+          ],
+          brandSectionTitle: "Brand & connection",
+          brandSectionBody: "Use Beacon to keep your community connected with smart onboarding, event reminders, and analytics that let you act faster.",
+          faq1Question: "How do I use the 3D model?",
+          faq1Answer: "The 3D model is embedded directly on the homepage. It showcases your brand in focus and invites visitors visually.",
+          faq2Question: "Is my logo visible here?",
+          faq2Answer: "Yes. The top section uses Beacon branding and a strong mark. You can replace the image in the logo section if you have a custom asset.",
+          faq3Question: "How do I invite Beacon?",
+          faq3Answer: "Use the Invite button at the top to add Beacon to your server. The onboarding flow begins automatically afterward.",
+          footer: "© 2026 Beacon Community OS. Crafted for Discord growth and community success.",
+          login: "Login",
+          inviteText: "Invite",
+          navFeatures: "Features",
+          navCommands: "Commands",
+          navFaq: "FAQ",
+          langLabel: "EN ▾",
+        },
+        de: {
+          features: "Leistungsstarke Tools für jeden Discord-Server",
+          featuresIntro: "Beacon kombiniert Analysen, Onboarding, Moderation und Support in einem eleganten Community-Betriebssystem.",
+          commands: "Schnelle Befehle",
+          commandsIntro: "Beginne sofort mit den Befehlen, die deine Community braucht.",
+          faq: "Häufig gestellte Fragen",
+          faqIntro: "Klare Antworten für Einrichtung, Branding und wie Beacon in deinem Discord funktioniert.",
+          heroEyebrow: "Live Server-Gesundheit + Wachstumsmotor",
+          heroHeading: "Bringe deine Discord-Community auf das nächste Level.",
+          heroBody: "Beacon verfolgt Aktivität, Mitgliederwachstum und Support-Workflows mit Präzision. Nutze die 3D-Modell-Erfahrung für einen hochwertigen Auftritt.",
+          heroPrimary: "Beacon hinzufügen",
+          heroSecondary: "Anleitung anzeigen",
+          stat1Title: "120+",
+          stat1Body: "Communities nutzen Beacon bereits für smarteres Onboarding.",
+          stat2Title: "Live",
+          stat2Body: "Echtzeit-Discord-Statistiken über Cloudflare und Bot-Events.",
+          stat3Title: "Modell + Logo",
+          stat3Body: "3D-Visualisierung und Brandmarke sind auf der Startseite integriert.",
+          card1Title: "Server-Gesundheit",
+          card1Body: "Beobachte Aktivität, Retention und Engagement in Echtzeit, damit deine Community nicht an Schwung verliert.",
+          card2Title: "Onboarding-Flow",
+          card2Body: "Erstelle Willkommensschritte, Rollenwahl und Einführungs-Prompts für sichere Onboarding-Erlebnisse.",
+          card3Title: "Support-Tickets",
+          card3Body: "Bearbeite Anfragen mit strukturierten Tickets, automatischen Tags und nachverfolgbaren Abläufen.",
+          card4Title: "Ankündigungen",
+          card4Body: "Verwalte Ankündigungen, Countdowns und zielgerichtete Broadcasts mit passendem Branding.",
+          commandListTitle: "Wichtige Slash-Befehle",
+          commandListItems: [
+            "/quickstart — starte die Beacon-Einrichtung automatisch.",
+            "/health — zeige Server-Gesundheit und Engagement-Werte an.",
+            "/settings — passe Benachrichtigungen, Channels und Rollen an.",
+            "/support — öffne ein Ticket oder frage direkt um Hilfe.",
+          ],
+          brandSectionTitle: "Marke & Verbindung",
+          brandSectionBody: "Nutze Beacon, um deine Community mit intelligentem Onboarding, Event-Erinnerungen und Analytics enger zusammenzubringen.",
+          faq1Question: "Wie verwende ich das 3D-Modell?",
+          faq1Answer: "Das 3D-Modell ist direkt auf der Startseite eingebettet. Es zeigt deine Marke im Fokus und lädt Besucher visuell ein.",
+          faq2Question: "Ist mein Logo hier sichtbar?",
+          faq2Answer: "Ja. Der obere Bereich verwendet Beacon-Branding und ein starkes Markenzeichen. Du kannst das Bild im Logo-Bereich durch ein eigenes Asset ersetzen.",
+          faq3Question: "Wie lade ich Beacon ein?",
+          faq3Answer: "Nutze den Invite-Button oben, um Beacon zu deinem Server hinzuzufügen. Danach startet der Onboarding-Flow automatisch.",
+          footer: "© 2026 Beacon Community OS. Für Discord-Wachstum und Community-Erfolg.",
+          login: "Anmelden",
+          inviteText: "Einladen",
+          navFeatures: "Features",
+          navCommands: "Befehle",
+          navFaq: "FAQ",
+          langLabel: "DE ▾",
+        },
+      };
+
+      const textMap = {
+        heroEyebrow: document.querySelector(".eyebrow"),
+        heroHeading: document.querySelector(".hero-copy h1"),
+        heroBody: document.querySelector(".hero-copy p"),
+        heroPrimary: document.getElementById("btn-add"),
+        heroSecondary: document.getElementById("btn-guide"),
+        stat1Title: document.getElementById("stat1-title"),
+        stat1Body: document.getElementById("stat1-body"),
+        stat2Title: document.getElementById("stat2-title"),
+        stat2Body: document.getElementById("stat2-body"),
+        stat3Title: document.getElementById("stat3-title"),
+        stat3Body: document.getElementById("stat3-body"),
+        features: document.querySelector("#features h2"),
+        featuresIntro: document.getElementById("features-intro"),
+        commands: document.querySelector("#commands h2"),
+        commandsIntro: document.getElementById("commands-intro"),
+        card1Title: document.querySelector(".grid-split .card:nth-child(1) h3"),
+        card1Body: document.querySelector(".grid-split .card:nth-child(1) p"),
+        card2Title: document.querySelector(".grid-split .card:nth-child(2) h3"),
+        card2Body: document.querySelector(".grid-split .card:nth-child(2) p"),
+        commandListTitle: document.querySelector(".grid-split .card:nth-child(1) h3"),
+        commandListIntro: document.querySelector(".grid-split .card:nth-child(1) ul"),
+        brandSectionTitle: document.querySelector(".grid-split .card:nth-child(2) h3"),
+        brandSectionBody: document.querySelector(".grid-split .card:nth-child(2) p"),
+        faq: document.querySelector("#faq h2"),
+        faqIntro: document.querySelector("#faq p"),
+        faq1Question: document.querySelector(".faq-item:nth-child(1) h3"),
+        faq1Answer: document.querySelector(".faq-item:nth-child(1) p"),
+        faq2Question: document.querySelector(".faq-item:nth-child(2) h3"),
+        faq2Answer: document.querySelector(".faq-item:nth-child(2) p"),
+        faq3Question: document.querySelector(".faq-item:nth-child(3) h3"),
+        faq3Answer: document.querySelector(".faq-item:nth-child(3) p"),
+        footer: document.getElementById("footer-copy"),
+        login: document.getElementById("login-btn"),
+        inviteText: document.getElementById("invite-btn"),
+        navFeatures: document.getElementById("nav-features"),
+        navCommands: document.getElementById("nav-commands"),
+        navFaq: document.getElementById("nav-faq"),
+        langLabel: document.getElementById("language-toggle"),
+      };
+
+      function setLanguage(lang) {
+        const locale = translations[lang] || translations.en;
+        document.documentElement.lang = lang;
+        textMap.heroEyebrow.textContent = locale.heroEyebrow;
+        textMap.heroHeading.textContent = locale.heroHeading;
+        textMap.heroBody.textContent = locale.heroBody;
+        textMap.heroPrimary.textContent = locale.heroPrimary;
+        textMap.heroSecondary.textContent = locale.heroSecondary;
+        textMap.stat1Title.textContent = locale.stat1Title;
+        textMap.stat1Body.textContent = locale.stat1Body;
+        textMap.stat2Title.textContent = locale.stat2Title;
+        textMap.stat2Body.textContent = locale.stat2Body;
+        textMap.stat3Title.textContent = locale.stat3Title;
+        textMap.stat3Body.textContent = locale.stat3Body;
+        textMap.features.textContent = locale.features;
+        textMap.commands.textContent = locale.commands;
+        textMap.faq.textContent = locale.faq;
+        textMap.featuresIntro.textContent = locale.featuresIntro;
+        textMap.commandsIntro.textContent = locale.commandsIntro;
+        textMap.card1Title.textContent = locale.card1Title;
+        textMap.card1Body.textContent = locale.card1Body;
+        textMap.card2Title.textContent = locale.card2Title;
+        textMap.card2Body.textContent = locale.card2Body;
+        textMap.commandListTitle.textContent = locale.commandListTitle;
+        renderCommandList(locale.commandListItems);
+        textMap.brandSectionTitle.textContent = locale.brandSectionTitle;
+        textMap.brandSectionBody.textContent = locale.brandSectionBody;
+        textMap.faqIntro.textContent = locale.faqIntro;
+        textMap.faq1Question.textContent = locale.faq1Question;
+        textMap.faq1Answer.textContent = locale.faq1Answer;
+        textMap.faq2Question.textContent = locale.faq2Question;
+        textMap.faq2Answer.textContent = locale.faq2Answer;
+        textMap.faq3Question.textContent = locale.faq3Question;
+        textMap.faq3Answer.textContent = locale.faq3Answer;
+        textMap.footer.textContent = locale.footer;
+        textMap.login.textContent = locale.login;
+        textMap.inviteText.textContent = locale.inviteText;
+        textMap.navFeatures.textContent = locale.navFeatures;
+        textMap.navCommands.textContent = locale.navCommands;
+        textMap.navFaq.textContent = locale.navFaq;
+        textMap.langLabel.textContent = locale.langLabel;
+
+        document.querySelectorAll(".lang-option").forEach((button) => {
+          button.classList.toggle("active", button.dataset.lang === lang);
+        });
+      }
+
+      function renderCommandList(items) {
+        const list = document.querySelector(".grid-split .card:nth-child(1) ul");
+        list.innerHTML = items.map((item) => `<li>${item}</li>`).join("");
+      }
+
+      const langToggle = document.getElementById("language-toggle");
+      const langMenu = document.getElementById("language-menu");
+
+      langToggle.addEventListener("click", () => {
+        const expanded = langToggle.getAttribute("aria-expanded") === "true";
+        langToggle.setAttribute("aria-expanded", String(!expanded));
+        langMenu.classList.toggle("hidden");
+      });
+
+      document.querySelectorAll(".lang-option").forEach((button) => {
+        button.addEventListener("click", () => {
+          setLanguage(button.dataset.lang);
+          langMenu.classList.add("hidden");
+          langToggle.setAttribute("aria-expanded", "false");
+        });
+      });
+
+      window.addEventListener("click", (event) => {
+        if (!langMenu.contains(event.target) && !langToggle.contains(event.target)) {
+          langMenu.classList.add("hidden");
+          langToggle.setAttribute("aria-expanded", "false");
+        }
+      });
+
+      setLanguage("en");
+
       const app = document.querySelector("#app");
       const scene = new THREE.Scene();
       scene.background = null;
-      scene.fog = new THREE.Fog(0x98d857, 10, 24);
 
       const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(4.2, 3.3, 5.2);
+      camera.position.set(4.6, 2.8, 5.5);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(container.clientWidth, container.clientHeight);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 0.72;
-      app.appendChild(renderer.domElement);
+      container.appendChild(renderer.domElement);
 
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.autoRotate = true;
-      controls.autoRotateSpeed = 1.0;
+      controls.autoRotateSpeed = 1.1;
       controls.enablePan = false;
       controls.minDistance = 4.2;
-      controls.maxDistance = 8.5;
-      controls.target.set(0, 1.1, 0);
+      controls.maxDistance = 7.5;
+      controls.target.set(0, 1.05, 0);
 
-      scene.add(new THREE.HemisphereLight(0xf6fff0, 0x3c7d48, 3.15));
-      const key = new THREE.DirectionalLight(0xffffff, 2.4);
-      key.position.set(4, 6, 3);
-      scene.add(key);
-      const rim = new THREE.DirectionalLight(0x8ffff0, 1.7);
-      rim.position.set(-4, 3.2, -3);
-      scene.add(rim);
+      scene.add(new THREE.HemisphereLight(0xd8f8ff, 0x122b14, 2.5));
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2.6);
+      keyLight.position.set(4, 8, 6);
+      scene.add(keyLight);
+      const fillLight = new THREE.DirectionalLight(0x60ffc8, 1.6);
+      fillLight.position.set(-5, 2, -4);
+      scene.add(fillLight);
 
-      const floor = new THREE.Mesh(
-        new THREE.CircleGeometry(3.15, 72),
-        new THREE.MeshBasicMaterial({ color: 0x6ab34a, transparent: true, opacity: 0.18 })
+      const ground = new THREE.Mesh(
+        new THREE.CircleGeometry(3.4, 96),
+        new THREE.MeshBasicMaterial({ color: 0x20422f, transparent: true, opacity: 0.18 })
       );
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.y = -0.02;
-      scene.add(floor);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -0.03;
+      scene.add(ground);
 
-      const glow = new THREE.Mesh(
-        new THREE.CircleGeometry(1.5, 72),
-        new THREE.MeshBasicMaterial({
-          color: 0x8ffff0,
-          transparent: true,
-          opacity: 0.22,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false
-        })
+      const highlight = new THREE.Mesh(
+        new THREE.CircleGeometry(1.7, 96),
+        new THREE.MeshBasicMaterial({ color: 0x7dffc2, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false })
       );
-      glow.rotation.x = -Math.PI / 2;
-      glow.position.y = 0.03;
-      scene.add(glow);
+      highlight.rotation.x = -Math.PI / 2;
+      highlight.position.y = 0.03;
+      scene.add(highlight);
 
       const haloMaterial = new THREE.MeshBasicMaterial({
-        color: 0xbaffef,
+        color: 0xa7fff0,
         transparent: true,
-        opacity: 0.28,
+        opacity: 0.24,
         blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
-        depthWrite: false
+        depthWrite: false,
       });
       const haloGroup = new THREE.Group();
       scene.add(haloGroup);
-      for (let i = 0; i < 4; i += 1) {
-        const ring = new THREE.Mesh(new THREE.RingGeometry(0.72 + i * 0.18, 0.76 + i * 0.18, 4), haloMaterial.clone());
+      for (let i = 0; i < 5; i += 1) {
+        const ring = new THREE.Mesh(new THREE.RingGeometry(0.7 + i * 0.16, 0.75 + i * 0.16, 64), haloMaterial.clone());
         ring.rotation.x = -Math.PI / 2;
         ring.rotation.z = Math.PI / 4;
-        ring.position.y = 1.78 + i * 0.08;
-        ring.material.opacity = 0.26 - i * 0.035;
-        ring.userData.speed = 0.35 + i * 0.17;
+        ring.position.y = 1.65 + i * 0.08;
+        ring.material.opacity = 0.24 - i * 0.03;
+        ring.userData.speed = 0.28 + i * 0.12;
         haloGroup.add(ring);
       }
 
       const modelRoot = new THREE.Group();
-      modelRoot.rotation.y = Math.PI * 0.08;
+      modelRoot.rotation.y = Math.PI * 0.06;
       scene.add(modelRoot);
 
-      new GLTFLoader().load("assets/sparkle_beacon.glb?v=5", (gltf) => {
+      new GLTFLoader().load("assets/sparkle_beacon.glb?v=6", (gltf) => {
         const model = gltf.scene;
-        model.traverse((child) => {
-          if (child.isMesh && child.material?.transparent) {
-            child.material.depthWrite = false;
+        model.traverse((node) => {
+          if (node.isMesh) {
+            if (node.material?.transparent) {
+              node.material.depthWrite = false;
+            }
+            node.material.metalness = 0.22;
+            node.material.roughness = 0.35;
           }
         });
         modelRoot.add(model);
@@ -206,17 +1017,20 @@
         requestAnimationFrame(animate);
         controls.update();
         haloGroup.children.forEach((ring) => {
-          ring.rotation.z += ring.userData.speed * 0.0016;
+          ring.rotation.z += ring.userData.speed * 0.0018;
         });
+        modelRoot.rotation.y += 0.0018;
         renderer.render(scene, camera);
       }
 
       animate();
 
       window.addEventListener("resize", () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        camera.aspect = width / height;
         camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(width, height);
       });
     </script>
   </body>
