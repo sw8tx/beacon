@@ -3,252 +3,29 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Beacon — Discord server operations, simplified</title>
-    <link rel="icon" type="image/png" href="assets/sparkle_beacon_preview.png" />
-    <link rel="shortcut icon" href="assets/sparkle_beacon_preview.png" />
-    <link rel="apple-touch-icon" href="assets/sparkle_beacon_preview.png" />
-    <link rel="stylesheet" href="styles.css" />
+    <title>Beacon</title>
+    <link rel="icon" type="image/png" href="assets/black.png" />
+    <link rel="shortcut icon" href="assets/black.png" />
+    <meta name="theme-color" content="#000000" />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        min-height: 100vh;
+        background: #000000;
+        color: #000000;
+      }
+
+      * {
+        background: transparent !important;
+        border-color: transparent !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+      }
+    </style>
   </head>
-  <body>
-    <div class="page-shell">
-      <header class="topbar">
-        <div class="brand">
-          <div class="brand-mark" aria-hidden="true">
-            <img src="assets/sparkle_beacon_preview.png" alt="Beacon logo" />
-          </div>
-          <div class="brand-copy">
-            <p class="brand-name">Beacon</p>
-            <p class="brand-tag">Modern Discord community tools</p>
-          </div>
-        </div>
-
-        <button class="menu-toggle js-menu-toggle" type="button" aria-label="Open menu" aria-expanded="false">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-
-        <nav class="nav-links" aria-label="Primary">
-          <a class="js-nav-link" href="#features">Features</a>
-          <a class="js-nav-link" href="#dashboard">Dashboard</a>
-          <a class="js-nav-link" href="#commands">Commands</a>
-          <a class="js-nav-link" href="#support">Support</a>
-          <a class="js-nav-link" href="#docs">Docs</a>
-        </nav>
-
-        <div class="top-actions">
-          <a class="button button--secondary js-dashboard" href="#dashboard">Dashboard</a>
-          <a class="button button--primary js-add" href="#invite">Add to Discord</a>
-        </div>
-      </header>
-
-      <div class="mobile-nav js-mobile-nav" aria-hidden="true">
-        <a class="js-nav-link" href="#features">Features</a>
-        <a class="js-nav-link" href="#dashboard">Dashboard</a>
-        <a class="js-nav-link" href="#commands">Commands</a>
-        <a class="js-nav-link" href="#support">Support</a>
-        <a class="js-nav-link" href="#docs">Docs</a>
-        <div class="mobile-nav-actions">
-          <a class="button button--secondary js-dashboard" href="#dashboard">Dashboard</a>
-          <a class="button button--primary js-add" href="#invite">Add to Discord</a>
-        </div>
-      </div>
-
-      <main>
-        <section class="hero">
-          <div class="hero-copy" data-reveal>
-            <div class="eyebrow">Modern Discord community tools</div>
-            <h1>Run your Discord with clarity.</h1>
-            <p>Beacon helps you manage onboarding, support, activity, member experience and community growth from one clean toolkit.</p>
-
-            <div class="hero-buttons">
-              <a class="button button--primary js-add" href="#invite">Add Beacon</a>
-              <a class="button button--secondary js-dashboard" href="#dashboard">View Dashboard</a>
-            </div>
-
-            <div class="stat-strip" data-reveal>
-              <div class="stat-card">
-                <strong class="js-server-count">—</strong>
-                <p class="stat-copy">Live servers connected.</p>
-              </div>
-              <div class="stat-card">
-                <strong class="js-member-count">—</strong>
-                <p class="stat-copy">Visible member total.</p>
-              </div>
-              <div class="stat-card">
-                <strong class="js-ticket-count">—</strong>
-                <p class="stat-copy">Support threads handled.</p>
-              </div>
-              <div class="stat-card">
-                <strong class="js-uptime-count">—</strong>
-                <p class="stat-copy">Uptime since last restart.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="hero-panel" data-reveal>
-            <div class="hero-panel__stage"></div>
-            <div class="hero-panel__glow"></div>
-            <div class="hero-panel__label">Beacon core visualization</div>
-          </div>
-        </section>
-
-        <section class="section" id="features">
-          <div class="section--split">
-            <div data-reveal>
-              <h2>Something for every stage of your server.</h2>
-              <p>Beacon focuses on the essential controls: onboarding, tickets, tracking, moderation and community insight. Everything is designed for clarity, not noise.</p>
-            </div>
-
-            <div class="feature-grid">
-              <div class="feature-card" data-reveal>
-                <h3>Onboarding that feels clear</h3>
-                <p>Guide new members through the first minutes in your server without extra setup overload.</p>
-                <ul>
-                  <li>One panel for welcome, roles and rules</li>
-                  <li>Fast setup with <code>/onboarding</code></li>
-                  <li>Private welcome flows for new members</li>
-                </ul>
-              </div>
-              <div class="feature-card" data-reveal>
-                <h3>Tickets with context</h3>
-                <p>Support requests are routed clearly and ticket channels stay structured.</p>
-                <ul>
-                  <li>Role-based access for staff</li>
-                  <li>Transcript delivery after close</li>
-                  <li>Minimal ticket noise in your server</li>
-                </ul>
-              </div>
-              <div class="feature-card" data-reveal>
-                <h3>Community tracking that is readable</h3>
-                <p>Find the pulse of your server with simple health metrics and motion-free reports.</p>
-                <ul>
-                  <li>Activity by channel</li>
-                  <li>Join / leave balance</li>
-                  <li>Weekly member trend clarity</li>
-                </ul>
-              </div>
-              <div class="feature-card" data-reveal>
-                <h3>Controls that stay in your server</h3>
-                <p>Moderation and automation are built around real Discord workflows, not gimmicks.</p>
-                <ul>
-                  <li>Command-based setup</li>
-                  <li>Configurable logs and roles</li>
-                  <li>Safe action buttons for staff</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="section section--split" id="dashboard">
-          <div data-reveal>
-            <h2>Dashboard previews built for clarity.</h2>
-            <p>Live status, server health and setup guidance appear in one panel so you can take action with confidence.</p>
-          </div>
-          <div class="preview-card" data-reveal>
-            <div class="preview-top">
-              <span class="preview-pill">Dashboard preview</span>
-              <h3 class="preview-title">Server health panel</h3>
-              <p class="preview-text">A clean server summary that keeps activity and recommendations in view.</p>
-            </div>
-            <div class="mock-panel">
-              <div class="mock-header">
-                <span class="mock-dot"></span>
-                <span class="mock-title">Beacon dashboard</span>
-                <span class="mock-dot"></span>
-              </div>
-              <div class="mock-list">
-                <div class="mock-item"><strong>Health</strong><span>78 / 100 — active channels look strong.</span></div>
-                <div class="mock-item"><strong>Recent activity</strong><span>312 messages in the last 24 hours.</span></div>
-                <div class="mock-item"><strong>Next step</strong><span>Set the welcome channel to reduce member drop-off.</span></div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="section" id="commands">
-          <div data-reveal>
-            <h2>Commands that stay useful.</h2>
-            <p>Beacon keeps the command set short and practical so staff can act without digging through menus.</p>
-          </div>
-
-          <div class="command-panel" data-reveal>
-            <div class="command-tabs">
-              <span class="command-tab active">Setup</span>
-              <span class="command-tab">Health</span>
-              <span class="command-tab">Tickets</span>
-            </div>
-            <div class="command-list">
-              <div class="command-item">
-                <span class="label">/setup</span>
-                <p class="description">Set welcome, logs, onboarding and member role in one command.</p>
-              </div>
-              <div class="command-item">
-                <span class="label">/health</span>
-                <p class="description">Check server activity, retention and channel coverage without clutter.</p>
-              </div>
-              <div class="command-item">
-                <span class="label">/ticketpanel</span>
-                <p class="description">Post a clean ticket entry panel so members can request help easily.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="section section--split" id="support">
-          <div data-reveal>
-            <h2>Support designed for teams.</h2>
-            <p>Beacon makes support work feel structured rather than chaotic.</p>
-          </div>
-
-          <div class="feature-card" data-reveal>
-            <h3>Fast follow-up</h3>
-            <ul>
-              <li>Ticket threads stay private</li>
-              <li>Staff can claim and close cleanly</li>
-              <li>Easy transcript delivery</li>
-            </ul>
-          </div>
-        </section>
-
-        <section class="section cta-panel" id="invite" data-reveal>
-          <h2>Bring structure to your community.</h2>
-          <div class="cta-row">
-            <a class="button button--primary js-add" href="#invite">Add to Discord</a>
-            <a class="button button--secondary js-dashboard" href="#dashboard">Open Dashboard</a>
-          </div>
-        </section>
-      </main>
-
-      <footer class="site-footer">
-        <div class="footer-grid">
-          <div>
-            <p class="brand-name">Beacon</p>
-            <p class="footer-note">A polished Discord operations assistant for communities that value clarity over noise.</p>
-          </div>
-          <div>
-            <p class="footer-heading">Product</p>
-            <a class="footer-link" href="#features">Features</a>
-            <a class="footer-link" href="#dashboard">Dashboard</a>
-            <a class="footer-link" href="#commands">Commands</a>
-          </div>
-          <div>
-            <p class="footer-heading">Resources</p>
-            <a class="footer-link" href="#support">Support</a>
-            <a class="footer-link" href="#docs">Docs</a>
-            <a class="footer-link" href="https://github.com/sw8tx/beacon" target="_blank" rel="noreferrer noopener">GitHub</a>
-          </div>
-          <div>
-            <p class="footer-heading">Legal</p>
-            <a class="footer-link" href="#">Privacy</a>
-            <a class="footer-link" href="#">Terms</a>
-          </div>
-        </div>
-        <p class="footer-note">© 2026 Beacon. Built for Discord communities that want a calm, professional experience.</p>
-      </footer>
-    </div>
-
-    <script src="app.js" type="module"></script>
-  </body>
+  <body></body>
 </html>
