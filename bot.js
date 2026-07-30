@@ -800,14 +800,18 @@ const commands = [
     .setDescription("Show bot status, uptime and system info."),
 ].map((cmd) => cmd.toJSON());
 
+async function registerGuildCommands(rest, guildId) {
+  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, guildId), { body: commands });
+  console.log(`[commands] Synced ${commands.length} slash commands for guild ${guildId}`);
+}
+
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
-  if (DEV_GUILD_ID) {
-    await rest.put(Routes.applicationGuildCommands(CLIENT_ID, DEV_GUILD_ID), { body: commands });
-    console.log(`Registered guild slash commands for ${DEV_GUILD_ID}`);
-  } else {
-    await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
-    console.log("Registered global slash commands");
+  await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
+  console.log(`[commands] Synced ${commands.length} global slash commands`);
+
+  for (const guildId of client.guilds.cache.keys()) {
+    await registerGuildCommands(rest, guildId);
   }
 }
 
@@ -831,6 +835,12 @@ client.on("guildCreate", async (guild) => {
   console.log(`[guild-join] Joined new guild: ${guild.name} (${guild.id}) with ${guild.memberCount} members`);
   guildData(guild.id); // Initialize guild data
   saveData();
+  try {
+    const rest = new REST({ version: "10" }).setToken(TOKEN);
+    await registerGuildCommands(rest, guild.id);
+  } catch (err) {
+    console.error(`[commands] Failed to sync slash commands for ${guild.id}: ${err.message}`);
+  }
   await syncDiscordStats(); // Immediately sync stats
 });
 
