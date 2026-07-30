@@ -176,22 +176,14 @@ async function initThreeLaptop() {
     const hinge = new THREE.Mesh(new THREE.CylinderGeometry(.14, .14, 5.3, 32), black); hinge.rotation.z = Math.PI / 2; hinge.position.set(0, -.77, -.77); laptop.add(hinge);
     const logo = new THREE.Mesh(new THREE.OctahedronGeometry(.22, 0), yellow); logo.position.set(0, -.64, 2.05); logo.rotation.y = Math.PI / 4; laptop.add(logo);
     const baseAccent = new THREE.Mesh(new THREE.BoxGeometry(2.6, .018, .018), yellow); baseAccent.position.set(0, -.845, 2.14); laptop.add(baseAccent);
-    const ringMaterial = new THREE.MeshBasicMaterial({ color: 0xffc31c, transparent: true, opacity: .45 });
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(4.65, .012, 8, 96), ringMaterial); ring.rotation.x = Math.PI / 2.1; ring.rotation.z = -.2; ring.position.y = -.62; scene.add(ring);
-    const halo = new THREE.Mesh(new THREE.TorusGeometry(4.1, .008, 8, 96), new THREE.MeshBasicMaterial({ color: 0xffc31c, transparent: true, opacity: .2 })); halo.rotation.x = Math.PI / 2.4; halo.rotation.z = .3; halo.position.y = .15; scene.add(halo);
-    let pointerX = 0; let pointerY = 0;
-    stage.addEventListener("pointermove", (event) => { const rect = stage.getBoundingClientRect(); pointerX = (event.clientX - rect.left) / rect.width - .5; pointerY = (event.clientY - rect.top) / rect.height - .5; });
-    stage.addEventListener("pointerleave", () => { pointerX = 0; pointerY = 0; });
     const resize = () => { const width = stage.clientWidth; const height = stage.clientHeight; camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height); };
     window.addEventListener("resize", resize);
     const clock = new THREE.Clock();
     function animate() {
       const elapsed = clock.getElapsedTime();
-      laptop.rotation.y += ((pointerX * .42 + Math.sin(elapsed * .32) * .18) - laptop.rotation.y) * .025;
-      laptop.rotation.x += ((pointerY * .15 - .04) - laptop.rotation.x) * .025;
+      laptop.rotation.y = -.18 + elapsed * .18;
+      laptop.rotation.x = -.04 + Math.sin(elapsed * .55) * .025;
       laptop.position.y = Math.sin(elapsed * .8) * .075;
-      ring.rotation.y = elapsed * .11;
-      halo.rotation.y = -elapsed * .08;
       screenCanvas.draw(performance.now());
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
