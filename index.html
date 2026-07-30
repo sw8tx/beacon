@@ -6,12 +6,12 @@
     <meta name="theme-color" content="#050505" />
     <meta name="description" content="Beacon is the Discord community operating system for ambitious servers." />
     <title>Beacon | Discord Community OS</title>
-    <link rel="icon" type="image/png" href="assets/beacon-logo.png?v=91" />
-    <link rel="shortcut icon" href="assets/beacon-logo.png?v=91" />
+    <link rel="icon" type="image/png" href="assets/beacon-logo.png?v=92" />
+    <link rel="shortcut icon" href="assets/beacon-logo.png?v=92" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=91" />
+    <link rel="stylesheet" href="styles.css?v=92" />
     <script type="importmap">
       {"imports":{"three":"https://unpkg.com/three@0.166.1/build/three.module.js"}}
     </script>
@@ -19,7 +19,7 @@
   <body>
     <nav class="site-navbar" aria-label="Beacon navigation">
       <a class="navbar-brand" href="#top" aria-label="Beacon home">
-        <span class="navbar-logo"><img src="assets/beacon-logo.png?v=91" width="34" height="34" alt="" /></span>
+        <span class="navbar-logo"><img src="assets/beacon-logo.png?v=92" width="34" height="34" alt="" /></span>
         <span class="navbar-name">Beacon</span>
       </a>
 
@@ -57,8 +57,8 @@
             <a href="#" data-lang="nl"><span>NL</span>Nederlands</a>
           </div>
         </details>
-        <a class="navbar-button navbar-button--server" href="https://discord.com" target="_blank" rel="noreferrer"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /><span data-i18n="add">Add to Server</span></a>
-        <a class="navbar-button navbar-button--login" href="https://discord.com" target="_blank" rel="noreferrer"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /><span data-i18n="login">Login with Discord</span></a>
+        <a class="navbar-button navbar-button--server" href="https://discord.com" target="_blank" rel="noreferrer"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="add">Add to Server</span></a>
+        <a class="navbar-button navbar-button--login" href="https://discord.com" target="_blank" rel="noreferrer"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="login">Login with Discord</span></a>
       </div>
     </nav>
 
@@ -79,8 +79,8 @@
           </div>
 
           <div class="hero-actions">
-            <a class="hero-button hero-button--primary" href="https://discord.com" target="_blank" rel="noreferrer"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /><span data-i18n="heroAdd">Add to Server</span><span class="button-arrow">↗</span></a>
-            <a class="hero-button hero-button--dark" href="https://discord.com" target="_blank" rel="noreferrer"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /><span data-i18n="heroLogin">Login with Discord</span></a>
+            <a class="hero-button hero-button--primary" href="https://discord.com" target="_blank" rel="noreferrer"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="heroAdd">Add to Server</span><span class="button-arrow">↗</span></a>
+            <a class="hero-button hero-button--dark" href="https://discord.com" target="_blank" rel="noreferrer"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="heroLogin">Login with Discord</span></a>
             <a class="hero-button hero-button--outline" href="#status"><span class="book-mark">▣</span><span data-i18n="docs">View Docs</span></a>
           </div>
           <div class="hero-note"><span class="online-pulse"></span><span data-i18n="heroNote">Trusted by growing communities everywhere</span></div>
@@ -97,10 +97,16 @@
 
       <section class="stats-section" id="status">
         <div class="section-kicker"><span class="status-dot"></span><span data-i18n="liveStatus">Live system status</span></div>
+        <div class="status-metrics" aria-live="polite">
+          <div class="status-metric"><strong data-stat="commands">--</strong><span data-i18n="commands">Commands</span></div>
+          <div class="status-metric"><strong data-stat="ping">--</strong><span data-i18n="ping">Ping</span></div>
+          <div class="status-metric"><strong data-stat="guilds">--</strong><span data-i18n="statServers">Servers</span></div>
+          <div class="status-metric"><strong data-stat="users">--</strong><span data-i18n="statUsers">Users</span></div>
+        </div>
       </section>
     </main>
 
     <footer><span data-i18n="footer">Built for communities with ambition.</span></footer>
-    <script src="app.js?v=91"></script>
+    <script src="app.js?v=92"></script>
   </body>
 </html>

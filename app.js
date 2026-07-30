@@ -41,6 +41,35 @@ let savedLanguage = "de";
 try { savedLanguage = localStorage.getItem("beacon-language") || "de"; } catch (_) {}
 setLanguage(savedLanguage);
 
+const statusValues = [...document.querySelectorAll("[data-stat]")];
+const KNOWN_COMMAND_COUNT = 21;
+
+function formatStatusNumber(value) {
+  return Number.isFinite(value) ? value.toLocaleString() : "--";
+}
+
+async function loadLiveStats() {
+  if (!statusValues.length || !window.fetch) return;
+  try {
+    const response = await fetch("/api/discord-stats", { cache: "no-store" });
+    if (!response.ok) return;
+    const stats = await response.json();
+    if (!stats?.online) return;
+    const values = {
+      commands: Number(stats.commands) > 0 ? formatStatusNumber(Number(stats.commands)) : String(KNOWN_COMMAND_COUNT),
+      ping: Number.isFinite(Number(stats.ping)) ? `${Math.round(Number(stats.ping))} ms` : "--",
+      guilds: formatStatusNumber(Number(stats.guilds)),
+      users: formatStatusNumber(Number(stats.users)),
+    };
+    statusValues.forEach((element) => {
+      element.textContent = values[element.dataset.stat] || "--";
+    });
+  } catch (_) {}
+}
+
+loadLiveStats();
+window.setInterval(loadLiveStats, 60_000);
+
 function revealOnScroll() {
   revealElements.forEach((element) => {
     if (element.getBoundingClientRect().top < window.innerHeight * .88) element.classList.add("revealed");

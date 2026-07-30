@@ -130,6 +130,7 @@ function buildStatsPayload() {
   return {
     guilds: client.guilds.cache.size,
     users: totalUsers,
+    commands: commands.length,
     ping: Math.round(client.ws.ping),
     uptime: Math.floor(process.uptime()),
   };

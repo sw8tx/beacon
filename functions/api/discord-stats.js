@@ -1,6 +1,7 @@
 const FALLBACK_STATS = {
   guilds: 0,
   users: 0,
+  commands: 0,
   ping: 0,
   uptime: 0,
   online: false,
@@ -28,6 +29,7 @@ function normalizeStats(input) {
   return {
     guilds: cleanNumber(input.guilds),
     users: cleanNumber(input.users),
+    commands: cleanNumber(input.commands),
     ping: cleanNumber(input.ping),
     uptime: cleanNumber(input.uptime),
     online: true,
