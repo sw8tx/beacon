@@ -35,7 +35,7 @@ const DATA_FILE = path.join(__dirname, "beacon-data.json");
 const LOGO_FILE = path.join(__dirname, "beacon-logo.png");
 const LOGO_ATTACHMENT_NAME = "beacon-logo.png";
 const BRAND_THUMBNAIL_URL = `attachment://${LOGO_ATTACHMENT_NAME}`;
-const BRAND_COLOR = 0xf5b301;
+const BRAND_COLOR = 0xff9c1b;
 
 if (!TOKEN || TOKEN.startsWith("PASTE_")) {
   console.error("Missing Discord bot token. Set DISCORD_TOKEN in your .env file or in your hosting environment.");
@@ -202,7 +202,7 @@ function brandEmbed(title, description) {
     .setTitle(title)
     .setDescription(description)
     .setThumbnail(BRAND_THUMBNAIL_URL)
-    .setFooter({ text: "Beacon - Community OS" })
+    .setFooter({ text: "Beacon · Community OS" })
     .setTimestamp();
 }
 
@@ -210,18 +210,18 @@ function errorEmbed(message) {
   return new EmbedBuilder()
     .setColor(Colors.Red)
     .setAuthor({ name: "Beacon", iconURL: BRAND_THUMBNAIL_URL })
-    .setThumbnail(BRAND_THUMBNAIL_URL)
-    .setTitle("Beacon could not do that")
-    .setDescription(message);
+    .setTitle("Action blocked")
+    .setDescription(message)
+    .setFooter({ text: "Beacon · Community OS" });
 }
 
 function successEmbed(title, description) {
   return new EmbedBuilder()
     .setColor(BRAND_COLOR)
     .setAuthor({ name: "Beacon", iconURL: BRAND_THUMBNAIL_URL })
-    .setThumbnail(BRAND_THUMBNAIL_URL)
     .setTitle(title)
-    .setDescription(description);
+    .setDescription(description)
+    .setFooter({ text: "Beacon · Community OS" });
 }
 
 function percent(value) {

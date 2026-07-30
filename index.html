@@ -3,1035 +3,248 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Beacon • Discord Community Intelligence</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23f5b301'/%3E%3Cstop offset='100%25' stop-color='%23ff9b00'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='url(%23g)'/%3E%3Ctext x='50' y='62' font-size='64' font-weight='900' text-anchor='middle' fill='white' font-family='Inter,Arial,sans-serif'%3EB%3C/text%3E%3C/svg%3E" />
-    <style>
-      :root {
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color-scheme: dark;
-        color: #f3f5f8;
-        background: #07140f;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      html,
-      body {
-        margin: 0;
-        min-height: 100%;
-        background: radial-gradient(circle at top, rgba(119, 220, 135, 0.16), transparent 28%),
-          radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.12), transparent 20%),
-          linear-gradient(135deg, #0b1811 0%, #0c2116 40%, #0a190f 100%);
-        overflow-x: hidden;
-      }
-
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        background-image: radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-        background-size: 72px 72px;
-        opacity: 0.18;
-      }
-
-      img {
-        display: block;
-        max-width: 100%;
-      }
-
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      button {
-        font: inherit;
-      }
-
-      header {
-        position: sticky;
-        top: 0;
-        z-index: 20;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 22px 36px;
-        backdrop-filter: blur(18px);
-        background: rgba(9, 16, 11, 0.68);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      }
-
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-      }
-
-      .brand-mark {
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(145deg, #f5b301 0%, #ffb300 100%);
-        box-shadow: 0 16px 40px rgba(245, 179, 1, 0.2);
-      }
-
-      .brand-mark span {
-        font-size: 24px;
-        font-weight: 900;
-        color: white;
-        line-height: 1;
-      }
-
-      .brand-text {
-        display: grid;
-        gap: 4px;
-      }
-
-      .brand-text strong {
-        font-size: 1rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .brand-text small {
-        color: rgba(255, 255, 255, 0.7);
-      }
-
-      nav {
-        display: flex;
-        gap: 24px;
-        align-items: center;
-      }
-
-      nav a,
-      nav button {
-        color: rgba(255, 255, 255, 0.78);
-      }
-
-      nav a:hover,
-      nav button:hover {
-        color: #ffffff;
-      }
-
-      nav button {
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 999px;
-        padding: 12px 18px;
-        background: rgba(255, 255, 255, 0.05);
-        cursor: pointer;
-      }
-
-      .header-actions {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-      }
-
-      .button-group {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .lang-toggle {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 999px;
-        padding: 12px 16px;
-        background: rgba(255, 255, 255, 0.05);
-        color: rgba(255, 255, 255, 0.9);
-        font-weight: 700;
-      }
-
-      .lang-menu {
-        position: absolute;
-        top: 68px;
-        right: 36px;
-        display: grid;
-        gap: 6px;
-        padding: 10px;
-        min-width: 170px;
-        border-radius: 18px;
-        background: rgba(2, 8, 4, 0.96);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.26);
-        z-index: 30;
-      }
-
-      .lang-menu.hidden {
-        display: none;
-      }
-
-      .lang-option {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        border: none;
-        background: transparent;
-        color: rgba(255, 255, 255, 0.8);
-        padding: 12px 14px;
-        border-radius: 14px;
-        cursor: pointer;
-        font-size: 0.95rem;
-        text-align: left;
-      }
-
-      .lang-option.active,
-      .lang-option:hover {
-        background: rgba(255, 255, 255, 0.08);
-        color: #ffffff;
-      }
-
-      .btn-primary,
-      .btn-secondary {
-        border: none;
-        border-radius: 14px;
-        padding: 16px 28px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
-
-      .btn-primary {
-        background: linear-gradient(135deg, #f5b301 0%, #ffb300 100%);
-        color: #09140b;
-        box-shadow: 0 20px 45px rgba(245, 179, 1, 0.28);
-      }
-
-      .btn-secondary {
-        background: rgba(255, 255, 255, 0.08);
-        color: #f3f5f8;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-      }
-
-      .btn-primary:hover,
-      .btn-secondary:hover {
-        transform: translateY(-2px);
-      }
-
-      main {
-        width: min(1240px, calc(100% - 36px));
-        margin: 0 auto;
-        padding: 32px 0 80px;
-        position: relative;
-        z-index: 5;
-      }
-
-      .hero-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
-        gap: 40px;
-        align-items: center;
-        margin-top: 24px;
-      }
-
-      .hero-copy {
-        max-width: 640px;
-      }
-
-      .eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 22px;
-        padding: 10px 16px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.06);
-        color: #b9f2cc;
-        font-size: 0.92rem;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        font-weight: 700;
-      }
-
-      .hero-copy h1 {
-        font-size: clamp(3.2rem, 4.2vw, 5.2rem);
-        line-height: 0.95;
-        letter-spacing: -0.05em;
-        margin: 0;
-      }
-
-      .hero-copy p {
-        margin: 28px 0 0;
-        max-width: 620px;
-        font-size: 1.08rem;
-        line-height: 1.8;
-        color: rgba(255, 255, 255, 0.85);
-      }
-
-      .hero-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin-top: 36px;
-      }
-
-      .btn-primary,
-      .btn-secondary {
-        border: none;
-        border-radius: 14px;
-        padding: 16px 28px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
-
-      .btn-primary {
-        background: linear-gradient(135deg, #f5b301 0%, #ffb300 100%);
-        color: #09140b;
-        box-shadow: 0 20px 45px rgba(245, 179, 1, 0.28);
-      }
-
-      .btn-secondary {
-        background: rgba(255, 255, 255, 0.08);
-        color: #f3f5f8;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-      }
-
-      .btn-primary:hover,
-      .btn-secondary:hover {
-        transform: translateY(-2px);
-      }
-
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 16px;
-        margin-top: 42px;
-      }
-
-      .stat-card {
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 18px;
-        padding: 22px;
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-      }
-
-      .stat-card strong {
-        display: block;
-        font-size: 1.7rem;
-        color: #ffffff;
-      }
-
-      .stat-card span {
-        display: block;
-        margin-top: 10px;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.95rem;
-        line-height: 1.6;
-      }
-
-      .visual-card {
-        position: relative;
-        overflow: hidden;
-        border-radius: 34px;
-        min-height: 620px;
-        background: linear-gradient(180deg, rgba(6, 22, 16, 0.95), rgba(10, 26, 17, 0.83));
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 30px 80px rgba(3, 10, 6, 0.45);
-        animation: float 10s ease-in-out infinite;
-      }
-
-      .scene-label {
-        position: absolute;
-        top: 24px;
-        left: 24px;
-        z-index: 2;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        background: rgba(3, 10, 6, 0.76);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 999px;
-      }
-
-      .scene-label img {
-        width: 32px;
-        height: 32px;
-        border-radius: 10px;
-        object-fit: cover;
-      }
-
-      .scene-label strong {
-        display: block;
-      }
-
-      .canvas-panel {
-        position: absolute;
-        inset: 0;
-      }
-
-      .visual-copy {
-        position: absolute;
-        left: 24px;
-        bottom: 24px;
-        right: 24px;
-        z-index: 2;
-        display: grid;
-        gap: 10px;
-        padding: 20px;
-        border-radius: 26px;
-        background: rgba(4, 11, 7, 0.76);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-      }
-
-      .visual-copy h2 {
-        margin: 0;
-        font-size: 1.35rem;
-      }
-
-      .visual-copy p {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.75);
-        line-height: 1.7;
-      }
-
-      .visual-copy .pill {
-        width: fit-content;
-        padding: 10px 14px;
-        border-radius: 999px;
-        background: rgba(245, 179, 1, 0.12);
-        color: #f8f3e4;
-        font-weight: 700;
-        letter-spacing: 0.02em;
-      }
-
-      .section-headline {
-        margin: 80px 0 32px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-      }
-
-      .section-headline h2 {
-        margin: 0;
-        font-size: clamp(2rem, 2.9vw, 3.2rem);
-      }
-
-      .section-headline p {
-        margin: 0;
-        max-width: 560px;
-        color: rgba(255, 255, 255, 0.74);
-      }
-
-      .cards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 22px;
-      }
-
-      .card {
-        background: rgba(7, 20, 14, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 24px;
-        padding: 28px;
-        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
-        transition: transform 0.25s ease, border-color 0.25s ease;
-      }
-
-      .card:hover {
-        transform: translateY(-6px);
-        border-color: rgba(245, 179, 1, 0.18);
-      }
-
-      .card h3 {
-        margin: 0 0 14px;
-        font-size: 1.25rem;
-      }
-
-      .card p,
-      .card li {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.72);
-        line-height: 1.75;
-        font-size: 0.98rem;
-      }
-
-      .card ul {
-        margin: 0;
-        padding-left: 18px;
-        display: grid;
-        gap: 10px;
-      }
-
-      .card li::marker {
-        color: #8ef1cc;
-      }
-
-      .grid-split {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 22px;
-      }
-
-      .faq-list {
-        display: grid;
-        gap: 18px;
-      }
-
-      .faq-item {
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        padding: 24px;
-        background: rgba(255, 255, 255, 0.04);
-      }
-
-      .faq-item h3 {
-        margin: 0 0 10px;
-        font-size: 1.08rem;
-      }
-
-      .faq-item p {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.74);
-      }
-
-      footer {
-        margin-top: 64px;
-        padding: 32px 0 16px;
-        text-align: center;
-        color: rgba(255, 255, 255, 0.7);
-      }
-
-      @keyframes float {
-        0%,
-        100% {
-          transform: translateY(0px);
-        }
-
-        50% {
-          transform: translateY(-12px);
-        }
-      }
-
-      @media (max-width: 980px) {
-        .hero-grid,
-        .grid-split {
-          grid-template-columns: 1fr;
-        }
-
-        .stats-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-      }
-
-      @media (max-width: 700px) {
-        header {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 16px;
-          padding: 20px;
-        }
-
-        .hero-grid {
-          gap: 24px;
-        }
-
-        .stats-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .visual-card {
-          min-height: 520px;
-        }
-      }
-    </style>
+    <title>Beacon — Discord server operations, simplified</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23ffb24f'/%3E%3Cstop offset='100%25' stop-color='%23ff8d17'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M42 22c0-5 4-9 9-9s9 4 9 9c0 1 0 2-0.3 3.1C63.8 29.4 69 38.4 69 49c0 13.8-11.2 25-25 25S19 62.8 19 49c0-10.7 5.3-19.7 13.4-23.9C42 24 42 23 42 22z' fill='url(%23g)'/%3E%3Cpath d='M50 35l13 24H37l13-24z' fill='%23ff9c1b'/%3E%3Cpath d='M50 68l15-14h-30l15 14z' fill='rgba(255,156,27,0.24)'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header>
-      <div class="brand">
-        <div class="brand-mark"><span>B</span></div>
-        <div class="brand-text">
-          <strong>Beacon</strong>
-          <small>Community intelligence for Discord</small>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true"></div>
+          <div class="brand-copy">
+            <p class="brand-name">Beacon</p>
+            <p class="brand-tag">Modern Discord community tools</p>
+          </div>
         </div>
-      </div>
 
-      <div class="header-actions">
-        <nav>
-          <a id="nav-features" href="#features">Features</a>
-          <a id="nav-commands" href="#commands">Commands</a>
-          <a id="nav-faq" href="#faq">FAQ</a>
+        <button class="menu-toggle js-menu-toggle" type="button" aria-label="Open menu" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <nav class="nav-links" aria-label="Primary">
+          <a class="js-nav-link" href="#features">Features</a>
+          <a class="js-nav-link" href="#dashboard">Dashboard</a>
+          <a class="js-nav-link" href="#commands">Commands</a>
+          <a class="js-nav-link" href="#support">Support</a>
+          <a class="js-nav-link" href="#docs">Docs</a>
         </nav>
 
-        <div class="button-group">
-          <button id="language-toggle" class="lang-toggle" type="button" aria-expanded="false">EN ▾</button>
-          <a id="login-btn" class="btn-secondary" href="#invite">Login</a>
-          <a id="invite-btn" class="btn-primary" href="#invite">Invite</a>
+        <div class="top-actions">
+          <a class="button button--secondary js-dashboard" href="#dashboard">Dashboard</a>
+          <a class="button button--primary js-add" href="#invite">Add to Discord</a>
+        </div>
+      </header>
+
+      <div class="mobile-nav js-mobile-nav" aria-hidden="true">
+        <a class="js-nav-link" href="#features">Features</a>
+        <a class="js-nav-link" href="#dashboard">Dashboard</a>
+        <a class="js-nav-link" href="#commands">Commands</a>
+        <a class="js-nav-link" href="#support">Support</a>
+        <a class="js-nav-link" href="#docs">Docs</a>
+        <div class="mobile-nav-actions">
+          <a class="button button--secondary js-dashboard" href="#dashboard">Dashboard</a>
+          <a class="button button--primary js-add" href="#invite">Add to Discord</a>
         </div>
       </div>
 
-      <div id="language-menu" class="lang-menu hidden" role="menu" aria-label="Select language">
-        <button class="lang-option active" type="button" data-lang="en">US English</button>
-        <button class="lang-option" type="button" data-lang="de">Deutsch</button>
-        <button class="lang-option" type="button" data-lang="fr">Français</button>
-        <button class="lang-option" type="button" data-lang="es">Español</button>
-      </div>
-    </header>
+      <main>
+        <section class="hero">
+          <div class="hero-copy" data-reveal>
+            <div class="eyebrow">Modern Discord community tools</div>
+            <h1>Run your Discord with clarity.</h1>
+            <p>Beacon helps you manage onboarding, support, activity, member experience and community growth from one clean toolkit.</p>
 
-    <main>
-      <section class="hero-grid">
-        <div class="hero-copy">
-          <div class="eyebrow">Live server health + growth engine</div>
-          <h1>Bring your Discord community to the next level.</h1>
-          <p>Beacon tracks activity, member growth, and support workflows with precision. Use the 3D model-powered brand experience to show your server a premium presence.</p>
-
-          <div class="hero-actions">
-            <button id="btn-add" class="btn-primary" type="button">Add Beacon</button>
-            <button id="btn-guide" class="btn-secondary" type="button">View guide</button>
-          </div>
-
-          <div class="stats-grid">
-            <div class="stat-card">
-              <strong id="stat1-title">120+</strong>
-              <span id="stat1-body">Communities already running Beacon with smarter onboarding.</span>
+            <div class="hero-buttons">
+              <a class="button button--primary js-add" href="#invite">Add Beacon</a>
+              <a class="button button--secondary js-dashboard" href="#dashboard">View Dashboard</a>
             </div>
-            <div class="stat-card">
-              <strong id="stat2-title">Live</strong>
-              <span id="stat2-body">Realtime Discord stats sync through Cloudflare and bot events.</span>
-            </div>
-            <div class="stat-card">
-              <strong id="stat3-title">Model + logo</strong>
-              <span id="stat3-body">3D visual showcase and brand mark included on the homepage.</span>
-            </div>
-          </div>
-        </div>
 
-        <article class="visual-card">
-          <div class="scene-label">
-            <img src="assets/sparkle_beacon_preview.png" alt="Beacon logo preview" />
-            <div>
-              <strong>Beacon Logo</strong>
-              <span>3D model powered visual</span>
+            <div class="stat-strip" data-reveal>
+              <div class="stat-card">
+                <strong class="js-server-count">—</strong>
+                <p class="stat-copy">Live servers connected.</p>
+              </div>
+              <div class="stat-card">
+                <strong class="js-member-count">—</strong>
+                <p class="stat-copy">Visible member total.</p>
+              </div>
+              <div class="stat-card">
+                <strong class="js-ticket-count">—</strong>
+                <p class="stat-copy">Support threads handled.</p>
+              </div>
+              <div class="stat-card">
+                <strong class="js-uptime-count">—</strong>
+                <p class="stat-copy">Uptime since last restart.</p>
+              </div>
             </div>
           </div>
-          <div class="canvas-panel" id="app"></div>
-          <div class="visual-copy">
-            <div class="pill">Animated 3D brand object</div>
-            <h2>Preview your community's pulse in motion.</h2>
-            <p>Use the embedded 3D model to give Beacon a refined, modern landing page that feels premium and human.</p>
+
+          <div class="hero-panel" data-reveal>
+            <div class="hero-panel__stage"></div>
+            <div class="hero-panel__glow"></div>
+            <div class="hero-panel__label">Beacon core visualization</div>
           </div>
-        </article>
-      </section>
+        </section>
 
-      <section class="section-headline" id="features">
-        <div>
-          <h2>Powerful tools for every Discord server</h2>
-          <p id="features-intro">Beacon combines analytics, onboarding, moderation, and support into one polished community OS.</p>
+        <section class="section" id="features">
+          <div class="section--split">
+            <div data-reveal>
+              <h2>Something for every stage of your server.</h2>
+              <p>Beacon focuses on the essential controls: onboarding, tickets, tracking, moderation and community insight. Everything is designed for clarity, not noise.</p>
+            </div>
+
+            <div class="feature-grid">
+              <div class="feature-card" data-reveal>
+                <h3>Onboarding that feels clear</h3>
+                <p>Guide new members through the first minutes in your server without extra setup overload.</p>
+                <ul>
+                  <li>One panel for welcome, roles and rules</li>
+                  <li>Fast setup with <code>/onboarding</code></li>
+                  <li>Private welcome flows for new members</li>
+                </ul>
+              </div>
+              <div class="feature-card" data-reveal>
+                <h3>Tickets with context</h3>
+                <p>Support requests are routed clearly and ticket channels stay structured.</p>
+                <ul>
+                  <li>Role-based access for staff</li>
+                  <li>Transcript delivery after close</li>
+                  <li>Minimal ticket noise in your server</li>
+                </ul>
+              </div>
+              <div class="feature-card" data-reveal>
+                <h3>Community tracking that is readable</h3>
+                <p>Find the pulse of your server with simple health metrics and motion-free reports.</p>
+                <ul>
+                  <li>Activity by channel</li>
+                  <li>Join / leave balance</li>
+                  <li>Weekly member trend clarity</li>
+                </ul>
+              </div>
+              <div class="feature-card" data-reveal>
+                <h3>Controls that stay in your server</h3>
+                <p>Moderation and automation are built around real Discord workflows, not gimmicks.</p>
+                <ul>
+                  <li>Command-based setup</li>
+                  <li>Configurable logs and roles</li>
+                  <li>Safe action buttons for staff</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section section--split" id="dashboard">
+          <div data-reveal>
+            <h2>Dashboard previews built for clarity.</h2>
+            <p>Live status, server health and setup guidance appear in one panel so you can take action with confidence.</p>
+          </div>
+          <div class="preview-card" data-reveal>
+            <div class="preview-top">
+              <span class="preview-pill">Dashboard preview</span>
+              <h3 class="preview-title">Server health panel</h3>
+              <p class="preview-text">A clean server summary that keeps activity and recommendations in view.</p>
+            </div>
+            <div class="mock-panel">
+              <div class="mock-header">
+                <span class="mock-dot"></span>
+                <span class="mock-title">Beacon dashboard</span>
+                <span class="mock-dot"></span>
+              </div>
+              <div class="mock-list">
+                <div class="mock-item"><strong>Health</strong><span>78 / 100 — active channels look strong.</span></div>
+                <div class="mock-item"><strong>Recent activity</strong><span>312 messages in the last 24 hours.</span></div>
+                <div class="mock-item"><strong>Next step</strong><span>Set the welcome channel to reduce member drop-off.</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="commands">
+          <div data-reveal>
+            <h2>Commands that stay useful.</h2>
+            <p>Beacon keeps the command set short and practical so staff can act without digging through menus.</p>
+          </div>
+
+          <div class="command-panel" data-reveal>
+            <div class="command-tabs">
+              <span class="command-tab active">Setup</span>
+              <span class="command-tab">Health</span>
+              <span class="command-tab">Tickets</span>
+            </div>
+            <div class="command-list">
+              <div class="command-item">
+                <span class="label">/setup</span>
+                <p class="description">Set welcome, logs, onboarding and member role in one command.</p>
+              </div>
+              <div class="command-item">
+                <span class="label">/health</span>
+                <p class="description">Check server activity, retention and channel coverage without clutter.</p>
+              </div>
+              <div class="command-item">
+                <span class="label">/ticketpanel</span>
+                <p class="description">Post a clean ticket entry panel so members can request help easily.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section section--split" id="support">
+          <div data-reveal>
+            <h2>Support designed for teams.</h2>
+            <p>Beacon makes support work feel structured rather than chaotic.</p>
+          </div>
+
+          <div class="feature-card" data-reveal>
+            <h3>Fast follow-up</h3>
+            <ul>
+              <li>Ticket threads stay private</li>
+              <li>Staff can claim and close cleanly</li>
+              <li>Easy transcript delivery</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="section cta-panel" id="invite" data-reveal>
+          <h2>Bring structure to your community.</h2>
+          <div class="cta-row">
+            <a class="button button--primary js-add" href="#invite">Add to Discord</a>
+            <a class="button button--secondary js-dashboard" href="#dashboard">Open Dashboard</a>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-grid">
+          <div>
+            <p class="brand-name">Beacon</p>
+            <p class="footer-note">A polished Discord operations assistant for communities that value clarity over noise.</p>
+          </div>
+          <div>
+            <p class="footer-heading">Product</p>
+            <a class="footer-link" href="#features">Features</a>
+            <a class="footer-link" href="#dashboard">Dashboard</a>
+            <a class="footer-link" href="#commands">Commands</a>
+          </div>
+          <div>
+            <p class="footer-heading">Resources</p>
+            <a class="footer-link" href="#support">Support</a>
+            <a class="footer-link" href="#docs">Docs</a>
+            <a class="footer-link" href="https://github.com/sw8tx/beacon" target="_blank" rel="noreferrer noopener">GitHub</a>
+          </div>
+          <div>
+            <p class="footer-heading">Legal</p>
+            <a class="footer-link" href="#">Privacy</a>
+            <a class="footer-link" href="#">Terms</a>
+          </div>
         </div>
-      </section>
+        <p class="footer-note">© 2026 Beacon. Built for Discord communities that want a calm, professional experience.</p>
+      </footer>
+    </div>
 
-      <div class="cards-grid">
-        <article class="card">
-          <h3>Server Health</h3>
-          <p>Watch member activity, retention, and engagement metrics in real time so your community never loses momentum.</p>
-        </article>
-        <article class="card">
-          <h3>Onboarding Flow</h3>
-          <p>Create welcome steps, role selection, and intro prompts that onboard new members with confidence.</p>
-        </article>
-        <article class="card">
-          <h3>Support Tickets</h3>
-          <p>Handle requests with structured tickets, automatic tags, and trackable follow-up so nothing slips through.</p>
-        </article>
-        <article class="card">
-          <h3>Announcements</h3>
-          <p>Manage announcements, countdowns, and targeted broadcasts with branding that matches your server.</p>
-        </article>
-      </div>
-
-      <section class="section-headline" id="commands">
-        <div>
-          <h2>Quick commands</h2>
-          <p id="commands-intro">Start with the commands your community needs instantly.</p>
-        </div>
-      </section>
-
-      <div class="grid-split">
-        <article class="card">
-          <h3>Essential slash commands</h3>
-          <ul>
-            <li><strong>/quickstart</strong> — begin Beacon setup automatically.</li>
-            <li><strong>/health</strong> — view server health and engagement scores.</li>
-            <li><strong>/settings</strong> — adjust notifications, channels, and roles.</li>
-            <li><strong>/support</strong> — open a ticket or ask for help directly.</li>
-          </ul>
-        </article>
-        <article class="card">
-          <h3>Brand & connection</h3>
-          <p>Use Beacon to keep your community connected with smart onboarding, event reminders, and analytics that let you act faster.</p>
-        </article>
-      </div>
-
-      <section class="section-headline" id="faq">
-        <div>
-          <h2>Frequently asked questions</h2>
-          <p>Clear answers for set up, branding, and how Beacon works inside your Discord server.</p>
-        </div>
-      </section>
-
-      <div class="faq-list">
-        <article class="faq-item">
-          <h3>Wie verwende ich das 3D-Modell?</h3>
-          <p>Das 3D-Modell ist direkt auf der Startseite eingebettet. Es zeigt deine Marke im Fokus und lädt Besucher visuell ein.</p>
-        </article>
-        <article class="faq-item">
-          <h3>Ist mein Logo hier sichtbar?</h3>
-          <p>Ja. Der obere Bereich verwendet das Beacon-Branding mit einem starken Markenzeichen. Du kannst das Bild im Abschnitt "Logo" direkt anpassen, falls ein eigenes Asset verfügbar ist.</p>
-        </article>
-        <article class="faq-item">
-          <h3>Wie lade ich Beacon ein?</h3>
-          <p>Nutze den "Invite"-Button oben, um Beacon zu deinem Server hinzuzufügen. Danach startet der Onboarding-Flow automatisch.</p>
-        </article>
-      </div>
-    </main>
-
-    <footer>
-      <p id="footer-copy">© 2026 Beacon Community OS. Crafted for Discord growth and community success.</p>
-    </footer>
-
-    <script type="module">
-      import * as THREE from "https://unpkg.com/three@0.166.1/build/three.module.js";
-      import { OrbitControls } from "https://unpkg.com/three@0.166.1/examples/jsm/controls/OrbitControls.js";
-      import { GLTFLoader } from "https://unpkg.com/three@0.166.1/examples/jsm/loaders/GLTFLoader.js";
-
-      const container = document.querySelector("#app");
-      const translations = {
-        en: {
-          features: "Powerful tools for every Discord server",
-          featuresIntro: "Beacon combines analytics, onboarding, moderation, and support into one polished community OS.",
-          commands: "Quick commands",
-          commandsIntro: "Start with the commands your community needs instantly.",
-          faq: "Frequently asked questions",
-          faqIntro: "Clear answers for set up, branding, and how Beacon works inside your Discord server.",
-          heroEyebrow: "Live server health + growth engine",
-          heroHeading: "Bring your Discord community to the next level.",
-          heroBody: "Beacon tracks activity, member growth, and support workflows with precision. Use the 3D model-powered brand experience to show your server a premium presence.",
-          heroPrimary: "Add Beacon",
-          heroSecondary: "View guide",
-          stat1Title: "120+",
-          stat1Body: "Communities already running Beacon with smarter onboarding.",
-          stat2Title: "Live",
-          stat2Body: "Realtime Discord stats sync through Cloudflare and bot events.",
-          stat3Title: "Model + logo",
-          stat3Body: "3D visual showcase and brand mark included on the homepage.",
-          card1Title: "Server Health",
-          card1Body: "Watch member activity, retention, and engagement metrics in real time so your community never loses momentum.",
-          card2Title: "Onboarding Flow",
-          card2Body: "Create welcome steps, role selection, and intro prompts that onboard new members with confidence.",
-          card3Title: "Support Tickets",
-          card3Body: "Handle requests with structured tickets, automatic tags, and trackable follow-up so nothing slips through.",
-          card4Title: "Announcements",
-          card4Body: "Manage announcements, countdowns, and targeted broadcasts with branding that matches your server.",
-          commandListTitle: "Essential slash commands",
-          commandListItems: [
-            "/quickstart — begin Beacon setup automatically.",
-            "/health — view server health and engagement scores.",
-            "/settings — adjust notifications, channels, and roles.",
-            "/support — open a ticket or ask for help directly.",
-          ],
-          brandSectionTitle: "Brand & connection",
-          brandSectionBody: "Use Beacon to keep your community connected with smart onboarding, event reminders, and analytics that let you act faster.",
-          faq1Question: "How do I use the 3D model?",
-          faq1Answer: "The 3D model is embedded directly on the homepage. It showcases your brand in focus and invites visitors visually.",
-          faq2Question: "Is my logo visible here?",
-          faq2Answer: "Yes. The top section uses Beacon branding and a strong mark. You can replace the image in the logo section if you have a custom asset.",
-          faq3Question: "How do I invite Beacon?",
-          faq3Answer: "Use the Invite button at the top to add Beacon to your server. The onboarding flow begins automatically afterward.",
-          footer: "© 2026 Beacon Community OS. Crafted for Discord growth and community success.",
-          login: "Login",
-          inviteText: "Invite",
-          navFeatures: "Features",
-          navCommands: "Commands",
-          navFaq: "FAQ",
-          langLabel: "EN ▾",
-        },
-        de: {
-          features: "Leistungsstarke Tools für jeden Discord-Server",
-          featuresIntro: "Beacon kombiniert Analysen, Onboarding, Moderation und Support in einem eleganten Community-Betriebssystem.",
-          commands: "Schnelle Befehle",
-          commandsIntro: "Beginne sofort mit den Befehlen, die deine Community braucht.",
-          faq: "Häufig gestellte Fragen",
-          faqIntro: "Klare Antworten für Einrichtung, Branding und wie Beacon in deinem Discord funktioniert.",
-          heroEyebrow: "Live Server-Gesundheit + Wachstumsmotor",
-          heroHeading: "Bringe deine Discord-Community auf das nächste Level.",
-          heroBody: "Beacon verfolgt Aktivität, Mitgliederwachstum und Support-Workflows mit Präzision. Nutze die 3D-Modell-Erfahrung für einen hochwertigen Auftritt.",
-          heroPrimary: "Beacon hinzufügen",
-          heroSecondary: "Anleitung anzeigen",
-          stat1Title: "120+",
-          stat1Body: "Communities nutzen Beacon bereits für smarteres Onboarding.",
-          stat2Title: "Live",
-          stat2Body: "Echtzeit-Discord-Statistiken über Cloudflare und Bot-Events.",
-          stat3Title: "Modell + Logo",
-          stat3Body: "3D-Visualisierung und Brandmarke sind auf der Startseite integriert.",
-          card1Title: "Server-Gesundheit",
-          card1Body: "Beobachte Aktivität, Retention und Engagement in Echtzeit, damit deine Community nicht an Schwung verliert.",
-          card2Title: "Onboarding-Flow",
-          card2Body: "Erstelle Willkommensschritte, Rollenwahl und Einführungs-Prompts für sichere Onboarding-Erlebnisse.",
-          card3Title: "Support-Tickets",
-          card3Body: "Bearbeite Anfragen mit strukturierten Tickets, automatischen Tags und nachverfolgbaren Abläufen.",
-          card4Title: "Ankündigungen",
-          card4Body: "Verwalte Ankündigungen, Countdowns und zielgerichtete Broadcasts mit passendem Branding.",
-          commandListTitle: "Wichtige Slash-Befehle",
-          commandListItems: [
-            "/quickstart — starte die Beacon-Einrichtung automatisch.",
-            "/health — zeige Server-Gesundheit und Engagement-Werte an.",
-            "/settings — passe Benachrichtigungen, Channels und Rollen an.",
-            "/support — öffne ein Ticket oder frage direkt um Hilfe.",
-          ],
-          brandSectionTitle: "Marke & Verbindung",
-          brandSectionBody: "Nutze Beacon, um deine Community mit intelligentem Onboarding, Event-Erinnerungen und Analytics enger zusammenzubringen.",
-          faq1Question: "Wie verwende ich das 3D-Modell?",
-          faq1Answer: "Das 3D-Modell ist direkt auf der Startseite eingebettet. Es zeigt deine Marke im Fokus und lädt Besucher visuell ein.",
-          faq2Question: "Ist mein Logo hier sichtbar?",
-          faq2Answer: "Ja. Der obere Bereich verwendet Beacon-Branding und ein starkes Markenzeichen. Du kannst das Bild im Logo-Bereich durch ein eigenes Asset ersetzen.",
-          faq3Question: "Wie lade ich Beacon ein?",
-          faq3Answer: "Nutze den Invite-Button oben, um Beacon zu deinem Server hinzuzufügen. Danach startet der Onboarding-Flow automatisch.",
-          footer: "© 2026 Beacon Community OS. Für Discord-Wachstum und Community-Erfolg.",
-          login: "Anmelden",
-          inviteText: "Einladen",
-          navFeatures: "Features",
-          navCommands: "Befehle",
-          navFaq: "FAQ",
-          langLabel: "DE ▾",
-        },
-      };
-
-      const textMap = {
-        heroEyebrow: document.querySelector(".eyebrow"),
-        heroHeading: document.querySelector(".hero-copy h1"),
-        heroBody: document.querySelector(".hero-copy p"),
-        heroPrimary: document.getElementById("btn-add"),
-        heroSecondary: document.getElementById("btn-guide"),
-        stat1Title: document.getElementById("stat1-title"),
-        stat1Body: document.getElementById("stat1-body"),
-        stat2Title: document.getElementById("stat2-title"),
-        stat2Body: document.getElementById("stat2-body"),
-        stat3Title: document.getElementById("stat3-title"),
-        stat3Body: document.getElementById("stat3-body"),
-        features: document.querySelector("#features h2"),
-        featuresIntro: document.getElementById("features-intro"),
-        commands: document.querySelector("#commands h2"),
-        commandsIntro: document.getElementById("commands-intro"),
-        card1Title: document.querySelector(".grid-split .card:nth-child(1) h3"),
-        card1Body: document.querySelector(".grid-split .card:nth-child(1) p"),
-        card2Title: document.querySelector(".grid-split .card:nth-child(2) h3"),
-        card2Body: document.querySelector(".grid-split .card:nth-child(2) p"),
-        commandListTitle: document.querySelector(".grid-split .card:nth-child(1) h3"),
-        commandListIntro: document.querySelector(".grid-split .card:nth-child(1) ul"),
-        brandSectionTitle: document.querySelector(".grid-split .card:nth-child(2) h3"),
-        brandSectionBody: document.querySelector(".grid-split .card:nth-child(2) p"),
-        faq: document.querySelector("#faq h2"),
-        faqIntro: document.querySelector("#faq p"),
-        faq1Question: document.querySelector(".faq-item:nth-child(1) h3"),
-        faq1Answer: document.querySelector(".faq-item:nth-child(1) p"),
-        faq2Question: document.querySelector(".faq-item:nth-child(2) h3"),
-        faq2Answer: document.querySelector(".faq-item:nth-child(2) p"),
-        faq3Question: document.querySelector(".faq-item:nth-child(3) h3"),
-        faq3Answer: document.querySelector(".faq-item:nth-child(3) p"),
-        footer: document.getElementById("footer-copy"),
-        login: document.getElementById("login-btn"),
-        inviteText: document.getElementById("invite-btn"),
-        navFeatures: document.getElementById("nav-features"),
-        navCommands: document.getElementById("nav-commands"),
-        navFaq: document.getElementById("nav-faq"),
-        langLabel: document.getElementById("language-toggle"),
-      };
-
-      function setLanguage(lang) {
-        const locale = translations[lang] || translations.en;
-        document.documentElement.lang = lang;
-        textMap.heroEyebrow.textContent = locale.heroEyebrow;
-        textMap.heroHeading.textContent = locale.heroHeading;
-        textMap.heroBody.textContent = locale.heroBody;
-        textMap.heroPrimary.textContent = locale.heroPrimary;
-        textMap.heroSecondary.textContent = locale.heroSecondary;
-        textMap.stat1Title.textContent = locale.stat1Title;
-        textMap.stat1Body.textContent = locale.stat1Body;
-        textMap.stat2Title.textContent = locale.stat2Title;
-        textMap.stat2Body.textContent = locale.stat2Body;
-        textMap.stat3Title.textContent = locale.stat3Title;
-        textMap.stat3Body.textContent = locale.stat3Body;
-        textMap.features.textContent = locale.features;
-        textMap.commands.textContent = locale.commands;
-        textMap.faq.textContent = locale.faq;
-        textMap.featuresIntro.textContent = locale.featuresIntro;
-        textMap.commandsIntro.textContent = locale.commandsIntro;
-        textMap.card1Title.textContent = locale.card1Title;
-        textMap.card1Body.textContent = locale.card1Body;
-        textMap.card2Title.textContent = locale.card2Title;
-        textMap.card2Body.textContent = locale.card2Body;
-        textMap.commandListTitle.textContent = locale.commandListTitle;
-        renderCommandList(locale.commandListItems);
-        textMap.brandSectionTitle.textContent = locale.brandSectionTitle;
-        textMap.brandSectionBody.textContent = locale.brandSectionBody;
-        textMap.faqIntro.textContent = locale.faqIntro;
-        textMap.faq1Question.textContent = locale.faq1Question;
-        textMap.faq1Answer.textContent = locale.faq1Answer;
-        textMap.faq2Question.textContent = locale.faq2Question;
-        textMap.faq2Answer.textContent = locale.faq2Answer;
-        textMap.faq3Question.textContent = locale.faq3Question;
-        textMap.faq3Answer.textContent = locale.faq3Answer;
-        textMap.footer.textContent = locale.footer;
-        textMap.login.textContent = locale.login;
-        textMap.inviteText.textContent = locale.inviteText;
-        textMap.navFeatures.textContent = locale.navFeatures;
-        textMap.navCommands.textContent = locale.navCommands;
-        textMap.navFaq.textContent = locale.navFaq;
-        textMap.langLabel.textContent = locale.langLabel;
-
-        document.querySelectorAll(".lang-option").forEach((button) => {
-          button.classList.toggle("active", button.dataset.lang === lang);
-        });
-      }
-
-      function renderCommandList(items) {
-        const list = document.querySelector(".grid-split .card:nth-child(1) ul");
-        list.innerHTML = items.map((item) => `<li>${item}</li>`).join("");
-      }
-
-      const langToggle = document.getElementById("language-toggle");
-      const langMenu = document.getElementById("language-menu");
-
-      langToggle.addEventListener("click", () => {
-        const expanded = langToggle.getAttribute("aria-expanded") === "true";
-        langToggle.setAttribute("aria-expanded", String(!expanded));
-        langMenu.classList.toggle("hidden");
-      });
-
-      document.querySelectorAll(".lang-option").forEach((button) => {
-        button.addEventListener("click", () => {
-          setLanguage(button.dataset.lang);
-          langMenu.classList.add("hidden");
-          langToggle.setAttribute("aria-expanded", "false");
-        });
-      });
-
-      window.addEventListener("click", (event) => {
-        if (!langMenu.contains(event.target) && !langToggle.contains(event.target)) {
-          langMenu.classList.add("hidden");
-          langToggle.setAttribute("aria-expanded", "false");
-        }
-      });
-
-      setLanguage("en");
-
-      const app = document.querySelector("#app");
-      const scene = new THREE.Scene();
-      scene.background = null;
-
-      const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(4.6, 2.8, 5.5);
-
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.72;
-      container.appendChild(renderer.domElement);
-
-      const controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.autoRotate = true;
-      controls.autoRotateSpeed = 1.1;
-      controls.enablePan = false;
-      controls.minDistance = 4.2;
-      controls.maxDistance = 7.5;
-      controls.target.set(0, 1.05, 0);
-
-      scene.add(new THREE.HemisphereLight(0xd8f8ff, 0x122b14, 2.5));
-      const keyLight = new THREE.DirectionalLight(0xffffff, 2.6);
-      keyLight.position.set(4, 8, 6);
-      scene.add(keyLight);
-      const fillLight = new THREE.DirectionalLight(0x60ffc8, 1.6);
-      fillLight.position.set(-5, 2, -4);
-      scene.add(fillLight);
-
-      const ground = new THREE.Mesh(
-        new THREE.CircleGeometry(3.4, 96),
-        new THREE.MeshBasicMaterial({ color: 0x20422f, transparent: true, opacity: 0.18 })
-      );
-      ground.rotation.x = -Math.PI / 2;
-      ground.position.y = -0.03;
-      scene.add(ground);
-
-      const highlight = new THREE.Mesh(
-        new THREE.CircleGeometry(1.7, 96),
-        new THREE.MeshBasicMaterial({ color: 0x7dffc2, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false })
-      );
-      highlight.rotation.x = -Math.PI / 2;
-      highlight.position.y = 0.03;
-      scene.add(highlight);
-
-      const haloMaterial = new THREE.MeshBasicMaterial({
-        color: 0xa7fff0,
-        transparent: true,
-        opacity: 0.24,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      });
-      const haloGroup = new THREE.Group();
-      scene.add(haloGroup);
-      for (let i = 0; i < 5; i += 1) {
-        const ring = new THREE.Mesh(new THREE.RingGeometry(0.7 + i * 0.16, 0.75 + i * 0.16, 64), haloMaterial.clone());
-        ring.rotation.x = -Math.PI / 2;
-        ring.rotation.z = Math.PI / 4;
-        ring.position.y = 1.65 + i * 0.08;
-        ring.material.opacity = 0.24 - i * 0.03;
-        ring.userData.speed = 0.28 + i * 0.12;
-        haloGroup.add(ring);
-      }
-
-      const modelRoot = new THREE.Group();
-      modelRoot.rotation.y = Math.PI * 0.06;
-      scene.add(modelRoot);
-
-      new GLTFLoader().load("assets/sparkle_beacon.glb?v=6", (gltf) => {
-        const model = gltf.scene;
-        model.traverse((node) => {
-          if (node.isMesh) {
-            if (node.material?.transparent) {
-              node.material.depthWrite = false;
-            }
-            node.material.metalness = 0.22;
-            node.material.roughness = 0.35;
-          }
-        });
-        modelRoot.add(model);
-      });
-
-      function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        haloGroup.children.forEach((ring) => {
-          ring.rotation.z += ring.userData.speed * 0.0018;
-        });
-        modelRoot.rotation.y += 0.0018;
-        renderer.render(scene, camera);
-      }
-
-      animate();
-
-      window.addEventListener("resize", () => {
-        const width = container.clientWidth;
-        const height = container.clientHeight;
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-        renderer.setSize(width, height);
-      });
-    </script>
+    <script src="app.js" type="module"></script>
   </body>
 </html>
