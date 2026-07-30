@@ -57,8 +57,12 @@
             <a href="#" data-lang="nl"><span>NL</span>Nederlands</a>
           </div>
         </details>
-        <a class="navbar-button navbar-button--server" href="https://discord.com" target="_blank" rel="noreferrer"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="add">Add to Server</span></a>
-        <a class="navbar-button navbar-button--login" href="https://discord.com" target="_blank" rel="noreferrer"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="login">Login with Discord</span></a>
+        <a class="navbar-button navbar-button--server" href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&scope=bot%20applications.commands"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="add">Add to Server</span></a>
+        <a class="navbar-button navbar-button--login" id="discord-login" href="/api/auth/discord/login"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="login">Login with Discord</span></a>
+        <details class="account-menu" id="discord-account" hidden>
+          <summary><img class="account-avatar" id="discord-avatar" src="assets/beacon-logo.png?v=92" alt="" /><span id="discord-username">Discord user</span></summary>
+          <button type="button" id="discord-logout">Log out</button>
+        </details>
       </div>
     </nav>
 
@@ -79,8 +83,8 @@
           </div>
 
           <div class="hero-actions">
-            <a class="hero-button hero-button--primary" href="https://discord.com" target="_blank" rel="noreferrer"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="heroAdd">Add to Server</span><span class="button-arrow">↗</span></a>
-            <a class="hero-button hero-button--dark" href="https://discord.com" target="_blank" rel="noreferrer"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="heroLogin">Login with Discord</span></a>
+            <a class="hero-button hero-button--primary" href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&scope=bot%20applications.commands"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="heroAdd">Add to Server</span><span class="button-arrow">↗</span></a>
+            <a class="hero-button hero-button--dark" href="/api/auth/discord/login"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="heroLogin">Login with Discord</span></a>
             <a class="hero-button hero-button--outline" href="#status"><span class="book-mark">▣</span><span data-i18n="docs">View Docs</span></a>
           </div>
           <div class="hero-note"><span class="online-pulse"></span><span data-i18n="heroNote">Trusted by growing communities everywhere</span></div>
@@ -107,6 +111,6 @@
     </main>
 
     <footer><span data-i18n="footer">Built for communities with ambition.</span></footer>
-    <script src="app.js?v=92"></script>
+    <script src="app.js?v=93"></script>
   </body>
 </html>

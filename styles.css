@@ -45,6 +45,14 @@ a { color: inherit; text-decoration: none; }
 .navbar-button:hover { transform: translateY(-2px); filter: brightness(1.08); }
 .navbar-button--server { background: #292d35; color: #eff1ef; }
 .navbar-button--login { color: #1b1504; background: var(--yellow); box-shadow: 0 0 22px rgba(255,195,28,.25); }
+.account-menu { position: relative; flex: 0 0 auto; }
+.account-menu summary { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; max-width: 160px; padding: 3px 8px 3px 4px; border: 1px solid rgba(255,255,255,.1); border-radius: 5px; color: #f2f3ed; font-size: .75rem; font-weight: 800; list-style: none; cursor: pointer; }
+.account-menu summary::-webkit-details-marker { display: none; }
+.account-menu summary::after { content: ""; width: 6px; height: 6px; margin-left: 2px; border-right: 1px solid currentColor; border-bottom: 1px solid currentColor; transform: translateY(-2px) rotate(45deg); }
+.account-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.account-menu summary span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-menu button { position: absolute; top: calc(100% + 8px); right: 0; min-width: 112px; min-height: 35px; padding: 0 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 5px; color: #f3f4ef; font: 700 .75rem "DM Sans", sans-serif; text-align: left; cursor: pointer; background: #101312; box-shadow: 0 16px 35px rgba(0,0,0,.4); }
+.account-menu button:hover { color: var(--yellow); }
 
 main { position: relative; flex: 1 0 auto; }
 .hero-section { position: relative; display: grid; grid-template-columns: minmax(420px, .91fr) minmax(560px, 1.09fr); gap: 20px; align-items: center; min-height: min(780px, calc(100vh - 150px)); padding: 150px 5.2vw 65px; border-bottom: 1px solid rgba(255,255,255,.06); }
@@ -100,7 +108,7 @@ footer { display: flex; align-items: center; justify-content: center; min-height
 [data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity .8s ease, transform .8s ease; }
 [data-reveal].revealed { opacity: 1; transform: none; }
 
-.navbar-link:focus-visible, .navbar-brand:focus-visible, .navbar-prestige:focus-visible, .navbar-button:focus-visible, .language-menu summary:focus-visible, .hero-button:focus-visible, footer a:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.navbar-link:focus-visible, .navbar-brand:focus-visible, .navbar-prestige:focus-visible, .navbar-button:focus-visible, .language-menu summary:focus-visible, .account-menu summary:focus-visible, .account-menu button:focus-visible, .hero-button:focus-visible, footer a:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } [data-reveal] { opacity: 1; transform: none; } }
 @media (max-width: 1180px) { .site-navbar { gap: 13px; padding-inline: 18px; } .navbar-links { gap: 12px; } .hero-section { grid-template-columns: minmax(370px, .85fr) minmax(480px, 1.15fr); padding-inline: 4vw; } .hero-stage { height: 520px; } .hero-visual { min-height: 520px; } }
 @media (max-width: 900px) { .site-navbar { flex-wrap: wrap; min-height: 112px; padding-block: 9px; } .navbar-brand { order: 1; } .navbar-actions { order: 2; } .navbar-links { order: 3; flex-basis: 100%; } .hero-section { grid-template-columns: 1fr; min-height: auto; padding-top: 155px; } .hero-copy { max-width: 760px; } .hero-visual { min-height: 490px; margin-top: 20px; } .hero-stage { height: 490px; } }

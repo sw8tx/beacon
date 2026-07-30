@@ -4,6 +4,11 @@ const languageMenu = document.querySelector(".language-menu");
 const languageOptions = [...document.querySelectorAll("[data-lang]")];
 const languageCode = document.querySelector(".language-current-code");
 const languageLabel = document.querySelector(".language-current-label");
+const discordLogin = document.querySelector("#discord-login");
+const discordAccount = document.querySelector("#discord-account");
+const discordAvatar = document.querySelector("#discord-avatar");
+const discordUsername = document.querySelector("#discord-username");
+const discordLogout = document.querySelector("#discord-logout");
 
 const translations = {
   en: { label: "English", code: "US", bot: "Beacon Bot", support: "Support Server", join: "Join our Discord", help: "Help", commands: "Commands", status: "Status", ping: "Ping", prestige: "Beacon Prestige", new: "New!", add: "Add to Server", login: "Login with Discord", eyebrow: "The ultimate server growth bot", heroLineOne: "Grow your server.", heroLineTwo: "Empower your community.", heroDescription: "Beacon is an all-in-one Discord bot built to help you grow, manage, and engage your server with powerful tools and an easy-to-use dashboard.", checkOne: "Ticket System", checkTwo: "Auto Responder", checkThree: "Sticky Notes", checkFour: "Server Statistics", checkFive: "/Say Command", checkSix: "And much more...", heroAdd: "Add to Server", heroLogin: "Login with Discord", docs: "View Docs", heroNote: "Trusted by growing communities everywhere", livePreview: "Live dashboard preview", builtFor: "Built for your next level", liveStatus: "Live system status", statServers: "Servers connected", statUsers: "Members reached", statPing: "Average ping", statUptime: "Always available", featureOverline: "Everything in one place", featureTitle: "Your community,\nin its element.", featureDescription: "Powerful automation, effortless moderation, and the clarity to make better decisions for your server.", featureOneTitle: "Automate the busywork", featureOneCopy: "Let Beacon handle repetitive tasks while you focus on the people who make your community special.", featureTwoTitle: "See what matters", featureTwoCopy: "Real-time server statistics and clean insights, right when you need them.", featureThreeTitle: "Make it yours", featureThreeCopy: "Flexible commands and thoughtful tools that fit the way your server works.", learnMore: "Explore feature", finalOverline: "Ready when you are", finalTitle: "Give your server\nthe Beacon treatment.", footer: "Built for communities with ambition." },
@@ -40,6 +45,28 @@ languageOptions.forEach((option) => option.addEventListener("click", (event) => 
 let savedLanguage = "de";
 try { savedLanguage = localStorage.getItem("beacon-language") || "de"; } catch (_) {}
 setLanguage(savedLanguage);
+
+async function loadDiscordSession() {
+  if (!discordLogin || !discordAccount || !window.fetch) return;
+  try {
+    const response = await fetch("/api/auth/discord/session", { cache: "no-store" });
+    if (!response.ok) return;
+    const { user } = await response.json();
+    if (!user?.username || !user?.avatar) return;
+    discordAvatar.src = user.avatar;
+    discordAvatar.alt = `${user.username} profile picture`;
+    discordUsername.textContent = user.username;
+    discordLogin.hidden = true;
+    discordAccount.hidden = false;
+  } catch (_) {}
+}
+
+discordLogout?.addEventListener("click", async () => {
+  await fetch("/api/auth/discord/logout", { method: "POST" }).catch(() => {});
+  window.location.assign("/");
+});
+
+loadDiscordSession();
 
 const statusValues = [...document.querySelectorAll("[data-stat]")];
 const KNOWN_COMMAND_COUNT = 21;
