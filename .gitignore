@@ -1,4 +1,4 @@
 .env
 node_modules/
 beacon-data.json
-beacon-logo.png
+/beacon-logo.png

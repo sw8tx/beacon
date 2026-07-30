@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Beacon</title>
-    <link rel="icon" type="image/png" href="assets/black.png" />
-    <link rel="shortcut icon" href="assets/black.png" />
+    <link rel="icon" type="image/png" href="assets/beacon-logo.png" />
+    <link rel="shortcut icon" href="assets/beacon-logo.png" />
     <meta name="theme-color" content="#000000" />
     <style>
       html, body {
@@ -27,5 +27,19 @@
       }
     </style>
   </head>
-  <body></body>
+  <body>
+    <nav class="site-taskbar" aria-label="Beacon navigation">
+      <a class="taskbar-brand" href="/" aria-label="Sparkle home">
+        <span class="taskbar-logo"><img src="assets/beacon-logo.png" alt="" /></span>
+        <span class="taskbar-name">Sparkle</span>
+      </a>
+
+      <div class="taskbar-links">
+        <a class="taskbar-link is-active" href="/">Home</a>
+        <a class="taskbar-link" href="/dashboard">Dashboard</a>
+        <a class="taskbar-link" href="/api/discord-stats">Live Stats</a>
+        <a class="taskbar-link taskbar-link--accent" href="https://discord.com" target="_blank" rel="noreferrer">Discord</a>
+      </div>
+    </nav>
+  </body>
 </html>
