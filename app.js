@@ -1,392 +1,206 @@
-const revealElements = Array.from(document.querySelectorAll("[data-reveal]"));
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-function setHeroHover(event) {
-  const root = document.documentElement;
-  const rect = heroPanel.getBoundingClientRect();
-  const x = ((event.clientX - rect.left) / rect.width - 0.5) * 0.6;
-  const y = ((event.clientY - rect.top) / rect.height - 0.5) * 0.4;
-  root.style.setProperty("--hero-tilt-x", `${y}deg`);
-  root.style.setProperty("--hero-tilt-y", `${x}deg`);
-}
-
-function resetHeroTilt() {
-  document.documentElement.style.setProperty("--hero-tilt-x", "0deg");
-  document.documentElement.style.setProperty("--hero-tilt-y", "0deg");
-}
-
-function revealOnScroll() {
-  const triggerPoint = window.innerHeight * 0.9;
-  revealElements.forEach((element) => {
-    const rect = element.getBoundingClientRect();
-    if (rect.top < triggerPoint) {
-      element.classList.add("revealed");
-    }
-  });
-}
-
-const heroPanel = document.querySelector(".hero-panel");
-const addButton = document.querySelector(".js-add");
-const dashboardButton = document.querySelector(".js-dashboard");
-const menuToggle = document.querySelector(".js-menu-toggle");
-const mobileNav = document.querySelector(".js-mobile-nav");
-const navLinks = document.querySelectorAll(".js-nav-link");
+const revealElements = [...document.querySelectorAll("[data-reveal]")];
 const languageMenu = document.querySelector(".language-menu");
-const languageOptions = document.querySelectorAll("[data-lang]");
+const languageOptions = [...document.querySelectorAll("[data-lang]")];
 const languageCode = document.querySelector(".language-current-code");
 const languageLabel = document.querySelector(".language-current-label");
 
 const translations = {
-  en: {
-    label: "English",
-    code: "US",
-    bot: "Beacon Bot",
-    support: "Support Server",
-    join: "Join our Discord",
-    help: "Help",
-    commands: "Commands",
-    status: "Status",
-    ping: "Ping",
-    prestige: "Beacon Prestige",
-    new: "New!",
-    add: "Add to Server",
-    login: "Login with Discord",
-  },
-  fr: {
-    label: "Francais",
-    code: "FR",
-    bot: "Bot Beacon",
-    support: "Serveur support",
-    join: "Rejoindre Discord",
-    help: "Aide",
-    commands: "Commandes",
-    status: "Statut",
-    ping: "Ping",
-    prestige: "Beacon Prestige",
-    new: "Nouveau!",
-    add: "Ajouter au serveur",
-    login: "Connexion Discord",
-  },
-  es: {
-    label: "Espanol",
-    code: "ES",
-    bot: "Bot Beacon",
-    support: "Servidor de soporte",
-    join: "Unete a Discord",
-    help: "Ayuda",
-    commands: "Comandos",
-    status: "Estado",
-    ping: "Ping",
-    prestige: "Beacon Prestige",
-    new: "Nuevo!",
-    add: "Agregar al servidor",
-    login: "Iniciar con Discord",
-  },
-  de: {
-    label: "Deutsch",
-    code: "DE",
-    bot: "Beacon Bot",
-    support: "Support Server",
-    join: "Join our Discord",
-    help: "Help",
-    commands: "Commands",
-    status: "Status",
-    ping: "Ping",
-    prestige: "Beacon Prestige",
-    new: "New!",
-    add: "Add to Server",
-    login: "Login with Discord",
-  },
-  tr: {
-    label: "Turkce",
-    code: "TR",
-    bot: "Beacon Bot",
-    support: "Destek sunucusu",
-    join: "Discord'a katil",
-    help: "Yardim",
-    commands: "Komutlar",
-    status: "Durum",
-    ping: "Ping",
-    prestige: "Beacon Prestige",
-    new: "Yeni!",
-    add: "Sunucuya ekle",
-    login: "Discord ile giris",
-  },
-  ar: {
-    label: "Arabic",
-    code: "SA",
-    bot: "Beacon Bot",
-    support: "Support Server",
-    join: "Join our Discord",
-    help: "Help",
-    commands: "Commands",
-    status: "Status",
-    ping: "Ping",
-    prestige: "Beacon Prestige",
-    new: "New!",
-    add: "Add to Server",
-    login: "Login with Discord",
-  },
-  pt: {
-    label: "Portugues",
-    code: "PT",
-    bot: "Bot Beacon",
-    support: "Servidor de suporte",
-    join: "Entrar no Discord",
-    help: "Ajuda",
-    commands: "Comandos",
-    status: "Status",
-    ping: "Ping",
-    prestige: "Beacon Prestige",
-    new: "Novo!",
-    add: "Adicionar ao servidor",
-    login: "Entrar com Discord",
-  },
-  "pt-BR": {
-    label: "Portugues (BR)",
-    code: "BR",
-    bot: "Bot Beacon",
-    support: "Servidor de suporte",
-    join: "Entrar no Discord",
-    help: "Ajuda",
-    commands: "Comandos",
-    status: "Status",
-    ping: "Ping",
-    prestige: "Beacon Prestige",
-    new: "Novo!",
-    add: "Adicionar ao servidor",
-    login: "Entrar com Discord",
-  },
-  it: {
-    label: "Italiano",
-    code: "IT",
-    bot: "Bot Beacon",
-    support: "Server supporto",
-    join: "Unisciti a Discord",
-    help: "Aiuto",
-    commands: "Comandi",
-    status: "Stato",
-    ping: "Ping",
-    prestige: "Beacon Prestige",
-    new: "Nuovo!",
-    add: "Aggiungi al server",
-    login: "Accedi con Discord",
-  },
-  nl: {
-    label: "Nederlands",
-    code: "NL",
-    bot: "Beacon Bot",
-    support: "Supportserver",
-    join: "Word lid van Discord",
-    help: "Help",
-    commands: "Commands",
-    status: "Status",
-    ping: "Ping",
-    prestige: "Beacon Prestige",
-    new: "Nieuw!",
-    add: "Toevoegen aan server",
-    login: "Login met Discord",
-  },
+  en: { label: "English", code: "US", bot: "Beacon Bot", support: "Support Server", join: "Join our Discord", help: "Help", commands: "Commands", status: "Status", ping: "Ping", prestige: "Beacon Prestige", new: "New!", add: "Add to Server", login: "Login with Discord", eyebrow: "The ultimate server growth bot", heroLineOne: "Grow your server.", heroLineTwo: "Empower your community.", heroDescription: "Beacon is an all-in-one Discord bot built to help you grow, manage, and engage your server with powerful tools and an easy-to-use dashboard.", checkOne: "Ticket System", checkTwo: "Auto Responder", checkThree: "Sticky Notes", checkFour: "Server Statistics", checkFive: "/Say Command", checkSix: "And much more...", heroAdd: "Add to Server", heroLogin: "Login with Discord", docs: "View Docs", heroNote: "Trusted by growing communities everywhere", livePreview: "Live dashboard preview", builtFor: "Built for your next level", liveStatus: "Live system status", statServers: "Servers connected", statUsers: "Members reached", statPing: "Average ping", statUptime: "Always available", featureOverline: "Everything in one place", featureTitle: "Your community,\nin its element.", featureDescription: "Powerful automation, effortless moderation, and the clarity to make better decisions for your server.", featureOneTitle: "Automate the busywork", featureOneCopy: "Let Beacon handle repetitive tasks while you focus on the people who make your community special.", featureTwoTitle: "See what matters", featureTwoCopy: "Real-time server statistics and clean insights, right when you need them.", featureThreeTitle: "Make it yours", featureThreeCopy: "Flexible commands and thoughtful tools that fit the way your server works.", learnMore: "Explore feature", finalOverline: "Ready when you are", finalTitle: "Give your server\nthe Beacon treatment.", footer: "Built for communities with ambition." },
+  fr: { label: "Francais", code: "FR", bot: "Bot Beacon", support: "Serveur support", join: "Rejoindre Discord", help: "Aide", commands: "Commandes", status: "Statut", ping: "Ping", prestige: "Beacon Prestige", new: "Nouveau!", add: "Ajouter au serveur", login: "Connexion Discord", eyebrow: "Le bot ultime pour votre serveur", heroLineOne: "Faites grandir votre serveur.", heroLineTwo: "Renforcez votre communaute.", heroDescription: "Beacon est un bot Discord complet pour developper, gerer et engager votre serveur avec des outils puissants.", checkOne: "Systeme de tickets", checkTwo: "Repondeur automatique", checkThree: "Notes epinglees", checkFour: "Statistiques serveur", checkFive: "/Say Command", checkSix: "Et bien plus...", heroAdd: "Ajouter au serveur", heroLogin: "Connexion Discord", docs: "Voir la documentation", heroNote: "Adopte par des communautes en croissance", livePreview: "Apercu du tableau de bord", builtFor: "Pour votre prochaine etape", liveStatus: "Etat du systeme", statServers: "Serveurs connectes", statUsers: "Membres atteints", statPing: "Ping moyen", statUptime: "Toujours disponible", featureOverline: "Tout au meme endroit", featureTitle: "Votre communaute,\na son meilleur.", featureDescription: "Automatisation puissante, moderation simple et informations claires pour votre serveur.", featureOneTitle: "Automatisez le travail", featureOneCopy: "Beacon gere les taches repetitives pendant que vous vous concentrez sur votre communaute.", featureTwoTitle: "Voyez l'essentiel", featureTwoCopy: "Des statistiques en temps reel et des informations claires au bon moment.", featureThreeTitle: "Faites-le votre", featureThreeCopy: "Des commandes flexibles qui s'adaptent a votre serveur.", learnMore: "Decouvrir", finalOverline: "Pret quand vous l'etes", finalTitle: "Offrez a votre serveur\nle traitement Beacon.", footer: "Concu pour les communautes ambitieuses." },
+  es: { label: "Espanol", code: "ES", bot: "Bot Beacon", support: "Servidor de soporte", join: "Unete a Discord", help: "Ayuda", commands: "Comandos", status: "Estado", ping: "Ping", prestige: "Beacon Prestige", new: "Nuevo!", add: "Agregar al servidor", login: "Iniciar con Discord", eyebrow: "El bot definitivo para crecer", heroLineOne: "Haz crecer tu servidor.", heroLineTwo: "Impulsa tu comunidad.", heroDescription: "Beacon es un bot de Discord todo en uno para hacer crecer, gestionar y conectar tu servidor.", checkOne: "Sistema de tickets", checkTwo: "Respuesta automatica", checkThree: "Notas fijadas", checkFour: "Estadisticas", checkFive: "/Say Command", checkSix: "Y mucho mas...", heroAdd: "Agregar al servidor", heroLogin: "Iniciar con Discord", docs: "Ver documentos", heroNote: "Comunidades en crecimiento confian en Beacon", livePreview: "Vista previa en vivo", builtFor: "Creado para tu siguiente nivel", liveStatus: "Estado en vivo", statServers: "Servidores conectados", statUsers: "Miembros alcanzados", statPing: "Ping promedio", statUptime: "Siempre disponible", featureOverline: "Todo en un solo lugar", featureTitle: "Tu comunidad,\nen su elemento.", featureDescription: "Automatizacion potente, moderacion sencilla y claridad para decidir mejor.", featureOneTitle: "Automatiza lo repetitivo", featureOneCopy: "Deja que Beacon se encargue de las tareas repetitivas.", featureTwoTitle: "Mira lo importante", featureTwoCopy: "Estadisticas en tiempo real cuando las necesitas.", featureThreeTitle: "Hazlo tuyo", featureThreeCopy: "Comandos flexibles para la forma en que funciona tu servidor.", learnMore: "Explorar", finalOverline: "Listo cuando tu quieras", finalTitle: "Dale a tu servidor\nel tratamiento Beacon.", footer: "Creado para comunidades ambiciosas." },
+  de: { label: "Deutsch", code: "DE", bot: "Beacon Bot", support: "Support Server", join: "Join our Discord", help: "Help", commands: "Commands", status: "Status", ping: "Ping", prestige: "Beacon Prestige", new: "New!", add: "Add to Server", login: "Login with Discord", eyebrow: "Der ultimative Server-Growth-Bot", heroLineOne: "Grow deinen Server.", heroLineTwo: "Staerke deine Community.", heroDescription: "Beacon hilft dir, deinen Discord-Server mit starken Tools aufzubauen, zu verwalten und zu verbinden.", checkOne: "Ticket-System", checkTwo: "Auto-Responder", checkThree: "Sticky Notes", checkFour: "Server-Statistiken", checkFive: "/Say Command", checkSix: "Und vieles mehr...", heroAdd: "Add to Server", heroLogin: "Login with Discord", docs: "View Docs", heroNote: "Von wachsenden Communities genutzt", livePreview: "Live-Dashboard-Vorschau", builtFor: "Fuer dein naechstes Level", liveStatus: "Live-Systemstatus", statServers: "Server verbunden", statUsers: "Mitglieder erreicht", statPing: "Durchschnittlicher Ping", statUptime: "Immer verfuegbar", featureOverline: "Alles an einem Ort", featureTitle: "Deine Community,\nin ihrem Element.", featureDescription: "Starke Automatisierung, einfache Moderation und klare Einblicke fuer bessere Entscheidungen.", featureOneTitle: "Routine automatisieren", featureOneCopy: "Beacon uebernimmt wiederkehrende Aufgaben, damit du dich auf deine Community konzentrieren kannst.", featureTwoTitle: "Das Wichtige sehen", featureTwoCopy: "Echtzeit-Statistiken und klare Einblicke, genau dann, wenn du sie brauchst.", featureThreeTitle: "Mach es zu deinem", featureThreeCopy: "Flexible Commands und Tools, die zu deinem Server passen.", learnMore: "Feature ansehen", finalOverline: "Bereit, wenn du es bist", finalTitle: "Gib deinem Server\nden Beacon-Touch.", footer: "Fuer Communities mit Ambition gebaut." },
+  tr: { label: "Turkce", code: "TR", bot: "Beacon Bot", support: "Destek sunucusu", join: "Discord'a katil", help: "Yardim", commands: "Komutlar", status: "Durum", ping: "Ping", prestige: "Beacon Prestige", new: "Yeni!", add: "Sunucuya ekle", login: "Discord ile giris", eyebrow: "Sunucular icin guc", heroLineOne: "Sunucunu buyut.", heroLineTwo: "Toplulugunu guclendir.", heroDescription: "Beacon, Discord sunucunu buyutmek, yonetmek ve toplulugunla etkilesim kurmak icin hepsi bir arada bir bottur.", checkOne: "Bilet sistemi", checkTwo: "Otomatik yanit", checkThree: "Sabit notlar", checkFour: "Sunucu istatistikleri", checkFive: "/Say Komutu", checkSix: "Ve cok daha fazlasi...", heroAdd: "Sunucuya ekle", heroLogin: "Discord ile giris", docs: "Belgeleri gor", heroNote: "Buyuyen topluluklar tarafindan kullaniliyor", livePreview: "Canli panel onizlemesi", builtFor: "Bir sonraki seviyen icin", liveStatus: "Canli sistem durumu", statServers: "Bagli sunucular", statUsers: "Ulasilan uyeler", statPing: "Ortalama ping", statUptime: "Her zaman aktif", featureOverline: "Her sey tek yerde", featureTitle: "Toplulugun,\nen iyi halinde.", featureDescription: "Guclu otomasyon, kolay moderasyon ve daha iyi kararlar icin net bilgiler.", featureOneTitle: "Tekrari otomatiklestir", featureOneCopy: "Beacon tekrar eden isleri ustlenirken sen topluluguna odaklan.", featureTwoTitle: "Onemli olanı gor", featureTwoCopy: "Ihtiyacin oldugunda gercek zamanli istatistikler.", featureThreeTitle: "Kendine gore yap", featureThreeCopy: "Sunucunun calisma sekline uyan esnek komutlar.", learnMore: "Incele", finalOverline: "Hazir oldugunda", finalTitle: "Sunucuna\nBeacon dokunusu kat.", footer: "Hedefleri olan topluluklar icin." },
+  ar: { label: "Arabic", code: "SA", bot: "Beacon Bot", support: "Support Server", join: "Join our Discord", help: "Help", commands: "Commands", status: "Status", ping: "Ping", prestige: "Beacon Prestige", new: "New!", add: "Add to Server", login: "Login with Discord", eyebrow: "The ultimate server growth bot", heroLineOne: "Grow your server.", heroLineTwo: "Empower your community.", heroDescription: "Beacon is an all-in-one Discord bot built to help you grow, manage, and engage your server.", checkOne: "Ticket System", checkTwo: "Auto Responder", checkThree: "Sticky Notes", checkFour: "Server Statistics", checkFive: "/Say Command", checkSix: "And much more...", heroAdd: "Add to Server", heroLogin: "Login with Discord", docs: "View Docs", heroNote: "Trusted by growing communities everywhere", livePreview: "Live dashboard preview", builtFor: "Built for your next level", liveStatus: "Live system status", statServers: "Servers connected", statUsers: "Members reached", statPing: "Average ping", statUptime: "Always available", featureOverline: "Everything in one place", featureTitle: "Your community,\nin its element.", featureDescription: "Powerful automation and clear insights for your server.", featureOneTitle: "Automate the busywork", featureOneCopy: "Let Beacon handle repetitive tasks.", featureTwoTitle: "See what matters", featureTwoCopy: "Real-time server statistics when you need them.", featureThreeTitle: "Make it yours", featureThreeCopy: "Flexible commands for your server.", learnMore: "Explore feature", finalOverline: "Ready when you are", finalTitle: "Give your server\nthe Beacon treatment.", footer: "Built for ambitious communities." },
+  pt: { label: "Portugues", code: "PT", bot: "Bot Beacon", support: "Servidor de suporte", join: "Entrar no Discord", help: "Ajuda", commands: "Comandos", status: "Status", ping: "Ping", prestige: "Beacon Prestige", new: "Novo!", add: "Adicionar ao servidor", login: "Entrar com Discord", eyebrow: "O bot definitivo para crescer", heroLineOne: "Faca seu servidor crescer.", heroLineTwo: "Fortaleca sua comunidade.", heroDescription: "Beacon e um bot Discord completo para ajudar voce a crescer, gerenciar e envolver seu servidor.", checkOne: "Sistema de tickets", checkTwo: "Resposta automatica", checkThree: "Notas fixadas", checkFour: "Estatisticas do servidor", checkFive: "/Say Command", checkSix: "E muito mais...", heroAdd: "Adicionar ao servidor", heroLogin: "Entrar com Discord", docs: "Ver documentos", heroNote: "Confiado por comunidades em crescimento", livePreview: "Previa do painel ao vivo", builtFor: "Feito para seu proximo nivel", liveStatus: "Status do sistema", statServers: "Servidores conectados", statUsers: "Membros alcancados", statPing: "Ping medio", statUptime: "Sempre disponivel", featureOverline: "Tudo em um so lugar", featureTitle: "Sua comunidade,\nem seu elemento.", featureDescription: "Automacao poderosa, moderacao simples e clareza para decidir melhor.", featureOneTitle: "Automatize o trabalho", featureOneCopy: "Deixe o Beacon cuidar das tarefas repetitivas.", featureTwoTitle: "Veja o que importa", featureTwoCopy: "Estatisticas em tempo real quando precisar.", featureThreeTitle: "Deixe com a sua cara", featureThreeCopy: "Comandos flexiveis para seu servidor.", learnMore: "Explorar", finalOverline: "Pronto quando voce estiver", finalTitle: "De ao seu servidor\no toque Beacon.", footer: "Feito para comunidades ambiciosas." },
+  "pt-BR": { label: "Portugues (BR)", code: "BR", bot: "Bot Beacon", support: "Servidor de suporte", join: "Entrar no Discord", help: "Ajuda", commands: "Comandos", status: "Status", ping: "Ping", prestige: "Beacon Prestige", new: "Novo!", add: "Adicionar ao servidor", login: "Entrar com Discord", eyebrow: "O bot definitivo para crescer", heroLineOne: "Faca seu servidor crescer.", heroLineTwo: "Fortaleca sua comunidade.", heroDescription: "Beacon e um bot Discord completo para ajudar voce a crescer, gerenciar e envolver seu servidor.", checkOne: "Sistema de tickets", checkTwo: "Resposta automatica", checkThree: "Notas fixadas", checkFour: "Estatisticas do servidor", checkFive: "/Say Command", checkSix: "E muito mais...", heroAdd: "Adicionar ao servidor", heroLogin: "Entrar com Discord", docs: "Ver documentos", heroNote: "Confiado por comunidades em crescimento", livePreview: "Previa do painel ao vivo", builtFor: "Feito para seu proximo nivel", liveStatus: "Status do sistema", statServers: "Servidores conectados", statUsers: "Membros alcancados", statPing: "Ping medio", statUptime: "Sempre disponivel", featureOverline: "Tudo em um so lugar", featureTitle: "Sua comunidade,\nem seu elemento.", featureDescription: "Automacao poderosa, moderacao simples e clareza para decidir melhor.", featureOneTitle: "Automatize o trabalho", featureOneCopy: "Deixe o Beacon cuidar das tarefas repetitivas.", featureTwoTitle: "Veja o que importa", featureTwoCopy: "Estatisticas em tempo real quando precisar.", featureThreeTitle: "Deixe com a sua cara", featureThreeCopy: "Comandos flexiveis para seu servidor.", learnMore: "Explorar", finalOverline: "Pronto quando voce estiver", finalTitle: "De ao seu servidor\no toque Beacon.", footer: "Feito para comunidades ambiciosas." },
+  it: { label: "Italiano", code: "IT", bot: "Bot Beacon", support: "Server supporto", join: "Unisciti a Discord", help: "Aiuto", commands: "Comandi", status: "Stato", ping: "Ping", prestige: "Beacon Prestige", new: "Nuovo!", add: "Aggiungi al server", login: "Accedi con Discord", eyebrow: "Il bot definitivo per il tuo server", heroLineOne: "Fai crescere il tuo server.", heroLineTwo: "Potenzia la tua community.", heroDescription: "Beacon e un bot Discord completo per far crescere, gestire e coinvolgere il tuo server.", checkOne: "Sistema ticket", checkTwo: "Risposta automatica", checkThree: "Note fissate", checkFour: "Statistiche server", checkFive: "/Say Command", checkSix: "E molto altro...", heroAdd: "Aggiungi al server", heroLogin: "Accedi con Discord", docs: "Vedi documenti", heroNote: "Scelto da community in crescita", livePreview: "Anteprima dashboard live", builtFor: "Per il tuo prossimo livello", liveStatus: "Stato del sistema", statServers: "Server collegati", statUsers: "Membri raggiunti", statPing: "Ping medio", statUptime: "Sempre disponibile", featureOverline: "Tutto in un unico posto", featureTitle: "La tua community,\nal meglio.", featureDescription: "Automazione potente e dati chiari per gestire meglio il tuo server.", featureOneTitle: "Automatizza il lavoro", featureOneCopy: "Lascia a Beacon le attivita ripetitive.", featureTwoTitle: "Vedi cio che conta", featureTwoCopy: "Statistiche in tempo reale quando servono.", featureThreeTitle: "Rendilo tuo", featureThreeCopy: "Comandi flessibili per il tuo server.", learnMore: "Esplora", finalOverline: "Pronto quando vuoi", finalTitle: "Dai al tuo server\nil tocco Beacon.", footer: "Creato per community ambiziose." },
+  nl: { label: "Nederlands", code: "NL", bot: "Beacon Bot", support: "Supportserver", join: "Word lid van Discord", help: "Help", commands: "Commands", status: "Status", ping: "Ping", prestige: "Beacon Prestige", new: "Nieuw!", add: "Toevoegen aan server", login: "Login met Discord", eyebrow: "De ultieme bot voor servergroei", heroLineOne: "Laat je server groeien.", heroLineTwo: "Versterk je community.", heroDescription: "Beacon is een complete Discord-bot om je server te laten groeien, beheren en verbinden.", checkOne: "Ticketsysteem", checkTwo: "Auto responder", checkThree: "Vastgezette notities", checkFour: "Serverstatistieken", checkFive: "/Say Command", checkSix: "En nog veel meer...", heroAdd: "Toevoegen aan server", heroLogin: "Login met Discord", docs: "Bekijk docs", heroNote: "Vertrouwd door groeiende communities", livePreview: "Live dashboard preview", builtFor: "Voor je volgende niveau", liveStatus: "Live systeemstatus", statServers: "Servers verbonden", statUsers: "Leden bereikt", statPing: "Gemiddelde ping", statUptime: "Altijd beschikbaar", featureOverline: "Alles op een plek", featureTitle: "Jouw community,\nin haar element.", featureDescription: "Krachtige automatisering, eenvoudige moderatie en heldere inzichten.", featureOneTitle: "Automatiseer werk", featureOneCopy: "Laat Beacon terugkerende taken afhandelen.", featureTwoTitle: "Zie wat telt", featureTwoCopy: "Realtime serverstatistieken wanneer je ze nodig hebt.", featureThreeTitle: "Maak het eigen", featureThreeCopy: "Flexibele commands voor jouw server.", learnMore: "Ontdek", finalOverline: "Klaar wanneer jij dat bent", finalTitle: "Geef je server\nde Beacon-touch.", footer: "Gebouwd voor ambitieuze communities." }
 };
 
 function setLanguage(language) {
   const dictionary = translations[language] || translations.de;
   document.documentElement.lang = language;
   document.querySelectorAll("[data-i18n]").forEach((element) => {
-    const key = element.dataset.i18n;
-    element.textContent = dictionary[key] || translations.de[key] || element.textContent;
+    const value = dictionary[element.dataset.i18n];
+    if (value) element.textContent = value;
   });
   if (languageCode) languageCode.textContent = dictionary.code;
-  if (languageLabel) languageLabel.textContent = dictionary.code;
-  languageOptions.forEach((option) => {
-    option.classList.toggle("is-selected", option.dataset.lang === language);
-  });
-  localStorage.setItem("beacon-language", language);
+  if (languageLabel) languageLabel.textContent = dictionary.label;
+  languageOptions.forEach((option) => option.classList.toggle("is-selected", option.dataset.lang === language));
+  try { localStorage.setItem("beacon-language", language); } catch (_) { /* private browsing can block storage */ }
 }
 
-languageOptions.forEach((option) => {
-  option.addEventListener("click", (event) => {
-    event.preventDefault();
-    setLanguage(option.dataset.lang);
-    if (languageMenu) languageMenu.removeAttribute("open");
-  });
-});
+languageOptions.forEach((option) => option.addEventListener("click", (event) => {
+  event.preventDefault();
+  setLanguage(option.dataset.lang);
+  languageMenu?.removeAttribute("open");
+}));
 
-setLanguage(localStorage.getItem("beacon-language") || "de");
+let savedLanguage = "de";
+try { savedLanguage = localStorage.getItem("beacon-language") || "de"; } catch (_) {}
+setLanguage(savedLanguage);
 
-if (menuToggle && mobileNav) {
-  menuToggle.addEventListener("click", () => {
-    mobileNav.classList.toggle("open");
-    menuToggle.setAttribute("aria-expanded", mobileNav.classList.contains("open") ? "true" : "false");
+function revealOnScroll() {
+  revealElements.forEach((element) => {
+    if (element.getBoundingClientRect().top < window.innerHeight * .88) element.classList.add("revealed");
   });
 }
-
-navLinks.forEach((link) => {
-  link.addEventListener("click", () => {
-    if (mobileNav && mobileNav.classList.contains("open")) {
-      mobileNav.classList.remove("open");
-      menuToggle.setAttribute("aria-expanded", "false");
-    }
-  });
-});
-
-if (heroPanel && !reduceMotion) {
-  heroPanel.addEventListener("mousemove", setHeroHover);
-  heroPanel.addEventListener("mouseleave", resetHeroTilt);
-}
-
-function defaultText() {
-  return "—";
-}
-
-function setStats(stats) {
-  const values = [
-    stats?.guilds,
-    stats?.users,
-    stats?.ping,
-    stats?.uptime,
-  ];
-
-  document.querySelectorAll(".stat-card strong").forEach((element, index) => {
-    const value = values[index];
-    element.textContent = Number.isFinite(value) ? value.toLocaleString() : defaultText();
-  });
-}
-
-function fetchStats() {
-  if (!window.fetch) return;
-  fetch("/api/discord-stats")
-    .then((response) => response.json())
-    .then((data) => {
-      if (!data || data.error) return;
-      setStats(data);
-      document.querySelectorAll(".stat-copy").forEach((element, index) => {
-        const text = [
-          "Live servers connected.",
-          "Visible member total.",
-          "Current gateway ping.",
-          "Uptime since last restart.",
-        ][index];
-        element.textContent = text;
-      });
-    })
-    .catch(() => {});
-}
-
-window.addEventListener("scroll", revealOnScroll);
+window.addEventListener("scroll", revealOnScroll, { passive: true });
 window.addEventListener("resize", revealOnScroll);
-window.addEventListener("load", () => {
-  revealOnScroll();
-  fetchStats();
-});
+window.addEventListener("load", revealOnScroll);
 
-const heroCanvas = document.querySelector(".hero-panel__stage");
-const modelPath = "assets/sparkle_beacon.glb";
+function makeDashboardTexture(THREE) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1200;
+  canvas.height = 720;
+  const context = canvas.getContext("2d");
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  function roundRect(x, y, width, height, radius, fill, stroke) {
+    context.beginPath();
+    context.roundRect(x, y, width, height, radius);
+    if (fill) { context.fillStyle = fill; context.fill(); }
+    if (stroke) { context.strokeStyle = stroke; context.stroke(); }
+  }
+  function text(value, x, y, size, color, weight = "500", align = "left") {
+    context.fillStyle = color;
+    context.font = `${weight} ${size}px Arial, sans-serif`;
+    context.textAlign = align;
+    context.fillText(value, x, y);
+  }
+  function draw(time) {
+    const pulse = Math.sin(time * .0017) * 2;
+    context.fillStyle = "#111514";
+    context.fillRect(0, 0, 1200, 720);
+    context.fillStyle = "#0a0d0d";
+    context.fillRect(0, 0, 208, 720);
+    context.strokeStyle = "rgba(255,255,255,.07)";
+    context.beginPath(); context.moveTo(208, 0); context.lineTo(208, 720); context.stroke();
+    context.fillStyle = "#ffc31c";
+    context.beginPath(); context.arc(39, 47, 12, 0, Math.PI * 2); context.fill();
+    text("BEACON", 62, 54, 22, "#f6f3ea", "700");
+    text("COMMUNITY OS", 62, 74, 8, "#777f78", "600");
+    const nav = ["Dashboard", "Tickets", "Automation", "Analytics", "Settings"];
+    nav.forEach((label, index) => {
+      const y = 145 + index * 48;
+      if (index === 0) roundRect(20, y - 24, 168, 38, 7, "rgba(255,195,28,.16)");
+      context.fillStyle = index === 0 ? "#ffc31c" : "#7f8881";
+      context.beginPath(); context.arc(40, y - 4, 4, 0, Math.PI * 2); context.fill();
+      text(label, 57, y, 14, index === 0 ? "#ffc31c" : "#a5aba6", "600");
+    });
+    text("BEACON PRESTIGE", 28, 650, 9, "#ffc31c", "700");
+    text("Your server is glowing.", 28, 669, 11, "#68716b");
+    text("Good evening, Agent", 248, 42, 13, "#7d8780");
+    text("Overview", 248, 78, 30, "#f4f3eb", "700");
+    roundRect(1004, 25, 145, 39, 7, "#1a201e");
+    context.fillStyle = "#72d391"; context.beginPath(); context.arc(1025, 44, 5, 0, Math.PI * 2); context.fill();
+    text("All systems live", 1038, 49, 11, "#b6c1b8", "600");
+    const metrics = [["1,542", "SERVERS", "+12 this week"], ["98,421", "MEMBERS", "+842 this week"], ["23ms", "PING", "Excellent"], ["99.9%", "UPTIME", "Operational"]];
+    metrics.forEach((metric, index) => {
+      const x = 248 + index * 225;
+      roundRect(x, 110, 207, 115, 9, "#171c1a", "rgba(255,255,255,.07)");
+      text(metric[1], x + 18, 139, 10, "#7e8880", "700");
+      text(metric[0], x + 18, 180, 28, "#f1f0e9", "700");
+      text(metric[2], x + 18, 204, 10, index > 1 ? "#72d391" : "#ffc31c", "600");
+    });
+    roundRect(248, 251, 432, 265, 9, "#171c1a", "rgba(255,255,255,.07)");
+    text("SERVER ACTIVITY", 270, 280, 11, "#ffc31c", "700");
+    text("last 7 days", 655, 280, 10, "#68716b", "600", "right");
+    context.strokeStyle = "rgba(255,255,255,.08)";
+    for (let i = 0; i < 4; i++) { context.beginPath(); context.moveTo(275, 325 + i * 43); context.lineTo(650, 325 + i * 43); context.stroke(); }
+    context.beginPath(); context.moveTo(275, 454); context.bezierCurveTo(330, 429 + pulse, 350, 447, 390, 405); context.bezierCurveTo(433, 359, 447, 427, 486, 382); context.bezierCurveTo(530, 336, 555, 383, 595, 345); context.bezierCurveTo(620, 324, 638, 350, 650, 323); context.strokeStyle = "#ffc31c"; context.lineWidth = 4; context.stroke(); context.lineWidth = 1;
+    context.fillStyle = "#ffc31c"; context.beginPath(); context.arc(650, 323, 5, 0, Math.PI * 2); context.fill();
+    const boxes = [[700, 251, 213, 126, "RECENT TICKETS"], [930, 251, 218, 126, "AUTO RESPONDER"], [700, 390, 213, 126, "STICKY NOTES"], [930, 390, 218, 126, "SERVER ACTIVITY"]];
+    boxes.forEach(([x, y, w, h, label], boxIndex) => {
+      roundRect(x, y, w, h, 9, "#171c1a", "rgba(255,255,255,.07)");
+      text(label, x + 17, y + 29, 10, "#ffc31c", "700");
+      for (let row = 0; row < 3; row++) {
+        const rowY = y + 55 + row * 20;
+        context.fillStyle = boxIndex === 1 ? "#ffc31c" : row === 1 ? "#72d391" : "#59645c";
+        context.beginPath(); context.arc(x + 20, rowY - 3, 4, 0, Math.PI * 2); context.fill();
+        text(["User feedback", "Role request", "Welcome message"][row], x + 34, rowY, 10, "#c1c7c0", "600");
+      }
+    });
+    text("Beacon Intelligence / Live", 248, 570, 10, "#68716b", "600");
+    context.fillStyle = "rgba(255,195,28,.1)"; context.fillRect(248, 590, 900, 1);
+    text("Turn activity into momentum.", 248, 624, 18, "#d8dbd2", "600");
+    texture.needsUpdate = true;
+  }
+  return { texture, draw };
+}
 
-if (heroCanvas && !reduceMotion) {
-  import("https://unpkg.com/three@0.166.1/build/three.module.js").then((THREE) => {
-    return Promise.all([
-      THREE,
-      import("https://unpkg.com/three@0.166.1/examples/jsm/controls/OrbitControls.js"),
-      import("https://unpkg.com/three@0.166.1/examples/jsm/loaders/GLTFLoader.js"),
-    ]);
-  }).then(([THREE, { OrbitControls }, { GLTFLoader }]) => {
+async function initThreeLaptop() {
+  const stage = document.querySelector(".hero-stage");
+  if (!stage || reduceMotion) return;
+  try {
+    const THREE = await import("https://unpkg.com/three@0.166.1/build/three.module.js");
+    const { RoundedBoxGeometry } = await import("https://unpkg.com/three@0.166.1/examples/jsm/geometries/RoundedBoxGeometry.js");
     const scene = new THREE.Scene();
-    scene.background = null;
-
-    const camera = new THREE.PerspectiveCamera(35, heroCanvas.clientWidth / heroCanvas.clientHeight, 0.15, 100);
-    camera.position.set(3.4, 2.4, 5.5);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const camera = new THREE.PerspectiveCamera(31, stage.clientWidth / stage.clientHeight, .1, 100);
+    camera.position.set(0, .45, 10.6);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(heroCanvas.clientWidth, heroCanvas.clientHeight);
+    renderer.setSize(stage.clientWidth, stage.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.75;
-    heroCanvas.appendChild(renderer.domElement);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.enableZoom = false;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.6;
-    controls.enablePan = false;
-    controls.minDistance = 4.2;
-    controls.maxDistance = 7.5;
-    controls.target.set(0, 1.1, 0);
-
-    const ambience = new THREE.HemisphereLight(0xffcfa3, 0x111111, 0.7);
-    scene.add(ambience);
-
-    const keyLight = new THREE.DirectionalLight(0xffb063, 1.8);
-    keyLight.position.set(3.6, 4.8, 3.5);
-    scene.add(keyLight);
-
-    const fillLight = new THREE.DirectionalLight(0x4d3e2f, 0.65);
-    fillLight.position.set(-4, 1.8, -2.5);
-    scene.add(fillLight);
-
-    const rimLight = new THREE.PointLight(0xff9f22, 0.65, 10);
-    rimLight.position.set(-1.4, 3.5, 4.5);
-    scene.add(rimLight);
-
-    const floor = new THREE.Mesh(
-      new THREE.CircleGeometry(3.2, 80),
-      new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.65, metalness: 0.18, transparent: true, opacity: 0.8 })
-    );
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.05;
-    scene.add(floor);
-
-    const glow = new THREE.Mesh(
-      new THREE.RingGeometry(1.35, 2.7, 64),
-      new THREE.MeshBasicMaterial({ color: 0xffa845, transparent: true, opacity: 0.12, side: THREE.DoubleSide })
-    );
-    glow.rotation.x = -Math.PI / 2;
-    glow.position.y = 0.01;
-    scene.add(glow);
-
-    const beaconRoot = new THREE.Group();
-    beaconRoot.rotation.y = Math.PI * 0.08;
-    scene.add(beaconRoot);
-
-    const loader = new GLTFLoader();
-    loader.load(modelPath, (gltf) => {
-      const model = gltf.scene;
-      model.traverse((node) => {
-        if (node.isMesh) {
-          node.material = node.material.clone();
-          node.material.metalness = 0.35;
-          node.material.roughness = 0.3;
-          node.material.emissive = new THREE.Color(0xff8b29);
-          node.material.emissiveIntensity = 0.18;
-          node.material.color = new THREE.Color(0x161616);
-        }
-      });
-      beaconRoot.add(model);
-    });
-
-    const tick = () => {
-      requestAnimationFrame(tick);
-      controls.update();
-      beaconRoot.rotation.y += 0.0014;
+    renderer.toneMappingExposure = 1.12;
+    stage.appendChild(renderer.domElement);
+    scene.add(new THREE.HemisphereLight(0xfceac1, 0x090b0b, 1.8));
+    const key = new THREE.DirectionalLight(0xffc02c, 4.5); key.position.set(-4, 6, 7); scene.add(key);
+    const rim = new THREE.PointLight(0xffa916, 11, 15); rim.position.set(4, 1, 3); scene.add(rim);
+    const fill = new THREE.PointLight(0xffe5a1, 4, 16); fill.position.set(-4, 0, 4); scene.add(fill);
+    const laptop = new THREE.Group(); laptop.rotation.y = -.18; laptop.rotation.x = -.03; scene.add(laptop);
+    const black = new THREE.MeshStandardMaterial({ color: 0x101313, roughness: .25, metalness: .78 });
+    const edge = new THREE.MeshStandardMaterial({ color: 0x2a2e2b, roughness: .23, metalness: .65 });
+    const yellow = new THREE.MeshStandardMaterial({ color: 0xffbd16, roughness: .27, metalness: .55, emissive: 0x8c5d00, emissiveIntensity: .23 });
+    const screenBezel = new THREE.Mesh(new RoundedBoxGeometry(6.5, 4.25, .27, .18, 6), black);
+    screenBezel.position.set(0, 1.28, -.85); laptop.add(screenBezel);
+    const screenCanvas = makeDashboardTexture(THREE);
+    const display = new THREE.Mesh(new RoundedBoxGeometry(6.08, 3.67, .035, .08, 5), new THREE.MeshStandardMaterial({ map: screenCanvas.texture, roughness: .32, metalness: .08, emissive: 0x382c09, emissiveIntensity: .08 }));
+    display.position.set(0, 1.27, -.68); laptop.add(display);
+    const cameraDot = new THREE.Mesh(new THREE.SphereGeometry(.045, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffc31c })); cameraDot.position.set(0, 3.2, -.67); laptop.add(cameraDot);
+    const base = new THREE.Mesh(new RoundedBoxGeometry(7.15, .38, 4.1, .16, 8), edge); base.position.set(0, -1.05, .25); laptop.add(base);
+    const deck = new THREE.Mesh(new RoundedBoxGeometry(6.92, .08, 3.83, .05, 6), new THREE.MeshStandardMaterial({ color: 0x1a1e1c, roughness: .46, metalness: .48 })); deck.position.set(0, -.84, .2); laptop.add(deck);
+    const keyboard = new THREE.Group();
+    for (let row = 0; row < 5; row++) {
+      const count = row === 4 ? 7 : 11;
+      for (let col = 0; col < count; col++) {
+        const keycap = new THREE.Mesh(new RoundedBoxGeometry(row === 4 ? .62 : .43, .055, .22, .035, 2), new THREE.MeshStandardMaterial({ color: row === 0 ? 0x252a27 : 0x0d100f, roughness: .32, metalness: .4 }));
+        keycap.position.set((col - (count - 1) / 2) * (row === 4 ? .72 : .5), -.78, -.7 + row * .42); keyboard.add(keycap);
+      }
+    }
+    laptop.add(keyboard);
+    const trackpad = new THREE.Mesh(new RoundedBoxGeometry(1.55, .025, .98, .08, 4), new THREE.MeshStandardMaterial({ color: 0x262b28, roughness: .26, metalness: .5 })); trackpad.position.set(0, -.78, 1.27); laptop.add(trackpad);
+    const hinge = new THREE.Mesh(new THREE.CylinderGeometry(.14, .14, 5.3, 32), black); hinge.rotation.z = Math.PI / 2; hinge.position.set(0, -.77, -.77); laptop.add(hinge);
+    const logo = new THREE.Mesh(new THREE.OctahedronGeometry(.22, 0), yellow); logo.position.set(0, -.64, 2.05); logo.rotation.y = Math.PI / 4; laptop.add(logo);
+    const baseAccent = new THREE.Mesh(new THREE.BoxGeometry(2.6, .018, .018), yellow); baseAccent.position.set(0, -.845, 2.14); laptop.add(baseAccent);
+    const ringMaterial = new THREE.MeshBasicMaterial({ color: 0xffc31c, transparent: true, opacity: .45 });
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(4.65, .012, 8, 96), ringMaterial); ring.rotation.x = Math.PI / 2.1; ring.rotation.z = -.2; ring.position.y = -.62; scene.add(ring);
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(4.1, .008, 8, 96), new THREE.MeshBasicMaterial({ color: 0xffc31c, transparent: true, opacity: .2 })); halo.rotation.x = Math.PI / 2.4; halo.rotation.z = .3; halo.position.y = .15; scene.add(halo);
+    let pointerX = 0; let pointerY = 0;
+    stage.addEventListener("pointermove", (event) => { const rect = stage.getBoundingClientRect(); pointerX = (event.clientX - rect.left) / rect.width - .5; pointerY = (event.clientY - rect.top) / rect.height - .5; });
+    stage.addEventListener("pointerleave", () => { pointerX = 0; pointerY = 0; });
+    const resize = () => { const width = stage.clientWidth; const height = stage.clientHeight; camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height); };
+    window.addEventListener("resize", resize);
+    const clock = new THREE.Clock();
+    function animate() {
+      const elapsed = clock.getElapsedTime();
+      laptop.rotation.y += ((pointerX * .42 + Math.sin(elapsed * .32) * .18) - laptop.rotation.y) * .025;
+      laptop.rotation.x += ((pointerY * .15 - .04) - laptop.rotation.x) * .025;
+      laptop.position.y = Math.sin(elapsed * .8) * .075;
+      ring.rotation.y = elapsed * .11;
+      halo.rotation.y = -elapsed * .08;
+      screenCanvas.draw(performance.now());
       renderer.render(scene, camera);
-    };
-
-    tick();
-
-    const resizeRenderer = () => {
-      const width = heroCanvas.clientWidth;
-      const height = heroCanvas.clientHeight;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    };
-
-    window.addEventListener("resize", resizeRenderer);
-  }).catch(() => {});
+      requestAnimationFrame(animate);
+    }
+    animate();
+  } catch (error) {
+    stage.classList.add("is-fallback");
+  }
 }
 
-if (!reduceMotion) {
-  requestAnimationFrame(() => revealOnScroll());
-}
+initThreeLaptop();
+requestAnimationFrame(revealOnScroll);
