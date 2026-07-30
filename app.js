@@ -31,6 +31,188 @@ const dashboardButton = document.querySelector(".js-dashboard");
 const menuToggle = document.querySelector(".js-menu-toggle");
 const mobileNav = document.querySelector(".js-mobile-nav");
 const navLinks = document.querySelectorAll(".js-nav-link");
+const languageMenu = document.querySelector(".language-menu");
+const languageOptions = document.querySelectorAll("[data-lang]");
+const languageCode = document.querySelector(".language-current-code");
+const languageLabel = document.querySelector(".language-current-label");
+
+const translations = {
+  en: {
+    label: "English",
+    code: "US",
+    bot: "Beacon Bot",
+    support: "Support Server",
+    join: "Join our Discord",
+    help: "Help",
+    commands: "Commands",
+    status: "Status",
+    ping: "Ping",
+    prestige: "Beacon Prestige",
+    new: "New!",
+    add: "Add to Server",
+    login: "Login with Discord",
+  },
+  fr: {
+    label: "Francais",
+    code: "FR",
+    bot: "Bot Beacon",
+    support: "Serveur support",
+    join: "Rejoindre Discord",
+    help: "Aide",
+    commands: "Commandes",
+    status: "Statut",
+    ping: "Ping",
+    prestige: "Beacon Prestige",
+    new: "Nouveau!",
+    add: "Ajouter au serveur",
+    login: "Connexion Discord",
+  },
+  es: {
+    label: "Espanol",
+    code: "ES",
+    bot: "Bot Beacon",
+    support: "Servidor de soporte",
+    join: "Unete a Discord",
+    help: "Ayuda",
+    commands: "Comandos",
+    status: "Estado",
+    ping: "Ping",
+    prestige: "Beacon Prestige",
+    new: "Nuevo!",
+    add: "Agregar al servidor",
+    login: "Iniciar con Discord",
+  },
+  de: {
+    label: "Deutsch",
+    code: "DE",
+    bot: "Beacon Bot",
+    support: "Support Server",
+    join: "Join our Discord",
+    help: "Help",
+    commands: "Commands",
+    status: "Status",
+    ping: "Ping",
+    prestige: "Beacon Prestige",
+    new: "New!",
+    add: "Add to Server",
+    login: "Login with Discord",
+  },
+  tr: {
+    label: "Turkce",
+    code: "TR",
+    bot: "Beacon Bot",
+    support: "Destek sunucusu",
+    join: "Discord'a katil",
+    help: "Yardim",
+    commands: "Komutlar",
+    status: "Durum",
+    ping: "Ping",
+    prestige: "Beacon Prestige",
+    new: "Yeni!",
+    add: "Sunucuya ekle",
+    login: "Discord ile giris",
+  },
+  ar: {
+    label: "Arabic",
+    code: "SA",
+    bot: "Beacon Bot",
+    support: "Support Server",
+    join: "Join our Discord",
+    help: "Help",
+    commands: "Commands",
+    status: "Status",
+    ping: "Ping",
+    prestige: "Beacon Prestige",
+    new: "New!",
+    add: "Add to Server",
+    login: "Login with Discord",
+  },
+  pt: {
+    label: "Portugues",
+    code: "PT",
+    bot: "Bot Beacon",
+    support: "Servidor de suporte",
+    join: "Entrar no Discord",
+    help: "Ajuda",
+    commands: "Comandos",
+    status: "Status",
+    ping: "Ping",
+    prestige: "Beacon Prestige",
+    new: "Novo!",
+    add: "Adicionar ao servidor",
+    login: "Entrar com Discord",
+  },
+  "pt-BR": {
+    label: "Portugues (BR)",
+    code: "BR",
+    bot: "Bot Beacon",
+    support: "Servidor de suporte",
+    join: "Entrar no Discord",
+    help: "Ajuda",
+    commands: "Comandos",
+    status: "Status",
+    ping: "Ping",
+    prestige: "Beacon Prestige",
+    new: "Novo!",
+    add: "Adicionar ao servidor",
+    login: "Entrar com Discord",
+  },
+  it: {
+    label: "Italiano",
+    code: "IT",
+    bot: "Bot Beacon",
+    support: "Server supporto",
+    join: "Unisciti a Discord",
+    help: "Aiuto",
+    commands: "Comandi",
+    status: "Stato",
+    ping: "Ping",
+    prestige: "Beacon Prestige",
+    new: "Nuovo!",
+    add: "Aggiungi al server",
+    login: "Accedi con Discord",
+  },
+  nl: {
+    label: "Nederlands",
+    code: "NL",
+    bot: "Beacon Bot",
+    support: "Supportserver",
+    join: "Word lid van Discord",
+    help: "Help",
+    commands: "Commands",
+    status: "Status",
+    ping: "Ping",
+    prestige: "Beacon Prestige",
+    new: "Nieuw!",
+    add: "Toevoegen aan server",
+    login: "Login met Discord",
+  },
+};
+
+function setLanguage(language) {
+  const dictionary = translations[language] || translations.de;
+  document.documentElement.lang = language;
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    const key = element.dataset.i18n;
+    element.textContent = dictionary[key] || translations.de[key] || element.textContent;
+  });
+  if (languageCode) languageCode.textContent = dictionary.code;
+  if (languageLabel) languageLabel.textContent = dictionary.code;
+  languageOptions.forEach((option) => {
+    option.classList.toggle("is-selected", option.dataset.lang === language);
+  });
+  localStorage.setItem("beacon-language", language);
+}
+
+languageOptions.forEach((option) => {
+  option.addEventListener("click", (event) => {
+    event.preventDefault();
+    setLanguage(option.dataset.lang);
+    if (languageMenu) languageMenu.removeAttribute("open");
+  });
+});
+
+setLanguage(localStorage.getItem("beacon-language") || "de");
 
 if (menuToggle && mobileNav) {
   menuToggle.addEventListener("click", () => {
