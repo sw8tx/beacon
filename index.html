@@ -4,34 +4,35 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Beacon</title>
-    <link rel="icon" type="image/png" href="assets/beacon-logo.png?v=84" />
-    <link rel="shortcut icon" href="assets/beacon-logo.png?v=84" />
-    <link rel="stylesheet" href="styles.css?v=84" />
+    <link rel="icon" type="image/png" href="assets/beacon-logo.png?v=85" />
+    <link rel="shortcut icon" href="assets/beacon-logo.png?v=85" />
+    <link rel="stylesheet" href="styles.css?v=85" />
     <meta name="theme-color" content="#000000" />
     <style>
       html, body { margin: 0; width: 100%; min-height: 100vh; background: #050505; color: #f7f4ec; }
       * { box-sizing: border-box; }
-      body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding-top: 108px; }
-      .site-navbar { position: fixed; top: 22px; left: 50%; z-index: 20; display: flex; align-items: center; gap: 18px; width: min(1780px, calc(100% - 44px)); min-height: 72px; padding: 10px 14px 10px 18px; transform: translateX(-50%); border: 1px solid rgba(255, 174, 42, 0.24); border-radius: 18px; background: rgba(15, 15, 15, 0.92); box-shadow: 0 18px 55px rgba(0, 0, 0, 0.45), 0 0 32px rgba(255, 169, 31, 0.08); backdrop-filter: blur(22px); }
+      body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding-top: 104px; }
+      .site-navbar { position: fixed; top: 22px; left: 50%; z-index: 20; display: flex; align-items: center; gap: 14px; width: min(1420px, calc(100% - 44px)); min-height: 72px; padding: 10px 14px 10px 18px; transform: translateX(-50%); border: 1px solid rgba(255, 174, 42, 0.24); border-radius: 18px; background: rgba(15, 15, 15, 0.92); box-shadow: 0 18px 55px rgba(0, 0, 0, 0.45), 0 0 32px rgba(255, 169, 31, 0.08); backdrop-filter: blur(22px); }
       .navbar-brand, .navbar-link, .navbar-prestige, .navbar-button, .language-options a { color: inherit; text-decoration: none; }
       .navbar-brand { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 11px; min-width: max-content; }
       .navbar-logo, .navbar-logo img { width: 34px; height: 34px; }
       .navbar-logo { display: grid; place-items: center; }
       .navbar-logo img { object-fit: contain; }
       .navbar-name { color: #fff8e7; font-size: 1.18rem; font-weight: 850; line-height: 1; }
-      .navbar-links { display: flex; flex: 1 1 auto; align-items: center; gap: 14px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+      .navbar-links { display: flex; flex: 1 1 auto; align-items: center; gap: 11px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
       .navbar-links::-webkit-scrollbar { display: none; }
       .navbar-link { flex: 0 0 auto; color: #fff9ed; font-size: 0.78rem; font-weight: 800; white-space: nowrap; }
       .navbar-link:hover, .navbar-link:focus-visible { color: #ffcf69; }
       .navbar-prestige { position: relative; display: inline-flex; flex: 0 0 auto; align-items: center; gap: 8px; min-height: 34px; padding: 0 15px; overflow: visible; border: 1px solid rgba(255, 197, 44, 0.8); border-radius: 4px; color: #ffd84a; font-size: 0.8rem; font-weight: 850; white-space: nowrap; background: rgba(255, 203, 50, 0.04); box-shadow: 0 0 24px rgba(255, 203, 50, 0.18), inset 0 0 18px rgba(255, 203, 50, 0.08); }
       .prestige-shine { position: absolute; inset: 1px; overflow: hidden; border-radius: 3px; pointer-events: none; }
       .prestige-shine::before { content: ""; position: absolute; top: -20%; left: -45%; width: 35%; height: 140%; transform: skewX(-18deg); background: linear-gradient(90deg, transparent, rgba(255, 255, 185, 0.58), transparent); animation: prestige-sheen 2.8s ease-in-out infinite; }
-      .prestige-badge { position: absolute; right: -20px; top: -17px; padding: 3px 6px; border-radius: 6px; color: #181000; font-size: 0.62rem; font-weight: 950; line-height: 1; background: #ffed32; box-shadow: 0 0 15px rgba(255, 237, 50, 0.65); }
+      .prestige-badge { position: relative; padding: 3px 6px; border-radius: 6px; color: #181000; font-size: 0.62rem; font-weight: 950; line-height: 1; background: #ffed32; box-shadow: 0 0 15px rgba(255, 237, 50, 0.65); }
       .navbar-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; margin-left: auto; }
       .language-menu { position: relative; }
       .language-menu summary { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 11px; border-radius: 5px; color: #fff9ed; font-size: 0.75rem; font-weight: 850; list-style: none; cursor: pointer; }
       .language-menu summary::-webkit-details-marker { display: none; }
       .language-menu summary::after { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); }
+      .language-menu:not([open]) .language-options { display: none; }
       .language-options { position: absolute; top: calc(100% + 10px); right: 0; display: grid; width: 178px; padding: 8px 0; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; background: #0b0d12; box-shadow: 0 16px 38px rgba(0, 0, 0, 0.42); }
       .language-options a { display: flex; align-items: center; gap: 12px; min-height: 34px; padding: 0 14px; color: #f2f4f8; font-size: 0.86rem; font-weight: 750; }
       .language-options span { min-width: 20px; color: #f7f7f7; font-size: 0.78rem; font-weight: 900; }
@@ -41,12 +42,13 @@
       .navbar-button--login { background: #e13a6c; }
       @keyframes prestige-sheen { 0% { left: -45%; } 48%, 100% { left: 115%; } }
       @media (max-width: 860px) { body { padding-top: 126px; } .site-navbar { top: 12px; width: calc(100% - 20px); flex-wrap: wrap; min-height: 104px; padding: 10px 12px; } .navbar-links { order: 3; flex-basis: 100%; } .navbar-actions { margin-left: auto; } }
+      @media (max-width: 560px) { body { padding-top: 154px; } .site-navbar { min-height: 136px; overflow: hidden; } .navbar-brand, .navbar-actions, .navbar-links { flex-basis: 100%; } .navbar-actions { margin-left: 0; overflow-x: auto; scrollbar-width: none; } .navbar-actions::-webkit-scrollbar { display: none; } }
     </style>
   </head>
   <body>
     <nav class="site-navbar" aria-label="Beacon navigation">
       <a class="navbar-brand" href="/" aria-label="Beacon home">
-        <span class="navbar-logo"><img src="assets/beacon-logo.png?v=84" alt="" /></span>
+        <span class="navbar-logo"><img src="assets/beacon-logo.png?v=85" width="34" height="34" alt="" /></span>
         <span class="navbar-name">Beacon</span>
       </a>
 
