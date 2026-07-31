@@ -22,3 +22,10 @@
 - STATS_SYNC_INTERVAL_MS (optional)
 - BOT_STATUS (optional)
 - BOT_STATUS_TYPE (optional)
+
+## Prestige system
+
+- Members earn 15-25 XP from messages, with a 60 second cooldown per user.
+- `/rank` shows level, XP, prestige and leaderboard position.
+- `/leaderboard` shows the top 10 members by prestige, level and XP.
+- `/prestige` resets a member to level 1 after level 25 and adds one prestige rank.

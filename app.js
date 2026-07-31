@@ -84,7 +84,7 @@ discordLogout?.addEventListener("click", async () => {
 loadDiscordSession();
 
 const statusValues = [...document.querySelectorAll("[data-stat]")];
-const KNOWN_COMMAND_COUNT = 21;
+const KNOWN_COMMAND_COUNT = 24;
 
 function formatStatusNumber(value) {
   return Number.isFinite(value) ? value.toLocaleString() : "--";

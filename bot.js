@@ -37,6 +37,11 @@ const LOGO_FILE = path.join(__dirname, "beacon-logo.png");
 const LOGO_ATTACHMENT_NAME = "beacon-logo.png";
 const BRAND_THUMBNAIL_URL = `attachment://${LOGO_ATTACHMENT_NAME}`;
 const BRAND_COLOR = 0xff9c1b;
+const XP_COOLDOWN_MS = 60_000;
+const XP_MIN_PER_MESSAGE = 15;
+const XP_MAX_PER_MESSAGE = 25;
+const PRESTIGE_LEVEL_REQUIREMENT = 25;
+const xpCooldowns = new Map();
 
 if (!TOKEN || TOKEN.startsWith("PASTE_")) {
   console.error("Missing Discord bot token. Set DISCORD_TOKEN in your .env file or in your hosting environment.");
@@ -233,6 +238,72 @@ function percent(value) {
 function progressBar(value, size = 12) {
   const filled = Math.round((Math.max(0, Math.min(100, value)) / 100) * size);
   return "`" + "#".repeat(filled) + "-".repeat(size - filled) + "`";
+}
+
+function randomXpAmount() {
+  return Math.floor(Math.random() * (XP_MAX_PER_MESSAGE - XP_MIN_PER_MESSAGE + 1)) + XP_MIN_PER_MESSAGE;
+}
+
+function xpForNextLevel(level, prestige = 0) {
+  return 100 + Math.max(1, level) * 50 + Math.max(0, prestige) * 25;
+}
+
+function prestigeTitle(prestige) {
+  if (prestige >= 10) return "Beacon Legend";
+  if (prestige >= 7) return "Beacon Mythic";
+  if (prestige >= 5) return "Beacon Elite";
+  if (prestige >= 3) return "Beacon Veteran";
+  if (prestige >= 1) return "Beacon Prestige";
+  return "Beacon Member";
+}
+
+function ensureMemberProfile(data, userId) {
+  if (!data.members[userId]) {
+    data.members[userId] = {
+      joinedAt: null,
+      messages: 0,
+      warnings: 0,
+      notes: [],
+      xp: 0,
+      totalXp: 0,
+      level: 1,
+      prestige: 0,
+    };
+  }
+
+  const profile = data.members[userId];
+  profile.messages = profile.messages || 0;
+  profile.warnings = profile.warnings || 0;
+  profile.notes = profile.notes || [];
+  profile.xp = profile.xp || 0;
+  profile.totalXp = profile.totalXp || 0;
+  profile.level = profile.level || 1;
+  profile.prestige = profile.prestige || 0;
+  return profile;
+}
+
+function rankMembers(data) {
+  return Object.entries(data.members || {})
+    .map(([userId, profile]) => ({
+      userId,
+      level: profile.level || 1,
+      prestige: profile.prestige || 0,
+      xp: profile.xp || 0,
+      totalXp: profile.totalXp || 0,
+      messages: profile.messages || 0,
+    }))
+    .sort((a, b) =>
+      b.prestige - a.prestige ||
+      b.level - a.level ||
+      b.xp - a.xp ||
+      b.totalXp - a.totalXp ||
+      b.messages - a.messages
+    );
+}
+
+function rankPosition(data, userId) {
+  const index = rankMembers(data).findIndex((item) => item.userId === userId);
+  return index === -1 ? null : index + 1;
 }
 
 function scoreLabel(value) {
@@ -792,6 +863,24 @@ const commands = [
     ),
 
   new SlashCommandBuilder()
+    .setName("rank")
+    .setDescription("Show a member's level, XP and prestige.")
+    .addUserOption((opt) =>
+      opt
+        .setName("user")
+        .setDescription("Member")
+        .setRequired(false)
+    ),
+
+  new SlashCommandBuilder()
+    .setName("leaderboard")
+    .setDescription("Show the server prestige leaderboard."),
+
+  new SlashCommandBuilder()
+    .setName("prestige")
+    .setDescription("Reset your level at the cap and gain one prestige rank."),
+
+  new SlashCommandBuilder()
     .setName("settings")
     .setDescription("Show Beacon settings for this server.")
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
@@ -925,15 +1014,44 @@ client.on("messageCreate", async (message) => {
   data.stats.userActivity[message.author.id].week += 1;
   data.stats.userActivity[message.author.id].total += 1;
 
-  if (!data.members[message.author.id]) {
-    data.members[message.author.id] = {
-      joinedAt: null,
-      messages: 0,
-      warnings: 0,
-      notes: [],
-    };
+  const profile = ensureMemberProfile(data, message.author.id);
+  profile.messages += 1;
+
+  const cooldownKey = `${message.guild.id}:${message.author.id}`;
+  const now = Date.now();
+  const lastXpAt = xpCooldowns.get(cooldownKey) || 0;
+
+  if (now - lastXpAt >= XP_COOLDOWN_MS) {
+    xpCooldowns.set(cooldownKey, now);
+    const earned = randomXpAmount();
+    profile.xp += earned;
+    profile.totalXp += earned;
+
+    let leveledUp = false;
+    while (profile.level < PRESTIGE_LEVEL_REQUIREMENT && profile.xp >= xpForNextLevel(profile.level, profile.prestige)) {
+      profile.xp -= xpForNextLevel(profile.level, profile.prestige);
+      profile.level += 1;
+      leveledUp = true;
+    }
+
+    if (profile.level >= PRESTIGE_LEVEL_REQUIREMENT) {
+      profile.level = PRESTIGE_LEVEL_REQUIREMENT;
+      profile.xp = Math.min(profile.xp, xpForNextLevel(profile.level, profile.prestige));
+    }
+
+    if (leveledUp) {
+      const embed = successEmbed(
+        "Level up",
+        `${message.author} reached **Level ${profile.level}**.`
+      ).addFields(
+        { name: "Prestige", value: `${profile.prestige}`, inline: true },
+        { name: "Rank", value: `#${rankPosition(data, message.author.id) || "-"}`, inline: true },
+        { name: "Next step", value: profile.level >= PRESTIGE_LEVEL_REQUIREMENT ? "Use `/prestige` to reset your level and climb higher." : "Keep chatting to earn more XP.", inline: false }
+      );
+
+      await message.channel.send(withBrandFiles({ embeds: [embed] })).catch(() => null);
+    }
   }
-  data.members[message.author.id].messages += 1;
 
   saveData();
 });
@@ -990,6 +1108,9 @@ async function handleCommand(interaction) {
   if (command === "rolepanel") return rolePanel(interaction, data);
   if (command === "event") return eventPost(interaction, data);
   if (command === "member") return memberProfile(interaction, data);
+  if (command === "rank") return rank(interaction, data);
+  if (command === "leaderboard") return leaderboard(interaction, data);
+  if (command === "prestige") return prestige(interaction, data);
   if (command === "settings") return settings(interaction, data);
   if (command === "status") return status(interaction);
 }
@@ -1016,6 +1137,9 @@ async function sendHelp(interaction) {
     { name: "/rolepanel", value: "Create a role menu with selectable roles." },
     { name: "/event", value: "Create an event post with RSVP buttons." },
     { name: "/member", value: "View a member's community profile." },
+    { name: "/rank", value: "View level, XP and prestige progress." },
+    { name: "/leaderboard", value: "Show the server prestige leaderboard." },
+    { name: "/prestige", value: `Prestige after reaching level ${PRESTIGE_LEVEL_REQUIREMENT}.` },
     { name: "/status", value: "Check uptime, ping, server count and memory." }
   );
 
@@ -1515,8 +1639,10 @@ async function eventPost(interaction, data) {
 async function memberProfile(interaction, data) {
   const user = interaction.options.getUser("user");
   const member = await interaction.guild.members.fetch(user.id).catch(() => null);
-  const profile = data.members[user.id] || { joinedAt: null, messages: 0, warnings: 0, notes: [] };
+  const profile = ensureMemberProfile(data, user.id);
   const weekly = data.stats.userActivity[user.id]?.week || 0;
+  const needed = xpForNextLevel(profile.level, profile.prestige);
+  const progress = profile.level >= PRESTIGE_LEVEL_REQUIREMENT ? 100 : (profile.xp / needed) * 100;
 
   const embed = brandEmbed("Member Profile", `${user}`)
     .setThumbnail(user.displayAvatarURL({ size: 256 }))
@@ -1524,12 +1650,92 @@ async function memberProfile(interaction, data) {
       { name: "Name", value: user.tag, inline: true },
       { name: "Joined Discord", value: `<t:${Math.floor(user.createdTimestamp / 1000)}:R>`, inline: true },
       { name: "Joined Server", value: member?.joinedTimestamp ? `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>` : "Unknown", inline: true },
+      { name: "Prestige", value: `${profile.prestige} - ${prestigeTitle(profile.prestige)}`, inline: true },
+      { name: "Level", value: `${profile.level}/${PRESTIGE_LEVEL_REQUIREMENT}`, inline: true },
+      { name: "Rank", value: `#${rankPosition(data, user.id) || "-"}`, inline: true },
+      { name: "XP", value: profile.level >= PRESTIGE_LEVEL_REQUIREMENT ? "Ready to prestige" : `${profile.xp}/${needed}\n${progressBar(progress, 10)}`, inline: false },
       { name: "Messages this week", value: `${weekly}`, inline: true },
       { name: "Messages total", value: `${profile.messages}`, inline: true },
       { name: "Warnings", value: `${profile.warnings || 0}`, inline: true }
     );
 
   await interaction.reply(withBrandFiles({ embeds: [embed], ephemeral: true }));
+}
+
+async function rank(interaction, data) {
+  const user = interaction.options.getUser("user") || interaction.user;
+  const profile = ensureMemberProfile(data, user.id);
+  const needed = xpForNextLevel(profile.level, profile.prestige);
+  const progress = profile.level >= PRESTIGE_LEVEL_REQUIREMENT ? 100 : (profile.xp / needed) * 100;
+  const placement = rankPosition(data, user.id);
+
+  const embed = brandEmbed("Beacon Rank", `${user}`)
+    .setThumbnail(user.displayAvatarURL({ size: 256 }))
+    .addFields(
+      { name: "Prestige", value: `${profile.prestige}`, inline: true },
+      { name: "Title", value: prestigeTitle(profile.prestige), inline: true },
+      { name: "Leaderboard", value: placement ? `#${placement}` : "Unranked", inline: true },
+      { name: "Level", value: `${profile.level}/${PRESTIGE_LEVEL_REQUIREMENT}`, inline: true },
+      { name: "Total XP", value: `${profile.totalXp}`, inline: true },
+      { name: "Messages", value: `${profile.messages}`, inline: true },
+      {
+        name: "Progress",
+        value: profile.level >= PRESTIGE_LEVEL_REQUIREMENT
+          ? "Ready. Use `/prestige` to reset your level and gain prestige."
+          : `${profile.xp}/${needed} XP\n${progressBar(progress, 14)}`,
+        inline: false,
+      }
+    );
+
+  await interaction.reply(withBrandFiles({ embeds: [embed] }));
+}
+
+async function leaderboard(interaction, data) {
+  const rows = rankMembers(data).slice(0, 10);
+  const description = rows.length
+    ? rows.map((item, index) => {
+        return `**${index + 1}.** <@${item.userId}> - P${item.prestige} L${item.level} - ${item.totalXp} XP`;
+      }).join("\n")
+    : "No ranked members yet. Send messages to start earning XP.";
+
+  const embed = brandEmbed("Prestige Leaderboard", description)
+    .addFields(
+      { name: "Level cap", value: `${PRESTIGE_LEVEL_REQUIREMENT}`, inline: true },
+      { name: "XP cooldown", value: `${Math.round(XP_COOLDOWN_MS / 1000)}s`, inline: true },
+      { name: "XP per message", value: `${XP_MIN_PER_MESSAGE}-${XP_MAX_PER_MESSAGE}`, inline: true }
+    );
+
+  await interaction.reply(withBrandFiles({ embeds: [embed] }));
+}
+
+async function prestige(interaction, data) {
+  const profile = ensureMemberProfile(data, interaction.user.id);
+
+  if (profile.level < PRESTIGE_LEVEL_REQUIREMENT) {
+    const needed = xpForNextLevel(profile.level, profile.prestige);
+    const remaining = Math.max(0, needed - profile.xp);
+    await interaction.reply(withBrandFiles({
+      embeds: [errorEmbed(`You need Level ${PRESTIGE_LEVEL_REQUIREMENT} before you can prestige. You are Level ${profile.level}; ${remaining} XP to the next level.`)],
+      ephemeral: true,
+    }));
+    return;
+  }
+
+  profile.prestige += 1;
+  profile.level = 1;
+  profile.xp = 0;
+  saveData();
+
+  const embed = successEmbed(
+    "Prestige gained",
+    `${interaction.user} reached **Prestige ${profile.prestige}** and became **${prestigeTitle(profile.prestige)}**.`
+  ).addFields(
+    { name: "Level reset", value: `Back to Level 1`, inline: true },
+    { name: "Leaderboard", value: `#${rankPosition(data, interaction.user.id) || "-"}`, inline: true },
+    { name: "Next climb", value: `Reach Level ${PRESTIGE_LEVEL_REQUIREMENT} again to prestige higher.`, inline: false }
+  );
+
+  await interaction.reply(withBrandFiles({ embeds: [embed] }));
 }
 
 async function settings(interaction, data) {
