@@ -126,14 +126,21 @@ async function updateHistory(env, stats) {
 }
 
 async function writeStats(env, stats) {
+  const storage = {
+    hasBinding: Boolean(env.DISCORD_STATS),
+    canPut: Boolean(env.DISCORD_STATS && typeof env.DISCORD_STATS.put === "function"),
+    persisted: false,
+  };
+
   memoryStats = stats;
 
   if (env.DISCORD_STATS && typeof env.DISCORD_STATS.put === "function") {
     try {
       await env.DISCORD_STATS.put("latest", JSON.stringify(stats));
+      storage.persisted = true;
     } catch (err) {
       console.error(`[discord-stats] Failed to write latest stats: ${err.message}`);
-      return;
+      return storage;
     }
 
     try {
@@ -142,6 +149,8 @@ async function writeStats(env, stats) {
       console.error(`[discord-stats] Failed to update history: ${err.message}`);
     }
   }
+
+  return storage;
 }
 
 async function handleGet(env) {
@@ -186,8 +195,8 @@ async function handlePost(request, env) {
     }
 
     const stats = normalizeStats(payload);
-    await writeStats(env, stats);
-    return json({ ok: true, updatedAt: stats.updatedAt });
+    const storage = await writeStats(env, stats);
+    return json({ ok: true, updatedAt: stats.updatedAt, storage });
   } catch (err) {
     const message = err?.message || "Unknown Discord stats error";
     console.error(`[discord-stats] POST failed: ${message}`);
