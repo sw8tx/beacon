@@ -158,6 +158,7 @@ function buildStatsPayload() {
 
 let warnedMissingStatsAuth = false;
 let statsSyncInterval = null;
+let lastStatsSyncLogAt = 0;
 
 async function syncDiscordStats() {
   if (!STATS_AUTH_TOKEN || STATS_AUTH_TOKEN.startsWith("PASTE_")) {
@@ -182,6 +183,12 @@ async function syncDiscordStats() {
     if (!response.ok) {
       const text = await response.text().catch(() => "");
       throw new Error(`HTTP ${response.status} ${response.statusText}${text ? ` - ${text.slice(0, 200)}` : ""}`);
+    }
+
+    const now = Date.now();
+    if (!lastStatsSyncLogAt || now - lastStatsSyncLogAt > 5 * 60_000) {
+      lastStatsSyncLogAt = now;
+      console.log(`[stats-sync] Synced ${client.guilds.cache.size} server(s) to ${STATS_SYNC_ENDPOINT}`);
     }
   } catch (err) {
     console.error(`[stats-sync] Failed to sync Discord stats: ${err.message}`);
