@@ -159,32 +159,31 @@ export async function onRequestGet({ env }) {
 }
 
 export async function onRequestPost({ request, env }) {
-  const auth = request.headers.get("authorization");
-  const allowedTokens = [env.STATS_SECRET, env.DISCORD_BOT_TOKEN].filter(Boolean);
-
-  if (!allowedTokens.length) {
-    return new Response("Server missing stats authentication", { status: 503 });
-  }
-
-  if (!allowedTokens.some((token) => auth === `Bearer ${token}`)) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-
-  let payload;
   try {
-    payload = await request.json();
-  } catch {
-    return new Response("Invalid JSON", { status: 400 });
-  }
+    const auth = request.headers.get("authorization");
+    const allowedTokens = [env.STATS_SECRET, env.DISCORD_BOT_TOKEN].filter(Boolean);
 
-  let stats;
-  try {
-    stats = normalizeStats(payload);
+    if (!allowedTokens.length) {
+      return new Response("Server missing stats authentication", { status: 503 });
+    }
+
+    if (!allowedTokens.some((token) => auth === `Bearer ${token}`)) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    let payload;
+    try {
+      payload = await request.json();
+    } catch {
+      return new Response("Invalid JSON", { status: 400 });
+    }
+
+    const stats = normalizeStats(payload);
     await writeStats(env, stats);
+    return json({ ok: true, updatedAt: stats.updatedAt });
   } catch (err) {
-    console.error(`[discord-stats] Failed to write stats: ${err.message}`);
-    return json({ ok: false, error: "Failed to store Discord stats" }, { status: 500 });
+    const message = err?.message || "Unknown Discord stats error";
+    console.error(`[discord-stats] POST failed: ${message}`);
+    return json({ ok: false, error: message }, { status: 500 });
   }
-
-  return json({ ok: true, updatedAt: stats.updatedAt });
 }
