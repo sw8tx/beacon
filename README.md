@@ -15,7 +15,7 @@
 - DISCORD_BOT_TOKEN (Cloudflare Pages secret; the bot token used to join authenticated users to the Support Server)
 - DISCORD_SUPPORT_GUILD_ID (Cloudflare Pages secret; the Support Server ID)
 - AUTH_SESSION_SECRET (Cloudflare Pages secret; use a long random value)
-- STATS_SECRET
+- STATS_SECRET (optional when the bot and Pages use the same Discord bot token)
 - DEV_GUILD_ID (optional)
 - DASHBOARD_URL (optional)
 - STATS_SYNC_ENDPOINT (optional)

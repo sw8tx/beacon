@@ -4,13 +4,13 @@ Set these in Cloudflare Pages for the `beacon-bot.site` project.
 
 ## Environment variable
 
-Name:
+Optional name:
 
 ```txt
 STATS_SECRET
 ```
 
-Value: the same secret used on the Discord bot host.
+Value: the same secret used on the Discord bot host. When this is omitted, the bot uses `DISCORD_TOKEN` and Pages verifies it against `DISCORD_BOT_TOKEN`.
 
 ## KV binding
 

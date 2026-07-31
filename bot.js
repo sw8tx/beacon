@@ -25,12 +25,13 @@ const {
 const TOKEN = process.env.DISCORD_TOKEN || process.env.TOKEN || "PASTE_NEW_DISCORD_BOT_TOKEN_HERE";
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID || "1529195963787251784";
 const DEV_GUILD_ID = process.env.DEV_GUILD_ID || "";
-const STATS_SECRET = process.env.STATS_SECRET || "PASTE_THE_SAME_CLOUDFLARE_STATS_SECRET_HERE";
+const STATS_SECRET = process.env.STATS_SECRET || "";
 const DASHBOARD_URL = process.env.DASHBOARD_URL || "https://beacon-bot.site";
 const STATS_SYNC_ENDPOINT = process.env.STATS_SYNC_ENDPOINT || "https://beacon-bot.site/api/discord-stats";
 const STATS_SYNC_INTERVAL_MS = Number(process.env.STATS_SYNC_INTERVAL_MS || 60_000);
 const BOT_STATUS = process.env.BOT_STATUS || "Community health";
 const BOT_STATUS_TYPE = Number(process.env.BOT_STATUS_TYPE || 3); // 0 = Playing, 2 = Listening, 3 = Watching, 5 = Competing
+const STATS_AUTH_TOKEN = STATS_SECRET || TOKEN;
 const DATA_FILE = path.join(__dirname, "beacon-data.json");
 const LOGO_FILE = path.join(__dirname, "beacon-logo.png");
 const LOGO_ATTACHMENT_NAME = "beacon-logo.png";
@@ -136,13 +137,13 @@ function buildStatsPayload() {
   };
 }
 
-let warnedMissingStatsSecret = false;
+let warnedMissingStatsAuth = false;
 
 async function syncDiscordStats() {
-  if (!STATS_SECRET || STATS_SECRET.startsWith("PASTE_")) {
-    if (!warnedMissingStatsSecret) {
-      console.warn("[stats-sync] STATS_SECRET is not set. Discord stats sync is disabled.");
-      warnedMissingStatsSecret = true;
+  if (!STATS_AUTH_TOKEN || STATS_AUTH_TOKEN.startsWith("PASTE_")) {
+    if (!warnedMissingStatsAuth) {
+      console.warn("[stats-sync] No stats authentication token is available. Discord stats sync is disabled.");
+      warnedMissingStatsAuth = true;
     }
     return;
   }
@@ -153,7 +154,7 @@ async function syncDiscordStats() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${STATS_SECRET}`,
+        Authorization: `Bearer ${STATS_AUTH_TOKEN}`,
       },
       body: JSON.stringify(buildStatsPayload()),
     });
