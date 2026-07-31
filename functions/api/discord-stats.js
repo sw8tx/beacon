@@ -130,6 +130,7 @@ async function writeStats(env, stats) {
     hasBinding: Boolean(env.DISCORD_STATS),
     canPut: Boolean(env.DISCORD_STATS && typeof env.DISCORD_STATS.put === "function"),
     persisted: false,
+    error: null,
   };
 
   memoryStats = stats;
@@ -139,7 +140,8 @@ async function writeStats(env, stats) {
       await env.DISCORD_STATS.put("latest", JSON.stringify(stats));
       storage.persisted = true;
     } catch (err) {
-      console.error(`[discord-stats] Failed to write latest stats: ${err.message}`);
+      storage.error = err?.message || "KV put failed";
+      console.error(`[discord-stats] Failed to write latest stats: ${storage.error}`);
       return storage;
     }
 
