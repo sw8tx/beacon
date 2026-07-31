@@ -23,6 +23,12 @@ function formatDuration(totalSeconds) {
   return `${minutes}m`;
 }
 
+function sessionLabel(stats) {
+  const startedAt = Date.parse(stats.startedAt || "");
+  if (!Number.isFinite(startedAt)) return `current session ${formatDuration(stats.uptime)}`;
+  return `started ${new Date(startedAt).toLocaleString()}`;
+}
+
 function dateKey(date) {
   return date.toISOString().slice(0, 10);
 }
@@ -140,7 +146,7 @@ async function refreshStatus() {
     const gateway = services.find((service) => service.dataset.service === "gateway");
     const website = services.find((service) => service.dataset.service === "website");
     const api = services.find((service) => service.dataset.service === "api");
-    setService(bot, stats.online, uptimeLabel, stats.online ? `Online \u00b7 current session ${formatDuration(stats.uptime)}` : "No fresh bot report received", days);
+    setService(bot, stats.online, uptimeLabel, stats.online ? `Online \u00b7 ${sessionLabel(stats)}` : "No fresh bot report received", days);
     setService(gateway, stats.online, uptimeLabel, stats.online ? `Connected \u00b7 ${Math.round(stats.ping)} ms gateway ping` : "Discord gateway connection unavailable", days);
     setService(website, landing.online, landing.online ? "Operational" : "Unavailable", landing.online ? `Responding \u00b7 ${landing.latency} ms browser check` : "Landing page check failed", withCurrentState(days, landing.online));
     setService(api, true, "Operational", "Live metrics API is responding", withCurrentState(days, true));

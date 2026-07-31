@@ -32,6 +32,8 @@ const STATS_SYNC_INTERVAL_MS = Number(process.env.STATS_SYNC_INTERVAL_MS || 60_0
 const BOT_STATUS = process.env.BOT_STATUS || "Community health";
 const BOT_STATUS_TYPE = Number(process.env.BOT_STATUS_TYPE || 3); // 0 = Playing, 2 = Listening, 3 = Watching, 5 = Competing
 const STATS_AUTH_TOKEN = STATS_SECRET || TOKEN;
+const BOT_STARTED_AT = new Date().toISOString();
+const BOT_SESSION_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const DATA_FILE = path.join(__dirname, "beacon-data.json");
 const LOGO_FILE = path.join(__dirname, "beacon-logo.png");
 const LOGO_ATTACHMENT_NAME = "beacon-logo.png";
@@ -147,11 +149,15 @@ function buildStatsPayload() {
     commands: commands.length,
     ping: Math.round(client.ws.ping),
     uptime: Math.floor(process.uptime()),
+    status: "online",
+    startedAt: BOT_STARTED_AT,
+    sessionId: BOT_SESSION_ID,
     servers,
   };
 }
 
 let warnedMissingStatsAuth = false;
+let statsSyncInterval = null;
 
 async function syncDiscordStats() {
   if (!STATS_AUTH_TOKEN || STATS_AUTH_TOKEN.startsWith("PASTE_")) {
@@ -183,8 +189,15 @@ async function syncDiscordStats() {
 }
 
 function startStatsSync() {
-  setTimeout(syncDiscordStats, 5_000);
-  setInterval(syncDiscordStats, STATS_SYNC_INTERVAL_MS);
+  syncDiscordStats();
+  [2_000, 10_000, 30_000].forEach((delay) => {
+    const timeout = setTimeout(syncDiscordStats, delay);
+    if (typeof timeout.unref === "function") timeout.unref();
+  });
+
+  if (statsSyncInterval) clearInterval(statsSyncInterval);
+  statsSyncInterval = setInterval(syncDiscordStats, STATS_SYNC_INTERVAL_MS);
+  if (typeof statsSyncInterval.unref === "function") statsSyncInterval.unref();
 }
 
 function guildData(guildId) {
@@ -921,13 +934,14 @@ client.once("ready", async () => {
     status: "online",
   });
 
+  startStatsSync();
+
   try {
     await registerCommands();
+    await syncDiscordStats();
   } catch (err) {
     console.error(`[commands] Failed to register slash commands: ${err.message}`);
   }
-
-  startStatsSync();
 });
 
 client.on("guildCreate", async (guild) => {

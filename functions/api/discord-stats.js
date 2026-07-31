@@ -5,6 +5,9 @@ const FALLBACK_STATS = {
   ping: 0,
   uptime: 0,
   servers: [],
+  status: "offline",
+  startedAt: null,
+  sessionId: null,
   online: false,
   updatedAt: null
 };
@@ -68,6 +71,9 @@ function normalizeStats(input) {
     ping: cleanNumber(input.ping),
     uptime: cleanNumber(input.uptime),
     servers: normalizeServers(input.servers),
+    status: cleanText(input.status, 24) || "online",
+    startedAt: cleanText(input.startedAt, 40) || null,
+    sessionId: cleanText(input.sessionId, 80) || null,
     online: true,
     updatedAt: new Date().toISOString()
   };
