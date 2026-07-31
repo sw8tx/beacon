@@ -71,10 +71,10 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .hero-button--primary:hover { box-shadow: 0 13px 34px rgba(255,195,28,.35); }
 .hero-button--dark { color: #f4f4ee; background: #282d33; }
 .hero-button--outline { border-color: var(--yellow); color: var(--yellow); background: transparent; }
-.discord-icon-wrap { display: grid; width: 25px; height: 25px; flex: 0 0 auto; place-items: center; border-radius: 6px; background: #5865f2; box-shadow: 0 4px 11px rgba(88,101,242,.32); }
-.discord-logo { display: block; width: 15px; height: 15px; filter: brightness(0) invert(1); }
+.discord-icon-wrap { display: grid; width: 25px; height: 25px; flex: 0 0 auto; place-items: center; }
+.discord-logo { display: block; width: 18px; height: 18px; }
 .navbar-button .discord-icon-wrap { width: 20px; height: 20px; border-radius: 5px; }
-.navbar-button .discord-logo { width: 12px; height: 12px; }
+.navbar-button .discord-logo { width: 15px; height: 15px; }
 .book-mark { color: currentColor; font-size: 1.15rem; }
 .button-arrow { font-size: 1.1rem; }
 .hero-note { display: flex; align-items: center; gap: 9px; margin-top: 22px; color: #7e8580; font-size: .78rem; }
