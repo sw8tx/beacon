@@ -18,12 +18,13 @@ const STALE_AFTER_MS = 3 * 60 * 1000;
 let memoryStats = { ...FALLBACK_STATS };
 
 function json(data, init = {}) {
-  return Response.json(data, {
-    ...init,
+  return new Response(JSON.stringify(data), {
+    status: init.status || 200,
     headers: {
       "cache-control": "no-store",
-      ...(init.headers || {})
-    }
+      "content-type": "application/json; charset=utf-8",
+      ...(init.headers || {}),
+    },
   });
 }
 
@@ -137,7 +138,7 @@ async function writeStats(env, stats) {
   memoryStats = stats;
 }
 
-export async function onRequestGet({ env }) {
+async function handleGet(env) {
   const stats = await readStats(env);
   const updatedAt = Date.parse(stats.updatedAt || "");
   const online = Boolean(stats.online && Number.isFinite(updatedAt) && Date.now() - updatedAt < STALE_AFTER_MS);
@@ -158,7 +159,7 @@ export async function onRequestGet({ env }) {
   return json({ ...stats, online, history, monitoringStartedAt });
 }
 
-export async function onRequestPost({ request, env }) {
+async function handlePost(request, env) {
   try {
     const auth = request.headers.get("authorization");
     const allowedTokens = [env.STATS_SECRET, env.DISCORD_BOT_TOKEN].filter(Boolean);
@@ -186,4 +187,13 @@ export async function onRequestPost({ request, env }) {
     console.error(`[discord-stats] POST failed: ${message}`);
     return json({ ok: false, error: message }, { status: 500 });
   }
+}
+
+export async function onRequest({ request, env }) {
+  if (request.method === "GET" || request.method === "HEAD") return handleGet(env);
+  if (request.method === "POST") return handlePost(request, env);
+  return json({ ok: false, error: "Method not allowed" }, {
+    status: 405,
+    headers: { allow: "GET, HEAD, POST" },
+  });
 }
