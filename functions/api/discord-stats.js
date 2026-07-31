@@ -14,6 +14,7 @@ const FALLBACK_STATS = {
 const HISTORY_KEY = "daily-history";
 const MONITORING_STARTED_KEY = "monitoring-started-at";
 const STALE_AFTER_MS = 3 * 60 * 1000;
+const CACHE_STATS_URL = "https://beacon-bot.site/__discord-stats-cache";
 
 let memoryStats = { ...FALLBACK_STATS };
 
@@ -82,6 +83,15 @@ function normalizeStats(input) {
 
 async function readStats(env) {
   try {
+    if (typeof caches !== "undefined") {
+      const cached = await caches.default.match(CACHE_STATS_URL);
+      if (cached) return await cached.json();
+    }
+  } catch (err) {
+    console.error(`[discord-stats] Failed to read cached stats: ${err.message}`);
+  }
+
+  try {
     if (env.DISCORD_STATS) {
       const stored = await env.DISCORD_STATS.get("latest", "json");
       return stored || FALLBACK_STATS;
@@ -91,6 +101,25 @@ async function readStats(env) {
   }
 
   return memoryStats;
+}
+
+async function writeCachedStats(stats) {
+  if (typeof caches === "undefined") return false;
+  try {
+    await caches.default.put(
+      CACHE_STATS_URL,
+      new Response(JSON.stringify(stats), {
+        headers: {
+          "cache-control": "public, max-age=300",
+          "content-type": "application/json; charset=utf-8",
+        },
+      })
+    );
+    return true;
+  } catch (err) {
+    console.error(`[discord-stats] Failed to write cached stats: ${err.message}`);
+    return false;
+  }
 }
 
 async function updateHistory(env, stats) {
@@ -129,11 +158,13 @@ async function writeStats(env, stats) {
   const storage = {
     hasBinding: Boolean(env.DISCORD_STATS),
     canPut: Boolean(env.DISCORD_STATS && typeof env.DISCORD_STATS.put === "function"),
+    cached: false,
     persisted: false,
     error: null,
   };
 
   memoryStats = stats;
+  storage.cached = await writeCachedStats(stats);
 
   if (env.DISCORD_STATS && typeof env.DISCORD_STATS.put === "function") {
     try {
