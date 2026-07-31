@@ -5,11 +5,7 @@ export async function onRequest(context) {
     return context.next(new Request(url, context.request));
   }
   if (url.hostname === "prestige.beacon-bot.site" && (url.pathname === "/" || url.pathname === "/index.html")) {
-    url.pathname = "/prestige.html";
-    return context.next(new Request(url, context.request));
-  }
-  if (url.pathname === "/prestige") {
-    url.pathname = "/prestige.html";
+    url.pathname = "/prestige/";
     return context.next(new Request(url, context.request));
   }
   return context.next();
