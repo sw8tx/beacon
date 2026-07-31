@@ -28,7 +28,7 @@ const DEV_GUILD_ID = process.env.DEV_GUILD_ID || "";
 const STATS_SECRET = process.env.STATS_SECRET || "";
 const DASHBOARD_URL = process.env.DASHBOARD_URL || "https://beacon-bot.site";
 const STATS_SYNC_ENDPOINT = process.env.STATS_SYNC_ENDPOINT || "https://beacon-bot.site/api/discord-stats";
-const STATS_SYNC_INTERVAL_MS = Number(process.env.STATS_SYNC_INTERVAL_MS || 60_000);
+const STATS_SYNC_INTERVAL_MS = Number(process.env.STATS_SYNC_INTERVAL_MS || 30_000);
 const BOT_STATUS = process.env.BOT_STATUS || "Community health";
 const BOT_STATUS_TYPE = Number(process.env.BOT_STATUS_TYPE || 3); // 0 = Playing, 2 = Listening, 3 = Watching, 5 = Competing
 const STATS_AUTH_TOKEN = STATS_SECRET || TOKEN;

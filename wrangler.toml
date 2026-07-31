@@ -6,3 +6,8 @@ compatibility_date = "2026-07-22"
 [[env.production.kv_namespaces]]
 id = "b39cfb1661c34313b9c2a80291ea3877"
 binding = "DISCORD_STATS"
+
+[[env.production.d1_databases]]
+binding = "STATUS_DB"
+database_name = "beacon-status"
+database_id = "4288dd79-a3ea-47a2-b724-e9a1771a603e"

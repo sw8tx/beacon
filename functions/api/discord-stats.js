@@ -83,6 +83,17 @@ function normalizeStats(input) {
 
 async function readStats(env) {
   try {
+    if (env.STATUS_DB) {
+      const row = await env.STATUS_DB.prepare(
+        "SELECT payload FROM status_state WHERE id = 1"
+      ).first();
+      if (row?.payload) return JSON.parse(row.payload);
+    }
+  } catch (err) {
+    console.error(`[discord-stats] Failed to read D1 stats: ${err.message}`);
+  }
+
+  try {
     if (typeof caches !== "undefined") {
       const cached = await caches.default.match(CACHE_STATS_URL);
       if (cached) return await cached.json();
@@ -154,8 +165,30 @@ async function updateHistory(env, stats) {
   await env.DISCORD_STATS.put(HISTORY_KEY, JSON.stringify(recentHistory));
 }
 
+async function updateD1History(env, stats) {
+  if (!env.STATUS_DB) return;
+
+  const date = stats.updatedAt.slice(0, 10);
+  const minute = stats.updatedAt.slice(0, 16);
+  await env.STATUS_DB.batch([
+    env.STATUS_DB.prepare(
+      "INSERT OR IGNORE INTO status_meta (key, value) VALUES ('monitoring-started-at', ?)"
+    ).bind(stats.updatedAt),
+    env.STATUS_DB.prepare(`
+      INSERT INTO status_history (date, reports, ping_total, last_minute, last_report_at)
+      VALUES (?, 1, ?, ?, ?)
+      ON CONFLICT(date) DO UPDATE SET
+        reports = reports + CASE WHEN last_minute <> excluded.last_minute THEN 1 ELSE 0 END,
+        ping_total = ping_total + CASE WHEN last_minute <> excluded.last_minute THEN excluded.ping_total ELSE 0 END,
+        last_minute = excluded.last_minute,
+        last_report_at = excluded.last_report_at
+    `).bind(date, stats.ping, minute, stats.updatedAt),
+  ]);
+}
+
 async function writeStats(env, stats) {
   const storage = {
+    database: false,
     hasBinding: Boolean(env.DISCORD_STATS),
     canPut: Boolean(env.DISCORD_STATS && typeof env.DISCORD_STATS.put === "function"),
     cached: false,
@@ -165,6 +198,25 @@ async function writeStats(env, stats) {
 
   memoryStats = stats;
   storage.cached = await writeCachedStats(stats);
+
+  if (env.STATUS_DB) {
+    try {
+      await env.STATUS_DB.prepare(`
+        INSERT INTO status_state (id, payload, updated_at)
+        VALUES (1, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          payload = excluded.payload,
+          updated_at = excluded.updated_at
+      `).bind(JSON.stringify(stats), stats.updatedAt).run();
+      await updateD1History(env, stats);
+      storage.database = true;
+      storage.persisted = true;
+      return storage;
+    } catch (err) {
+      storage.error = err?.message || "D1 write failed";
+      console.error(`[discord-stats] Failed to write D1 stats: ${storage.error}`);
+    }
+  }
 
   if (env.DISCORD_STATS && typeof env.DISCORD_STATS.put === "function") {
     try {
@@ -193,7 +245,22 @@ async function handleGet(env) {
   let history = [];
   let monitoringStartedAt = null;
 
-  if (env.DISCORD_STATS) {
+  if (env.STATUS_DB) {
+    try {
+      const [historyResult, monitoringRow] = await Promise.all([
+        env.STATUS_DB.prepare(
+          "SELECT date, reports, ping_total AS pingTotal, last_minute AS lastMinute, last_report_at AS lastReportAt FROM status_history ORDER BY date DESC LIMIT 30"
+        ).all(),
+        env.STATUS_DB.prepare(
+          "SELECT value FROM status_meta WHERE key = 'monitoring-started-at'"
+        ).first(),
+      ]);
+      history = (historyResult.results || []).reverse();
+      monitoringStartedAt = monitoringRow?.value || null;
+    } catch (err) {
+      console.error(`[discord-stats] Failed to read D1 history: ${err.message}`);
+    }
+  } else if (env.DISCORD_STATS) {
     try {
       [history, monitoringStartedAt] = await Promise.all([
         env.DISCORD_STATS.get(HISTORY_KEY, "json").then((value) => Array.isArray(value) ? value : []),

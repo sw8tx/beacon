@@ -173,4 +173,8 @@ async function refreshStatus() {
 }
 
 refreshStatus();
-window.setInterval(refreshStatus, 60_000);
+window.setInterval(refreshStatus, 5_000);
+window.addEventListener("focus", refreshStatus);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") refreshStatus();
+});
