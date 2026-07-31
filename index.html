@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=102" />
+    <link rel="stylesheet" href="styles.css?v=103" />
     <script type="importmap">
       {"imports":{"three":"https://unpkg.com/three@0.166.1/build/three.module.js"}}
     </script>
@@ -28,6 +28,7 @@
         <a class="navbar-link navbar-link--primary" href="#features" data-i18n="navCommands">Commands</a>
         <a class="navbar-link navbar-link--primary" href="/api/auth/discord/login" data-i18n="navDashboard">Dashboard</a>
         <a class="navbar-link" href="#top" data-i18n="navPrestige">Prestige</a>
+        <a class="navbar-link" href="https://status.beacon-bot.site/" data-i18n="navStatus">Status</a>
         <a class="navbar-link" href="/api/auth/discord/login" data-i18n="navSupport">Support</a>
       </div>
 
@@ -90,7 +91,7 @@
       </section>
 
       <section class="stats-section" id="status">
-        <div class="section-kicker"><span class="status-dot"></span><span data-i18n="liveStatus">Live system status</span></div>
+        <a class="section-kicker" href="https://status.beacon-bot.site/"><span class="status-dot"></span><span data-i18n="liveStatus">Live system status</span></a>
         <div class="status-metrics" aria-live="polite">
           <div class="status-metric"><strong data-stat="commands">--</strong><span data-i18n="commands">Commands</span></div>
           <div class="status-metric"><strong data-stat="ping">--</strong><span data-i18n="ping">Ping</span></div>
@@ -108,10 +109,10 @@
       <nav class="footer-links" aria-label="Footer navigation">
         <a href="#features" data-i18n="footerProduct">Product</a>
         <a href="#features" data-i18n="navCommands">Commands</a>
-        <a href="#status" data-i18n="navStatus">Status</a>
+        <a href="https://status.beacon-bot.site/" data-i18n="navStatus">Status</a>
         <a href="/api/auth/discord/login" data-i18n="navSupport">Support</a>
       </nav>
     </footer>
-    <script src="app.js?v=102"></script>
+    <script src="app.js?v=103"></script>
   </body>
 </html>

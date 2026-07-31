@@ -7,6 +7,9 @@ const FALLBACK_STATS = {
   online: false,
   updatedAt: null
 };
+const HISTORY_KEY = "daily-history";
+const MONITORING_STARTED_KEY = "monitoring-started-at";
+const STALE_AFTER_MS = 3 * 60 * 1000;
 
 let memoryStats = { ...FALLBACK_STATS };
 
@@ -46,16 +49,59 @@ async function readStats(env) {
   return memoryStats;
 }
 
+async function updateHistory(env, stats) {
+  let monitoringStartedAt = await env.DISCORD_STATS.get(MONITORING_STARTED_KEY);
+  if (!monitoringStartedAt) {
+    monitoringStartedAt = stats.updatedAt;
+    await env.DISCORD_STATS.put(MONITORING_STARTED_KEY, monitoringStartedAt);
+  }
+
+  const history = await env.DISCORD_STATS.get(HISTORY_KEY, "json") || [];
+  const date = stats.updatedAt.slice(0, 10);
+  const minute = stats.updatedAt.slice(0, 16);
+  let entry = history.find((item) => item.date === date);
+  if (!entry) {
+    entry = { date, reports: 0, pingTotal: 0, lastMinute: null, lastReportAt: stats.updatedAt };
+    history.push(entry);
+  }
+
+  if (entry.lastMinute !== minute) {
+    entry.reports += 1;
+    entry.pingTotal += stats.ping;
+    entry.lastMinute = minute;
+  }
+  entry.lastReportAt = stats.updatedAt;
+
+  const recentHistory = history
+    .sort((left, right) => left.date.localeCompare(right.date))
+    .slice(-30);
+  await env.DISCORD_STATS.put(HISTORY_KEY, JSON.stringify(recentHistory));
+}
+
 async function writeStats(env, stats) {
   if (env.DISCORD_STATS) {
     await env.DISCORD_STATS.put("latest", JSON.stringify(stats));
+    await updateHistory(env, stats);
   }
 
   memoryStats = stats;
 }
 
 export async function onRequestGet({ env }) {
-  return json(await readStats(env));
+  const stats = await readStats(env);
+  const updatedAt = Date.parse(stats.updatedAt || "");
+  const online = Boolean(stats.online && Number.isFinite(updatedAt) && Date.now() - updatedAt < STALE_AFTER_MS);
+  let history = [];
+  let monitoringStartedAt = null;
+
+  if (env.DISCORD_STATS) {
+    [history, monitoringStartedAt] = await Promise.all([
+      env.DISCORD_STATS.get(HISTORY_KEY, "json").then((value) => value || []),
+      env.DISCORD_STATS.get(MONITORING_STARTED_KEY),
+    ]);
+  }
+
+  return json({ ...stats, online, history, monitoringStartedAt });
 }
 
 export async function onRequestPost({ request, env }) {
