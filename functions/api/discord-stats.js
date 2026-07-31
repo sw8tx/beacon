@@ -80,22 +80,29 @@ function normalizeStats(input) {
 }
 
 async function readStats(env) {
-  if (env.DISCORD_STATS) {
-    const stored = await env.DISCORD_STATS.get("latest", "json");
-    return stored || FALLBACK_STATS;
+  try {
+    if (env.DISCORD_STATS) {
+      const stored = await env.DISCORD_STATS.get("latest", "json");
+      return stored || FALLBACK_STATS;
+    }
+  } catch (err) {
+    console.error(`[discord-stats] Failed to read latest stats: ${err.message}`);
   }
 
   return memoryStats;
 }
 
 async function updateHistory(env, stats) {
+  if (!env.DISCORD_STATS) return;
+
   let monitoringStartedAt = await env.DISCORD_STATS.get(MONITORING_STARTED_KEY);
   if (!monitoringStartedAt) {
     monitoringStartedAt = stats.updatedAt;
     await env.DISCORD_STATS.put(MONITORING_STARTED_KEY, monitoringStartedAt);
   }
 
-  const history = await env.DISCORD_STATS.get(HISTORY_KEY, "json") || [];
+  const storedHistory = await env.DISCORD_STATS.get(HISTORY_KEY, "json").catch(() => []);
+  const history = Array.isArray(storedHistory) ? storedHistory : [];
   const date = stats.updatedAt.slice(0, 10);
   const minute = stats.updatedAt.slice(0, 16);
   let entry = history.find((item) => item.date === date);
@@ -120,7 +127,11 @@ async function updateHistory(env, stats) {
 async function writeStats(env, stats) {
   if (env.DISCORD_STATS) {
     await env.DISCORD_STATS.put("latest", JSON.stringify(stats));
-    await updateHistory(env, stats);
+    try {
+      await updateHistory(env, stats);
+    } catch (err) {
+      console.error(`[discord-stats] Failed to update history: ${err.message}`);
+    }
   }
 
   memoryStats = stats;
@@ -134,10 +145,14 @@ export async function onRequestGet({ env }) {
   let monitoringStartedAt = null;
 
   if (env.DISCORD_STATS) {
-    [history, monitoringStartedAt] = await Promise.all([
-      env.DISCORD_STATS.get(HISTORY_KEY, "json").then((value) => value || []),
-      env.DISCORD_STATS.get(MONITORING_STARTED_KEY),
-    ]);
+    try {
+      [history, monitoringStartedAt] = await Promise.all([
+        env.DISCORD_STATS.get(HISTORY_KEY, "json").then((value) => Array.isArray(value) ? value : []),
+        env.DISCORD_STATS.get(MONITORING_STARTED_KEY),
+      ]);
+    } catch (err) {
+      console.error(`[discord-stats] Failed to read history: ${err.message}`);
+    }
   }
 
   return json({ ...stats, online, history, monitoringStartedAt });
@@ -162,8 +177,14 @@ export async function onRequestPost({ request, env }) {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  const stats = normalizeStats(payload);
-  await writeStats(env, stats);
+  let stats;
+  try {
+    stats = normalizeStats(payload);
+    await writeStats(env, stats);
+  } catch (err) {
+    console.error(`[discord-stats] Failed to write stats: ${err.message}`);
+    return json({ ok: false, error: "Failed to store Discord stats" }, { status: 500 });
+  }
 
   return json({ ok: true, updatedAt: stats.updatedAt });
 }
