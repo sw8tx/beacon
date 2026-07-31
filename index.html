@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=100" />
+    <link rel="stylesheet" href="styles.css?v=101" />
     <script type="importmap">
       {"imports":{"three":"https://unpkg.com/three@0.166.1/build/three.module.js"}}
     </script>
@@ -25,11 +25,10 @@
 
       <div class="navbar-links">
         <a class="navbar-link is-active" href="#features" data-i18n="navFeatures">Features</a>
-        <a class="navbar-link navbar-link--primary" href="/docs#commands" data-i18n="navCommands">Commands</a>
+        <a class="navbar-link navbar-link--primary" href="#features" data-i18n="navCommands">Commands</a>
         <a class="navbar-link navbar-link--primary" href="/api/auth/discord/login" data-i18n="navDashboard">Dashboard</a>
-        <a class="navbar-link" href="/docs#prestige" data-i18n="navPrestige">Prestige</a>
-        <a class="navbar-link" href="/docs" data-i18n="navDocs">Docs</a>
-        <a class="navbar-link" href="/docs#support" data-i18n="navSupport">Support</a>
+        <a class="navbar-link" href="#top" data-i18n="navPrestige">Prestige</a>
+        <a class="navbar-link" href="/api/auth/discord/login" data-i18n="navSupport">Support</a>
       </div>
 
       <div class="navbar-actions">
@@ -78,7 +77,6 @@
           <div class="hero-actions">
             <a class="hero-button hero-button--primary" href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&scope=bot%20applications.commands"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="heroAdd">Add to Server</span><span class="button-arrow">↗</span></a>
             <a class="hero-button hero-button--dark" href="/api/auth/discord/login"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="heroLogin">Login with Discord</span></a>
-            <a class="hero-button hero-button--outline" href="/docs"><span class="book-mark">▣</span><span data-i18n="docs">View Docs</span></a>
           </div>
           <div class="hero-note"><span class="online-pulse"></span><span data-i18n="heroNote">Trusted by growing communities everywhere</span></div>
         </div>
@@ -109,17 +107,11 @@
       </div>
       <nav class="footer-links" aria-label="Footer navigation">
         <a href="#features" data-i18n="footerProduct">Product</a>
-        <a href="/docs#commands" data-i18n="navCommands">Commands</a>
-        <a href="/docs" data-i18n="footerDocumentation">Documentation</a>
+        <a href="#features" data-i18n="navCommands">Commands</a>
         <a href="#status" data-i18n="navStatus">Status</a>
-        <a href="/docs#support" data-i18n="navSupport">Support</a>
-      </nav>
-      <nav class="footer-legal" aria-label="Legal navigation">
-        <a href="/docs#privacy" data-i18n="footerPrivacy">Privacy</a>
-        <a href="/docs#terms" data-i18n="footerTerms">Terms</a>
-        <a href="/docs#imprint" data-i18n="footerImprint">Impressum</a>
+        <a href="/api/auth/discord/login" data-i18n="navSupport">Support</a>
       </nav>
     </footer>
-    <script src="app.js?v=100"></script>
+    <script src="app.js?v=101"></script>
   </body>
 </html>
