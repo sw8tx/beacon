@@ -4,5 +4,5 @@ pages_build_output_dir = ""
 compatibility_date = "2026-07-22"
 
 [[env.production.kv_namespaces]]
-id = "4828f892918541e6a9299d9d823b9e8e"
+id = "b39cfb1661c34313b9c2a80291ea3877"
 binding = "DISCORD_STATS"
