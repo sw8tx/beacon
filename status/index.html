@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/status/status.css?v=1" />
+    <link rel="stylesheet" href="/status/status.css?v=2" />
   </head>
   <body>
     <header class="status-header">
@@ -88,13 +88,13 @@
         </article>
       </section>
 
-      <section class="incident-history">
+      <section class="incident-history" data-incident>
         <p class="eyebrow">Incident history</p>
-        <div><span class="status-dot"></span><strong>No active incidents</strong><span>Beacon is operating normally.</span></div>
+        <div><span class="status-dot"></span><strong data-incident-title>No active incidents</strong><span data-incident-copy>Beacon is operating normally.</span></div>
       </section>
     </main>
 
     <footer><span>Beacon status</span><span data-last-updated>Waiting for live data...</span></footer>
-    <script src="/status/status.js?v=1"></script>
+    <script src="/status/status.js?v=2"></script>
   </body>
 </html>

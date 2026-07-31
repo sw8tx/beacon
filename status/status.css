@@ -43,6 +43,7 @@ h1 { margin-bottom: 11px; font: 700 clamp(2.25rem, 6vw, 4.4rem)/1 "Space Grotesk
 .incident-history { padding-top: 70px; }
 .incident-history > div { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 10px; padding: 18px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .incident-history .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 11px var(--green); }
+.incident-history.is-down .status-dot { background: var(--red); box-shadow: 0 0 11px var(--red); }
 .incident-history strong { font-size: .86rem; }
 .incident-history div span:last-child { justify-self: end; color: #767d77; font-size: .75rem; }
 footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 70px; padding: 18px max(22px, calc((100vw - 940px) / 2)); border-top: 1px solid rgba(255,195,28,.2); color: #747b75; font-size: .7rem; }

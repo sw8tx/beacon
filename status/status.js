@@ -3,6 +3,9 @@ const summaryTitle = document.querySelector("[data-summary-title]");
 const summaryCopy = document.querySelector("[data-summary-copy]");
 const summaryIcon = document.querySelector("[data-summary-icon]");
 const lastUpdated = document.querySelector("[data-last-updated]");
+const incident = document.querySelector("[data-incident]");
+const incidentTitle = document.querySelector("[data-incident-title]");
+const incidentCopy = document.querySelector("[data-incident-copy]");
 const services = [...document.querySelectorAll("[data-service]")];
 
 function formatNumber(value) {
@@ -124,6 +127,9 @@ async function refreshStatus() {
     summaryIcon.textContent = allOnline ? "\u2713" : "!";
     summaryTitle.textContent = allOnline ? "All systems operational" : "Service disruption detected";
     summaryCopy.textContent = allOnline ? "Beacon Bot and its public services are responding normally." : "At least one Beacon service is not responding normally.";
+    incident.classList.toggle("is-down", !allOnline);
+    incidentTitle.textContent = allOnline ? "No active incidents" : "Active service interruption";
+    incidentCopy.textContent = allOnline ? "Beacon is operating normally." : "The live monitor is waiting for a healthy Beacon report.";
 
     document.querySelector('[data-metric="uptime"]').textContent = formatDuration(stats.uptime);
     document.querySelector('[data-metric="ping"]').textContent = Number(stats.ping) ? `${Math.round(stats.ping)} ms` : "--";
@@ -147,6 +153,9 @@ async function refreshStatus() {
     summaryIcon.textContent = "!";
     summaryTitle.textContent = "Status data unavailable";
     summaryCopy.textContent = "The monitoring API could not be reached. Beacon may still be operating.";
+    incident.classList.add("is-down");
+    incidentTitle.textContent = "Monitoring data unavailable";
+    incidentCopy.textContent = "The status API could not complete its latest check.";
     const emptyDays = buildDays({ online: false, history: [], monitoringStartedAt: null });
     services.forEach((service) => setService(service, false, "Unavailable", "No live status data", emptyDays));
     if (landing.online) {
