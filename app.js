@@ -23,6 +23,21 @@ const translations = {
   nl: { label: "Nederlands", code: "NL", bot: "Beacon Bot", support: "Supportserver", join: "Word lid van Discord", help: "Help", commands: "Commands", status: "Status", ping: "Ping", prestige: "Beacon Prestige", new: "Nieuw!", add: "Toevoegen aan server", login: "Login met Discord", eyebrow: "De ultieme bot voor servergroei", heroLineOne: "Laat je server groeien.", heroLineTwo: "Versterk je community.", heroDescription: "Beacon is een complete Discord-bot om je server te laten groeien, beheren en verbinden.", checkOne: "Ticketsysteem", checkTwo: "Auto responder", checkThree: "Vastgezette notities", checkFour: "Serverstatistieken", checkFive: "/Say Command", checkSix: "En nog veel meer...", heroAdd: "Toevoegen aan server", heroLogin: "Login met Discord", docs: "Bekijk docs", heroNote: "Vertrouwd door groeiende communities", livePreview: "Live dashboard preview", builtFor: "Voor je volgende niveau", liveStatus: "Live systeemstatus", statServers: "Servers verbonden", statUsers: "Leden bereikt", statPing: "Gemiddelde ping", statUptime: "Altijd beschikbaar", featureOverline: "Alles op een plek", featureTitle: "Jouw community,\nin haar element.", featureDescription: "Krachtige automatisering, eenvoudige moderatie en heldere inzichten.", featureOneTitle: "Automatiseer werk", featureOneCopy: "Laat Beacon terugkerende taken afhandelen.", featureTwoTitle: "Zie wat telt", featureTwoCopy: "Realtime serverstatistieken wanneer je ze nodig hebt.", featureThreeTitle: "Maak het eigen", featureThreeCopy: "Flexibele commands voor jouw server.", learnMore: "Ontdek", finalOverline: "Klaar wanneer jij dat bent", finalTitle: "Geef je server\nde Beacon-touch.", footer: "Gebouwd voor ambitieuze communities." }
 };
 
+const interfaceTranslations = {
+  en: { navFeatures: "Features", navCommands: "Commands", navDashboard: "Dashboard", navPrestige: "Prestige", navDocs: "Docs", navSupport: "Support", navStatus: "Status", checkFive: "Welcome Messages", checkSix: "Community Health Score", footerProduct: "Product", footerDocumentation: "Documentation", footerPrivacy: "Privacy", footerTerms: "Terms", footerImprint: "Imprint" },
+  fr: { navFeatures: "Fonctions", navCommands: "Commandes", navDashboard: "Tableau de bord", navPrestige: "Prestige", navDocs: "Docs", navSupport: "Support", navStatus: "Statut", checkFive: "Messages de bienvenue", checkSix: "Score de sante communautaire", footerProduct: "Produit", footerDocumentation: "Documentation", footerPrivacy: "Confidentialite", footerTerms: "Conditions", footerImprint: "Mentions legales" },
+  es: { navFeatures: "Funciones", navCommands: "Comandos", navDashboard: "Panel", navPrestige: "Prestige", navDocs: "Docs", navSupport: "Soporte", navStatus: "Estado", checkFive: "Mensajes de bienvenida", checkSix: "Salud de la comunidad", footerProduct: "Producto", footerDocumentation: "Documentacion", footerPrivacy: "Privacidad", footerTerms: "Terminos", footerImprint: "Aviso legal" },
+  de: { navFeatures: "Features", navCommands: "Commands", navDashboard: "Dashboard", navPrestige: "Prestige", navDocs: "Docs", navSupport: "Support", navStatus: "Status", checkFive: "Welcome Messages", checkSix: "Community Health Score", footerProduct: "Produkt", footerDocumentation: "Dokumentation", footerPrivacy: "Datenschutz", footerTerms: "Nutzungsbedingungen", footerImprint: "Impressum" },
+  tr: { navFeatures: "Ozellikler", navCommands: "Komutlar", navDashboard: "Panel", navPrestige: "Prestige", navDocs: "Belgeler", navSupport: "Destek", navStatus: "Durum", checkFive: "Karsilama mesajlari", checkSix: "Topluluk saglik puani", footerProduct: "Urun", footerDocumentation: "Belgeler", footerPrivacy: "Gizlilik", footerTerms: "Kosullar", footerImprint: "Kunye" },
+  ar: { navFeatures: "Features", navCommands: "Commands", navDashboard: "Dashboard", navPrestige: "Prestige", navDocs: "Docs", navSupport: "Support", navStatus: "Status", checkFive: "Welcome Messages", checkSix: "Community Health Score", footerProduct: "Product", footerDocumentation: "Documentation", footerPrivacy: "Privacy", footerTerms: "Terms", footerImprint: "Imprint" },
+  pt: { navFeatures: "Recursos", navCommands: "Comandos", navDashboard: "Painel", navPrestige: "Prestige", navDocs: "Docs", navSupport: "Suporte", navStatus: "Status", checkFive: "Mensagens de boas-vindas", checkSix: "Saude da comunidade", footerProduct: "Produto", footerDocumentation: "Documentacao", footerPrivacy: "Privacidade", footerTerms: "Termos", footerImprint: "Aviso legal" },
+  "pt-BR": { navFeatures: "Recursos", navCommands: "Comandos", navDashboard: "Painel", navPrestige: "Prestige", navDocs: "Docs", navSupport: "Suporte", navStatus: "Status", checkFive: "Mensagens de boas-vindas", checkSix: "Saude da comunidade", footerProduct: "Produto", footerDocumentation: "Documentacao", footerPrivacy: "Privacidade", footerTerms: "Termos", footerImprint: "Aviso legal" },
+  it: { navFeatures: "Funzioni", navCommands: "Comandi", navDashboard: "Dashboard", navPrestige: "Prestige", navDocs: "Docs", navSupport: "Supporto", navStatus: "Stato", checkFive: "Messaggi di benvenuto", checkSix: "Salute della community", footerProduct: "Prodotto", footerDocumentation: "Documentazione", footerPrivacy: "Privacy", footerTerms: "Termini", footerImprint: "Note legali" },
+  nl: { navFeatures: "Functies", navCommands: "Commands", navDashboard: "Dashboard", navPrestige: "Prestige", navDocs: "Docs", navSupport: "Support", navStatus: "Status", checkFive: "Welkomstberichten", checkSix: "Community health score", footerProduct: "Product", footerDocumentation: "Documentatie", footerPrivacy: "Privacy", footerTerms: "Voorwaarden", footerImprint: "Colofon" },
+};
+
+Object.entries(interfaceTranslations).forEach(([language, values]) => Object.assign(translations[language], values));
+
 function setLanguage(language) {
   const dictionary = translations[language] || translations.de;
   document.documentElement.lang = language;
@@ -128,11 +143,11 @@ function makeDashboardTexture(THREE) {
   }
   function draw(time) {
     const pulse = Math.sin(time * .0017) * 2;
-    context.fillStyle = "#111514";
+    context.fillStyle = "#202623";
     context.fillRect(0, 0, 1200, 720);
-    context.fillStyle = "#0a0d0d";
+    context.fillStyle = "#111614";
     context.fillRect(0, 0, 208, 720);
-    context.strokeStyle = "rgba(255,255,255,.07)";
+    context.strokeStyle = "rgba(255,255,255,.13)";
     context.beginPath(); context.moveTo(208, 0); context.lineTo(208, 720); context.stroke();
     context.fillStyle = "#ffc31c";
     context.beginPath(); context.arc(39, 47, 12, 0, Math.PI * 2); context.fill();
@@ -141,7 +156,7 @@ function makeDashboardTexture(THREE) {
     const nav = ["Dashboard", "Tickets", "Automation", "Analytics", "Settings"];
     nav.forEach((label, index) => {
       const y = 145 + index * 48;
-      if (index === 0) roundRect(20, y - 24, 168, 38, 7, "rgba(255,195,28,.16)");
+      if (index === 0) roundRect(20, y - 24, 168, 38, 7, "rgba(255,195,28,.24)", "rgba(255,195,28,.34)");
       context.fillStyle = index === 0 ? "#ffc31c" : "#7f8881";
       context.beginPath(); context.arc(40, y - 4, 4, 0, Math.PI * 2); context.fill();
       text(label, 57, y, 14, index === 0 ? "#ffc31c" : "#a5aba6", "600");
@@ -150,18 +165,18 @@ function makeDashboardTexture(THREE) {
     text("Your server is glowing.", 28, 669, 11, "#68716b");
     text("Good evening, Agent", 248, 42, 13, "#7d8780");
     text("Overview", 248, 78, 30, "#f4f3eb", "700");
-    roundRect(1004, 25, 145, 39, 7, "#1a201e");
+    roundRect(1004, 25, 145, 39, 7, "#29312d", "rgba(120,217,151,.22)");
     context.fillStyle = "#72d391"; context.beginPath(); context.arc(1025, 44, 5, 0, Math.PI * 2); context.fill();
     text("All systems live", 1038, 49, 11, "#b6c1b8", "600");
     const metrics = [["1,542", "SERVERS", "+12 this week"], ["98,421", "MEMBERS", "+842 this week"], ["23ms", "PING", "Excellent"], ["99.9%", "UPTIME", "Operational"]];
     metrics.forEach((metric, index) => {
       const x = 248 + index * 225;
-      roundRect(x, 110, 207, 115, 9, "#171c1a", "rgba(255,255,255,.07)");
+      roundRect(x, 110, 207, 115, 9, "#29302d", "rgba(255,255,255,.14)");
       text(metric[1], x + 18, 139, 10, "#7e8880", "700");
       text(metric[0], x + 18, 180, 28, "#f1f0e9", "700");
       text(metric[2], x + 18, 204, 10, index > 1 ? "#72d391" : "#ffc31c", "600");
     });
-    roundRect(248, 251, 432, 265, 9, "#171c1a", "rgba(255,255,255,.07)");
+    roundRect(248, 251, 432, 265, 9, "#252c29", "rgba(255,255,255,.14)");
     text("SERVER ACTIVITY", 270, 280, 11, "#ffc31c", "700");
     text("last 7 days", 655, 280, 10, "#68716b", "600", "right");
     context.strokeStyle = "rgba(255,255,255,.08)";
@@ -170,7 +185,7 @@ function makeDashboardTexture(THREE) {
     context.fillStyle = "#ffc31c"; context.beginPath(); context.arc(650, 323, 5, 0, Math.PI * 2); context.fill();
     const boxes = [[700, 251, 213, 126, "RECENT TICKETS"], [930, 251, 218, 126, "AUTO RESPONDER"], [700, 390, 213, 126, "STICKY NOTES"], [930, 390, 218, 126, "SERVER ACTIVITY"]];
     boxes.forEach(([x, y, w, h, label], boxIndex) => {
-      roundRect(x, y, w, h, 9, "#171c1a", "rgba(255,255,255,.07)");
+      roundRect(x, y, w, h, 9, "#252c29", "rgba(255,255,255,.14)");
       text(label, x + 17, y + 29, 10, "#ffc31c", "700");
       for (let row = 0; row < 3; row++) {
         const rowY = y + 55 + row * 20;
@@ -201,34 +216,34 @@ async function initThreeLaptop() {
     renderer.setSize(stage.clientWidth, stage.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 1.24;
     stage.appendChild(renderer.domElement);
-    scene.add(new THREE.HemisphereLight(0xfceac1, 0x090b0b, 1.8));
-    const key = new THREE.DirectionalLight(0xffc02c, 4.5); key.position.set(-4, 6, 7); scene.add(key);
+    scene.add(new THREE.HemisphereLight(0xfff1cf, 0x111513, 2.35));
+    const key = new THREE.DirectionalLight(0xffc02c, 5.3); key.position.set(-4, 6, 7); scene.add(key);
     const rim = new THREE.PointLight(0xffa916, 11, 15); rim.position.set(4, 1, 3); scene.add(rim);
     const fill = new THREE.PointLight(0xffe5a1, 4, 16); fill.position.set(-4, 0, 4); scene.add(fill);
-    const laptop = new THREE.Group(); laptop.rotation.y = -.18; laptop.rotation.x = -.03; scene.add(laptop);
-    const black = new THREE.MeshStandardMaterial({ color: 0x101313, roughness: .25, metalness: .78 });
-    const edge = new THREE.MeshStandardMaterial({ color: 0x2a2e2b, roughness: .23, metalness: .65 });
+    const laptop = new THREE.Group(); laptop.rotation.y = -.18; laptop.rotation.x = -.03; laptop.scale.setScalar(1.12); scene.add(laptop);
+    const black = new THREE.MeshStandardMaterial({ color: 0x171b19, roughness: .36, metalness: .62 });
+    const edge = new THREE.MeshStandardMaterial({ color: 0x454c47, roughness: .3, metalness: .58 });
     const yellow = new THREE.MeshStandardMaterial({ color: 0xffbd16, roughness: .27, metalness: .55, emissive: 0x8c5d00, emissiveIntensity: .23 });
     const screenBezel = new THREE.Mesh(new RoundedBoxGeometry(6.5, 4.25, .27, .18, 6), black);
     screenBezel.position.set(0, 1.28, -.85); laptop.add(screenBezel);
     const screenCanvas = makeDashboardTexture(THREE);
-    const display = new THREE.Mesh(new RoundedBoxGeometry(6.08, 3.67, .035, .08, 5), new THREE.MeshStandardMaterial({ map: screenCanvas.texture, roughness: .32, metalness: .08, emissive: 0x382c09, emissiveIntensity: .08 }));
+    const display = new THREE.Mesh(new RoundedBoxGeometry(6.08, 3.67, .035, .08, 5), new THREE.MeshBasicMaterial({ map: screenCanvas.texture, toneMapped: false }));
     display.position.set(0, 1.27, -.68); laptop.add(display);
     const cameraDot = new THREE.Mesh(new THREE.SphereGeometry(.045, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffc31c })); cameraDot.position.set(0, 3.2, -.67); laptop.add(cameraDot);
     const base = new THREE.Mesh(new RoundedBoxGeometry(7.15, .38, 4.1, .16, 8), edge); base.position.set(0, -1.05, .25); laptop.add(base);
-    const deck = new THREE.Mesh(new RoundedBoxGeometry(6.92, .08, 3.83, .05, 6), new THREE.MeshStandardMaterial({ color: 0x1a1e1c, roughness: .46, metalness: .48 })); deck.position.set(0, -.84, .2); laptop.add(deck);
+    const deck = new THREE.Mesh(new RoundedBoxGeometry(6.92, .08, 3.83, .05, 6), new THREE.MeshStandardMaterial({ color: 0x343a36, roughness: .42, metalness: .46 })); deck.position.set(0, -.84, .2); laptop.add(deck);
     const keyboard = new THREE.Group();
     for (let row = 0; row < 5; row++) {
       const count = row === 4 ? 7 : 11;
       for (let col = 0; col < count; col++) {
-        const keycap = new THREE.Mesh(new RoundedBoxGeometry(row === 4 ? .62 : .43, .055, .22, .035, 2), new THREE.MeshStandardMaterial({ color: row === 0 ? 0x252a27 : 0x0d100f, roughness: .32, metalness: .4 }));
+        const keycap = new THREE.Mesh(new RoundedBoxGeometry(row === 4 ? .62 : .43, .055, .22, .035, 2), new THREE.MeshStandardMaterial({ color: row === 0 ? 0x4a514c : 0x272c29, roughness: .38, metalness: .34 }));
         keycap.position.set((col - (count - 1) / 2) * (row === 4 ? .72 : .5), -.78, -.7 + row * .42); keyboard.add(keycap);
       }
     }
     laptop.add(keyboard);
-    const trackpad = new THREE.Mesh(new RoundedBoxGeometry(1.55, .025, .98, .08, 4), new THREE.MeshStandardMaterial({ color: 0x262b28, roughness: .26, metalness: .5 })); trackpad.position.set(0, -.78, 1.27); laptop.add(trackpad);
+    const trackpad = new THREE.Mesh(new RoundedBoxGeometry(1.55, .025, .98, .08, 4), new THREE.MeshStandardMaterial({ color: 0x4b524d, roughness: .34, metalness: .43 })); trackpad.position.set(0, -.78, 1.27); laptop.add(trackpad);
     const hinge = new THREE.Mesh(new THREE.CylinderGeometry(.14, .14, 5.3, 32), black); hinge.rotation.z = Math.PI / 2; hinge.position.set(0, -.77, -.77); laptop.add(hinge);
     const logo = new THREE.Mesh(new THREE.OctahedronGeometry(.22, 0), yellow); logo.position.set(0, -.64, 2.05); logo.rotation.y = Math.PI / 4; laptop.add(logo);
     const baseAccent = new THREE.Mesh(new THREE.BoxGeometry(2.6, .018, .018), yellow); baseAccent.position.set(0, -.845, 2.14); laptop.add(baseAccent);
@@ -237,7 +252,7 @@ async function initThreeLaptop() {
     const clock = new THREE.Clock();
     function animate() {
       const elapsed = clock.getElapsedTime();
-      laptop.rotation.y = -.18 + elapsed * .18;
+      laptop.rotation.y = -.1 + Math.sin(elapsed * .42) * .24;
       laptop.rotation.x = -.04 + Math.sin(elapsed * .55) * .025;
       laptop.position.y = Math.sin(elapsed * .8) * .075;
       screenCanvas.draw(performance.now());

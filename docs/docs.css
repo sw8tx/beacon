@@ -1,0 +1,40 @@
+:root { --ink: #050505; --panel: #111412; --paper: #f6f3ea; --muted: #949b95; --yellow: #ffc31c; --line: rgba(255,255,255,.1); }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 100px; }
+body { min-width: 320px; margin: 0; color: var(--paper); background: var(--ink); font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif; }
+a { color: inherit; text-decoration: none; }
+.docs-header { position: fixed; inset: 0 0 auto; z-index: 10; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 72px; padding: 12px 4vw; border-bottom: 1px solid rgba(255,195,28,.25); background: rgba(7,8,8,.94); backdrop-filter: blur(18px); }
+.docs-brand { display: inline-flex; width: max-content; align-items: center; gap: 10px; font: 700 1.05rem "Space Grotesk", sans-serif; }
+.docs-brand img { object-fit: contain; }
+.docs-brand span { padding-left: 10px; border-left: 1px solid var(--line); color: #7f8781; font: 600 .76rem "DM Sans", sans-serif; text-transform: uppercase; }
+.docs-header nav { display: flex; gap: 24px; color: #b8beb9; font-size: .78rem; font-weight: 700; }
+.docs-header nav a:hover { color: var(--yellow); }
+.docs-login { justify-self: end; min-height: 38px; padding: 10px 15px; border-radius: 5px; color: #1b1504; background: var(--yellow); font-size: .76rem; font-weight: 800; }
+main { display: grid; grid-template-columns: 220px minmax(0, 900px); gap: 60px; max-width: 1260px; margin: 0 auto; padding: 130px 32px 90px; }
+.docs-sidebar { position: sticky; top: 106px; display: flex; height: max-content; flex-direction: column; gap: 13px; padding-left: 18px; border-left: 1px solid var(--line); color: #7f8781; font-size: .76rem; }
+.docs-sidebar span { margin-bottom: 8px; color: #e5e8e2; font-weight: 800; text-transform: uppercase; }
+.docs-sidebar a:hover { color: var(--yellow); }
+.docs-content { min-width: 0; }
+.docs-intro { padding: 24px 0 82px; border-bottom: 1px solid rgba(255,195,28,.24); }
+.docs-kicker { margin: 0 0 18px; color: var(--yellow); font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+h1, h2, p { margin-top: 0; }
+h1 { max-width: 780px; margin-bottom: 24px; font: 700 clamp(3.2rem, 7vw, 6.2rem)/.95 "Space Grotesk", sans-serif; }
+h2 { margin-bottom: 16px; font: 700 clamp(1.8rem, 4vw, 3rem)/1.03 "Space Grotesk", sans-serif; }
+.docs-intro > p:not(.docs-kicker), .section-copy, .split-section p, .legal-section p { max-width: 700px; color: var(--muted); font-size: 1rem; line-height: 1.75; }
+.docs-actions { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 32px; }
+.docs-actions a { min-height: 48px; padding: 14px 18px; border: 1px solid rgba(255,255,255,.13); border-radius: 5px; font-size: .84rem; font-weight: 800; }
+.docs-actions .primary { border-color: var(--yellow); color: #211800; background: var(--yellow); }
+.docs-section { padding: 76px 0; border-bottom: 1px solid var(--line); }
+.command-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin-top: 34px; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: var(--line); }
+.command-list > div { display: grid; gap: 8px; min-height: 104px; padding: 20px; background: var(--panel); }
+.command-list code { width: max-content; color: var(--yellow); font: 700 .9rem "Space Grotesk", sans-serif; }
+.command-list span { color: #969d97; font-size: .84rem; line-height: 1.5; }
+.split-section { display: grid; grid-template-columns: minmax(250px, .9fr) 1.1fr; gap: 60px; align-items: start; }
+.text-link { display: inline-block; margin-top: 15px; color: var(--yellow); font-weight: 800; }
+.legal-section { padding-block: 50px; }
+.legal-section h2 { font-size: 1.5rem; }
+footer { display: flex; justify-content: space-between; padding: 25px 5vw; border-top: 1px solid rgba(255,195,28,.2); color: #757c76; font-size: .76rem; }
+footer span { color: #e8eae5; font-weight: 800; }
+a:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+@media (max-width: 850px) { .docs-header { grid-template-columns: 1fr auto; } .docs-header nav { display: none; } main { grid-template-columns: 1fr; padding-inline: 22px; } .docs-sidebar { display: none; } .split-section { grid-template-columns: 1fr; gap: 10px; } }
+@media (max-width: 560px) { .docs-header { padding-inline: 14px; } .docs-brand span { display: none; } .docs-login { padding-inline: 11px; } main { padding-top: 112px; } h1 { font-size: 3rem; } .command-list { grid-template-columns: 1fr; } footer { gap: 20px; flex-direction: column; } }

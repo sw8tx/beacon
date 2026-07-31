@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=92" />
+    <link rel="stylesheet" href="styles.css?v=97" />
     <script type="importmap">
       {"imports":{"three":"https://unpkg.com/three@0.166.1/build/three.module.js"}}
     </script>
@@ -24,18 +24,12 @@
       </a>
 
       <div class="navbar-links">
-        <a class="navbar-link is-active" href="#top" data-i18n="bot">Beacon Bot</a>
-        <a class="navbar-link" href="https://discord.com" target="_blank" rel="noreferrer" data-i18n="support">Support Server</a>
-        <a class="navbar-link" href="https://discord.com" target="_blank" rel="noreferrer" data-i18n="join">Join our Discord</a>
-        <a class="navbar-link" href="#status" data-i18n="help">Help</a>
-        <a class="navbar-link" href="#status" data-i18n="commands">Commands</a>
-        <a class="navbar-link" href="#status" data-i18n="status">Status</a>
-        <a class="navbar-link" href="#status" data-i18n="ping">Ping</a>
-        <a class="navbar-prestige" href="#top">
-          <span class="prestige-shine" aria-hidden="true"></span>
-          <span data-i18n="prestige">Beacon Prestige</span>
-          <span class="prestige-badge" data-i18n="new">New!</span>
-        </a>
+        <a class="navbar-link is-active" href="#features" data-i18n="navFeatures">Features</a>
+        <a class="navbar-link" href="/docs#commands" data-i18n="navCommands">Commands</a>
+        <a class="navbar-link" href="/api/auth/discord/login" data-i18n="navDashboard">Dashboard</a>
+        <a class="navbar-link" href="/docs#prestige" data-i18n="navPrestige">Prestige</a>
+        <a class="navbar-link" href="/docs" data-i18n="navDocs">Docs</a>
+        <a class="navbar-link" href="/docs#support" data-i18n="navSupport">Support</a>
       </div>
 
       <div class="navbar-actions">
@@ -69,23 +63,22 @@
     <main id="top">
       <section class="hero-section">
         <div class="hero-copy" data-reveal>
-          <div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="eyebrow">The ultimate server growth bot</span></div>
           <h1><span data-i18n="heroLineOne">Grow your server.</span><br /><em data-i18n="heroLineTwo">Empower your community.</em></h1>
           <p class="hero-description" data-i18n="heroDescription">Beacon is an all-in-one Discord bot built to help you grow, manage, and engage your server with powerful tools and an easy-to-use dashboard.</p>
 
-          <div class="hero-checks">
+          <div class="hero-checks" id="features">
             <span><i>✓</i><span data-i18n="checkOne">Ticket System</span></span>
             <span><i>✓</i><span data-i18n="checkTwo">Auto Responder</span></span>
             <span><i>✓</i><span data-i18n="checkThree">Sticky Notes</span></span>
             <span><i>✓</i><span data-i18n="checkFour">Server Statistics</span></span>
-            <span><i>✓</i><span data-i18n="checkFive">/Say Command</span></span>
-            <span><i>✓</i><span data-i18n="checkSix">And much more...</span></span>
+            <span><i>✓</i><span data-i18n="checkFive">Welcome Messages</span></span>
+            <span><i>✓</i><span data-i18n="checkSix">Community Health Score</span></span>
           </div>
 
           <div class="hero-actions">
             <a class="hero-button hero-button--primary" href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&scope=bot%20applications.commands"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="heroAdd">Add to Server</span><span class="button-arrow">↗</span></a>
             <a class="hero-button hero-button--dark" href="/api/auth/discord/login"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="heroLogin">Login with Discord</span></a>
-            <a class="hero-button hero-button--outline" href="#status"><span class="book-mark">▣</span><span data-i18n="docs">View Docs</span></a>
+            <a class="hero-button hero-button--outline" href="/docs"><span class="book-mark">▣</span><span data-i18n="docs">View Docs</span></a>
           </div>
           <div class="hero-note"><span class="online-pulse"></span><span data-i18n="heroNote">Trusted by growing communities everywhere</span></div>
         </div>
@@ -95,7 +88,6 @@
           <div class="visual-grid"></div>
           <div class="hero-stage" aria-label="Rotating 3D Beacon computer dashboard"></div>
           <div class="visual-shadow"></div>
-          <div class="visual-label visual-label--bottom"><span class="mini-spark">✦</span><span data-i18n="builtFor">Built for your next level</span></div>
         </div>
       </section>
 
@@ -110,7 +102,24 @@
       </section>
     </main>
 
-    <footer><span data-i18n="footer">Built for communities with ambition.</span></footer>
-    <script src="app.js?v=96"></script>
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <a href="#top" aria-label="Beacon home"><img src="assets/beacon-logo.png?v=92" width="32" height="32" alt="" /><strong>Beacon</strong></a>
+        <span data-i18n="footer">Built for communities with ambition.</span>
+      </div>
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="#features" data-i18n="footerProduct">Product</a>
+        <a href="/docs#commands" data-i18n="navCommands">Commands</a>
+        <a href="/docs" data-i18n="footerDocumentation">Documentation</a>
+        <a href="#status" data-i18n="navStatus">Status</a>
+        <a href="/docs#support" data-i18n="navSupport">Support</a>
+      </nav>
+      <nav class="footer-legal" aria-label="Legal navigation">
+        <a href="/docs#privacy" data-i18n="footerPrivacy">Privacy</a>
+        <a href="/docs#terms" data-i18n="footerTerms">Terms</a>
+        <a href="/docs#imprint" data-i18n="footerImprint">Impressum</a>
+      </nav>
+    </footer>
+    <script src="app.js?v=97"></script>
   </body>
 </html>
