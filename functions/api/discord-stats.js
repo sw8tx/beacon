@@ -126,16 +126,22 @@ async function updateHistory(env, stats) {
 }
 
 async function writeStats(env, stats) {
-  if (env.DISCORD_STATS) {
-    await env.DISCORD_STATS.put("latest", JSON.stringify(stats));
+  memoryStats = stats;
+
+  if (env.DISCORD_STATS && typeof env.DISCORD_STATS.put === "function") {
+    try {
+      await env.DISCORD_STATS.put("latest", JSON.stringify(stats));
+    } catch (err) {
+      console.error(`[discord-stats] Failed to write latest stats: ${err.message}`);
+      return;
+    }
+
     try {
       await updateHistory(env, stats);
     } catch (err) {
       console.error(`[discord-stats] Failed to update history: ${err.message}`);
     }
   }
-
-  memoryStats = stats;
 }
 
 async function handleGet(env) {
