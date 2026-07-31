@@ -4,6 +4,7 @@ const FALLBACK_STATS = {
   commands: 0,
   ping: 0,
   uptime: 0,
+  servers: [],
   online: false,
   updatedAt: null
 };
@@ -28,6 +29,37 @@ function cleanNumber(value) {
   return Number.isFinite(number) && number >= 0 ? Math.floor(number) : 0;
 }
 
+function cleanText(value, maxLength = 80) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+}
+
+function cleanUrl(value) {
+  const text = cleanText(value, 240);
+  if (!text) return null;
+  try {
+    const url = new URL(text);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeServers(input) {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((server) => ({
+      name: cleanText(server?.name, 80),
+      members: cleanNumber(server?.members),
+      iconUrl: cleanUrl(server?.iconUrl),
+    }))
+    .filter((server) => server.name)
+    .sort((left, right) => right.members - left.members)
+    .slice(0, 12);
+}
+
 function normalizeStats(input) {
   return {
     guilds: cleanNumber(input.guilds),
@@ -35,6 +67,7 @@ function normalizeStats(input) {
     commands: cleanNumber(input.commands),
     ping: cleanNumber(input.ping),
     uptime: cleanNumber(input.uptime),
+    servers: normalizeServers(input.servers),
     online: true,
     updatedAt: new Date().toISOString()
   };

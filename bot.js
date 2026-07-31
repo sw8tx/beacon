@@ -132,6 +132,14 @@ function buildStatsPayload() {
   const totalUsers = client.guilds.cache.reduce((sum, guild) => {
     return sum + (guild.memberCount || guild.members.cache.size || 0);
   }, 0);
+  const servers = client.guilds.cache
+    .map((guild) => ({
+      name: guild.name,
+      members: guild.memberCount || guild.members.cache.size || 0,
+      iconUrl: guild.iconURL({ extension: "png", size: 64 }) || null,
+    }))
+    .sort((left, right) => right.members - left.members)
+    .slice(0, 12);
 
   return {
     guilds: client.guilds.cache.size,
@@ -139,6 +147,7 @@ function buildStatsPayload() {
     commands: commands.length,
     ping: Math.round(client.ws.ping),
     uptime: Math.floor(process.uptime()),
+    servers,
   };
 }
 
