@@ -6,7 +6,7 @@ const html = `<!doctype html>
     <meta name="theme-color" content="#000000" />
     <title>Beacon Commands</title>
     <link rel="icon" type="image/png" href="/assets/beacon-logo.png?v=92" />
-    <link rel="stylesheet" href="/commands.css?v=4" />
+    <link rel="stylesheet" href="/commands.css?v=5" />
   </head>
   <body>
     <nav class="commands-nav" aria-label="Beacon commands navigation">
@@ -24,11 +24,12 @@ const html = `<!doctype html>
       </aside>
       <section class="commands-doc" id="tickets">
         <h1>Ticket Commands</h1>
-        <p class="doc-lead">Set up a clean support flow for your server. Configure the panel once, let members open private tickets, and keep every support case in one place.</p>
+        <p class="doc-lead">Set up a clean support flow for your server. Configure the panel once, let members open private tickets, and keep every support case in one place. This is made for normal support, reports, orders, appeals, or anything that should not happen in public chat.</p>
         <div class="doc-panel">
           <h2>How it works</h2>
-          <p>When someone opens a ticket, Beacon asks for a short subject and details, then creates a private channel for the member and your staff team. Simple, organized, and easy to close with a transcript when the issue is done.</p>
+          <p>When someone opens a ticket, Beacon asks for a short subject and details, then creates a private channel for the member and your staff team. Staff can claim the ticket, add another person if needed, and close it when the issue is done. The close action can also create a transcript, so the important stuff is not lost.</p>
         </div>
+        <section class="flow-grid" aria-label="Ticket flow"><article><span>1</span><h2>Configure</h2><p>Use <code>/ticketsetup</code> to set the support role, panel text, modal labels, open limit, transcript behavior, and the color style.</p></article><article><span>2</span><h2>Post panel</h2><p>Use <code>/ticketpanel</code> in the channel where members should open tickets. Beacon posts the embed and the button.</p></article><article><span>3</span><h2>Handle ticket</h2><p>Staff can claim, add users, check ticket info, and close the channel once the support case is finished.</p></article></section>
         <div class="command-list">
           <article id="ticketsetup" class="command-card"><div><code>/ticketsetup</code><p>Customize the ticket system: support role, panel text, button labels, limits, transcripts, channel names, and more.</p></div><span>+17 options</span></article>
           <article id="ticketpanel" class="command-card"><div><code>/ticketpanel</code><p>Post the ticket panel in the current channel so members can open a private ticket with one click.</p></div><span>Panel</span></article>
@@ -44,29 +45,10 @@ const html = `<!doctype html>
           </div>
         </section>
         <section class="preview-block" aria-label="Ticket panel preview">
-          <h2>Panel preview</h2>
-          <div class="discord-preview discord-preview--panel">
-            <div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div>
-            <div class="preview-card">
-              <strong>Beacon</strong>
-              <h3>Need help?</h3>
-              <p>Open a private ticket and the team will pick it up as soon as possible.</p>
-              <b>Before you open one</b>
-              <p>Use tickets for support, reports, orders, or private questions. Please do not open duplicate tickets.</p>
-              <button type="button">Open Ticket</button>
-            </div>
-          </div>
-          <div class="discord-preview discord-preview--opened">
-            <div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div>
-            <div class="preview-card">
-              <strong>Beacon</strong>
-              <h3>Ticket opened</h3>
-              <p>Thanks. Tell us what you need and include screenshots, order IDs, or context if it helps.</p>
-              <div class="ticket-fields"><div><b>Owner</b><span>member</span></div><div><b>Status</b><span>Open</span></div><div><b>Team</b><span>staff</span></div></div>
-              <b>Subject</b><p>Order help</p><b>Details</b><p>I need help with my setup.</p>
-              <div class="preview-actions"><button type="button">Claim</button><button class="danger" type="button">Close</button></div>
-            </div>
-          </div>
+          <h2>Screenshots</h2>
+          <p>These previews show what members and staff will see after setup.</p>
+          <div class="screenshot-frame"><div class="screenshot-top"><span></span><strong>Ticket panel</strong></div><div class="discord-preview discord-preview--panel"><div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div><div class="preview-card"><strong>Beacon</strong><h3>Need help?</h3><p>Open a private ticket and the team will pick it up as soon as possible.</p><b>Before you open one</b><p>Use tickets for support, reports, orders, or private questions. Please do not open duplicate tickets.</p><b>What happens next</b><p>Beacon asks for a subject and details, then creates a private channel for you and the team.</p><button type="button">Open Ticket</button></div></div></div>
+          <div class="screenshot-frame"><div class="screenshot-top"><span></span><strong>Opened ticket</strong></div><div class="discord-preview discord-preview--opened"><div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div><div class="preview-card"><strong>Beacon</strong><h3>Ticket opened</h3><p>Thanks. Tell us what you need and include screenshots, order IDs, or context if it helps.</p><div class="ticket-fields"><div><b>Owner</b><span>member</span></div><div><b>Status</b><span>Open</span></div><div><b>Team</b><span>staff</span></div></div><b>Subject</b><p>Order help</p><b>Details</b><p>I need help with my setup.</p><b>Controls</b><p>Claim marks ownership for staff. Close closes the channel and can send a transcript.</p><div class="preview-actions"><button type="button">Claim</button><button class="danger" type="button">Close</button></div></div></div></div>
         </section>
       </section>
     </main>
