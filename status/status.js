@@ -7,6 +7,11 @@ const incident = document.querySelector("[data-incident]");
 const incidentTitle = document.querySelector("[data-incident-title]");
 const incidentCopy = document.querySelector("[data-incident-copy]");
 const services = [...document.querySelectorAll("[data-service]")];
+const API_ENDPOINTS = [
+  "/api/discord-stats",
+  "https://beacon-bot.site/api/discord-stats",
+];
+let lastReportAt = null;
 
 function formatNumber(value) {
   const number = Number(value);
@@ -83,6 +88,42 @@ function overallUptime(days) {
   return known.reduce((sum, day) => sum + day.percent, 0) / known.length;
 }
 
+function formatPercent(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? `${number.toFixed(2)}%` : "--";
+}
+
+function updateLastUpdated() {
+  if (!Number.isFinite(lastReportAt)) {
+    lastUpdated.textContent = "Last updated: waiting for first report";
+    return;
+  }
+  const seconds = Math.max(0, Math.floor((Date.now() - lastReportAt) / 1000));
+  lastUpdated.textContent = `Last updated: ${seconds} second${seconds === 1 ? "" : "s"} ago`;
+}
+
+async function fetchStats() {
+  let lastError = null;
+  for (const endpoint of API_ENDPOINTS) {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 5_000);
+    try {
+      const separator = endpoint.includes("?") ? "&" : "?";
+      const response = await fetch(`${endpoint}${separator}status-check=${Date.now()}`, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`Status API returned ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      lastError = error;
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+  throw lastError || new Error("Status API unavailable");
+}
+
 function withCurrentState(days, online) {
   return days.map((day) => day.today
     ? { ...day, state: online ? "up" : "down", percent: online ? 100 : 0 }
@@ -120,13 +161,12 @@ async function checkLandingPage() {
 async function refreshStatus() {
   const landingPromise = checkLandingPage();
   try {
-    const response = await fetch(`/api/discord-stats?status-check=${Date.now()}`, { cache: "no-store" });
-    if (!response.ok) throw new Error("Status API unavailable");
-    const stats = await response.json();
+    const stats = await fetchStats();
     const landing = await landingPromise;
     const days = buildDays(stats);
     const uptime = overallUptime(days);
-    const uptimeLabel = uptime === null ? "Monitoring started" : `${uptime.toFixed(2)}% uptime`;
+    const measuredUptime = Number.isFinite(Number(stats.uptimePercent)) ? Number(stats.uptimePercent) : uptime;
+    const uptimeLabel = measuredUptime === null ? "Monitoring started" : `${measuredUptime.toFixed(2)}% uptime`;
     const allOnline = Boolean(stats.online && landing.online);
 
     summary.classList.toggle("is-down", !allOnline);
@@ -141,6 +181,7 @@ async function refreshStatus() {
     document.querySelector('[data-metric="ping"]').textContent = Number(stats.ping) ? `${Math.round(stats.ping)} ms` : "--";
     document.querySelector('[data-metric="guilds"]').textContent = formatNumber(stats.guilds);
     document.querySelector('[data-metric="users"]').textContent = formatNumber(stats.users);
+    document.querySelector('[data-metric="uptime-percent"]').textContent = formatPercent(measuredUptime);
 
     const bot = services.find((service) => service.dataset.service === "bot");
     const gateway = services.find((service) => service.dataset.service === "gateway");
@@ -151,8 +192,8 @@ async function refreshStatus() {
     setService(website, landing.online, landing.online ? "Operational" : "Unavailable", landing.online ? `Responding \u00b7 ${landing.latency} ms browser check` : "Landing page check failed", withCurrentState(days, landing.online));
     setService(api, true, "Operational", "Live metrics API is responding", withCurrentState(days, true));
 
-    const updated = new Date(stats.updatedAt || Date.now());
-    lastUpdated.textContent = `Last bot report ${updated.toLocaleString()}`;
+    lastReportAt = Date.parse(stats.updatedAt || "");
+    updateLastUpdated();
   } catch {
     const landing = await landingPromise;
     summary.classList.add("is-down");
@@ -168,12 +209,14 @@ async function refreshStatus() {
       const website = services.find((service) => service.dataset.service === "website");
       setService(website, true, "Operational", `Responding \u00b7 ${landing.latency} ms browser check`, withCurrentState(emptyDays, true));
     }
-    lastUpdated.textContent = "Live status check failed";
+    lastReportAt = null;
+    lastUpdated.textContent = "Last updated: live status check failed";
   }
 }
 
 refreshStatus();
 window.setInterval(refreshStatus, 5_000);
+window.setInterval(updateLastUpdated, 1_000);
 window.addEventListener("focus", refreshStatus);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") refreshStatus();

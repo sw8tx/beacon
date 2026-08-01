@@ -24,9 +24,28 @@ function json(data, init = {}) {
     headers: {
       "cache-control": "no-store",
       "content-type": "application/json; charset=utf-8",
+      "access-control-allow-origin": "*",
+      "access-control-allow-methods": "GET, HEAD, POST, OPTIONS",
+      "access-control-allow-headers": "authorization, content-type",
       ...(init.headers || {}),
     },
   });
+}
+
+function uptimePercent(history, monitoringStartedAt) {
+  const startedAt = Date.parse(monitoringStartedAt || "");
+  if (!Number.isFinite(startedAt)) return null;
+
+  const now = Date.now();
+  const windowStart = Math.max(startedAt, now - 30 * 86400000);
+  const expectedReports = Math.max(1, Math.floor((now - windowStart) / 60000) + 1);
+  const receivedReports = history.reduce((total, entry) => {
+    const day = Date.parse(`${entry.date}T00:00:00.000Z`);
+    if (!Number.isFinite(day) || day + 86400000 <= windowStart) return total;
+    return total + cleanNumber(entry.reports);
+  }, 0);
+
+  return Math.max(0, Math.min(100, receivedReports / expectedReports * 100));
 }
 
 function cleanNumber(value) {
@@ -271,7 +290,18 @@ async function handleGet(env) {
     }
   }
 
-  return json({ ...stats, online, history, monitoringStartedAt });
+  const ageSeconds = Number.isFinite(updatedAt)
+    ? Math.max(0, Math.floor((Date.now() - updatedAt) / 1000))
+    : null;
+
+  return json({
+    ...stats,
+    online,
+    history,
+    monitoringStartedAt,
+    uptimePercent: uptimePercent(history, monitoringStartedAt),
+    ageSeconds,
+  });
 }
 
 async function handlePost(request, env) {
@@ -305,6 +335,17 @@ async function handlePost(request, env) {
 }
 
 export async function onRequest({ request, env }) {
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "access-control-allow-origin": "*",
+        "access-control-allow-methods": "GET, HEAD, POST, OPTIONS",
+        "access-control-allow-headers": "authorization, content-type",
+        "access-control-max-age": "86400",
+      },
+    });
+  }
   if (request.method === "GET" || request.method === "HEAD") return handleGet(env);
   if (request.method === "POST") return handlePost(request, env);
   return json({ ok: false, error: "Method not allowed" }, {

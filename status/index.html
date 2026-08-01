@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/status/status.css?v=2" />
+    <link rel="stylesheet" href="/status/status.css?v=3" />
   </head>
   <body>
     <header class="status-header">
@@ -36,6 +36,7 @@
         <div><span>Gateway ping</span><strong data-metric="ping">--</strong></div>
         <div><span>Connected servers</span><strong data-metric="guilds">--</strong></div>
         <div><span>Community members</span><strong data-metric="users">--</strong></div>
+        <div><span>30-day uptime</span><strong data-metric="uptime-percent">--</strong></div>
       </section>
 
       <section class="services" aria-labelledby="services-title">
@@ -95,6 +96,6 @@
     </main>
 
     <footer><span>Beacon status</span><span data-last-updated>Waiting for live data...</span></footer>
-    <script src="/status/status.js?v=4"></script>
+    <script src="/status/status.js?v=5" defer></script>
   </body>
 </html>
