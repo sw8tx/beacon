@@ -6,7 +6,7 @@ export async function onRequest(context) {
   }
   if (url.hostname === "status.beacon-bot.site" && (url.pathname === "/" || url.pathname === "/index.html")) {
     url.pathname = "/status/";
-    return context.next(new Request(url, context.request));
+    return fetch(new Request(url, context.request));
   }
   if (url.hostname === "prestige.beacon-bot.site" && (url.pathname === "/" || url.pathname === "/index.html")) {
     url.pathname = "/prestige/";
