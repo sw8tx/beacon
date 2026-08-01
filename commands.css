@@ -74,7 +74,7 @@ a {
 
 .commands-shell {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: 270px minmax(0, 1fr);
   min-height: calc(100vh - 72px);
 }
 
@@ -86,42 +86,12 @@ a {
   overflow-y: auto;
   border-right: 1px solid var(--line);
   background: #08090d;
-  padding: 18px 14px;
-}
-
-.sidebar-product {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  padding: 9px 10px 16px;
-  border-bottom: 1px solid var(--line);
-}
-
-.sidebar-product img {
-  object-fit: contain;
-  filter: drop-shadow(0 0 12px rgba(255, 195, 28, .28));
-}
-
-.sidebar-product strong,
-.sidebar-product span {
-  display: block;
-}
-
-.sidebar-product strong {
-  font-size: .92rem;
-}
-
-.sidebar-product span {
-  color: var(--dim);
-  font-size: .72rem;
-  font-weight: 700;
+  padding: 34px 14px;
 }
 
 .sidebar-list {
   display: grid;
-  gap: 4px;
-  padding-top: 17px;
+  gap: 10px;
 }
 
 .sidebar-list p {
@@ -137,8 +107,8 @@ a {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 38px;
-  padding: 0 12px;
+  min-height: 46px;
+  padding: 0 14px;
   border-radius: 7px;
   color: #c5cad8;
   font-size: .88rem;
@@ -157,17 +127,9 @@ a {
 }
 
 .commands-doc {
-  width: min(100%, 940px);
-  padding: 70px 54px 96px;
-}
-
-.doc-kicker {
-  margin: 0 0 10px;
-  color: var(--yellow);
-  font-size: .7rem;
-  font-weight: 900;
-  letter-spacing: .22em;
-  text-transform: uppercase;
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  padding: 78px 64px 104px;
 }
 
 h1,
@@ -178,8 +140,8 @@ p {
 }
 
 h1 {
-  margin-bottom: 18px;
-  font-size: clamp(2.4rem, 5vw, 4.8rem);
+  margin-bottom: 20px;
+  font-size: clamp(2.65rem, 5vw, 5.25rem);
   line-height: .95;
   letter-spacing: 0;
 }
@@ -190,7 +152,7 @@ h2 {
 }
 
 .doc-lead {
-  max-width: 760px;
+  max-width: 880px;
   margin-bottom: 34px;
   color: #d7daea;
   font-size: 1.15rem;
@@ -208,7 +170,7 @@ h2 {
 
 .doc-panel {
   margin-bottom: 28px;
-  padding: 24px;
+  padding: 28px;
 }
 
 .doc-panel p,
@@ -230,7 +192,7 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 22px;
-  padding: 18px 20px;
+  padding: 20px 22px;
 }
 
 code {
@@ -265,7 +227,7 @@ code {
 .options-block,
 .preview-block {
   margin-top: 28px;
-  padding: 24px;
+  padding: 28px;
 }
 
 .option-grid {

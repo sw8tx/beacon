@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#000000" />
     <title>Beacon Commands</title>
     <link rel="icon" type="image/png" href="/assets/beacon-logo.png?v=92" />
-    <link rel="stylesheet" href="/commands.css?v=2" />
+    <link rel="stylesheet" href="/commands.css?v=3" />
   </head>
   <body>
     <nav class="commands-nav" aria-label="Beacon commands navigation">
@@ -19,63 +19,35 @@
 
     <main class="commands-shell">
       <aside class="commands-sidebar" aria-label="Command sections">
-        <div class="sidebar-product">
-          <img src="/assets/beacon-logo.png?v=92" width="28" height="28" alt="" />
-          <div>
-            <strong>Beacon</strong>
-            <span>Commands</span>
-          </div>
-        </div>
-
         <nav class="sidebar-list">
-          <p>Server</p>
-          <a href="#administration"><span>#</span>Administration</a>
-          <a href="#verification"><span>#</span>Verification</a>
-          <a href="#raid"><span>#</span>Raid Protection</a>
-
-          <p>Growth</p>
-          <a href="#tracking"><span>#</span>Invite Tracking</a>
-          <a href="#analytics"><span>#</span>Analytics</a>
-          <a href="#leaderboard"><span>#</span>Leaderboard</a>
-
-          <p>Messages</p>
-          <a href="#join"><span>#</span>Join Messages</a>
-          <a href="#leave"><span>#</span>Leave Messages</a>
-
-          <p>Tickets</p>
           <a class="is-active" href="#tickets"><span>#</span>Tickets</a>
           <a href="#ticketsetup"><span>#</span>Setup</a>
           <a href="#ticketpanel"><span>#</span>Panels</a>
-
-          <p>Engagement</p>
-          <a href="#counting"><span>#</span>Message Counting</a>
-          <a href="#giveaways"><span>#</span>Giveaways</a>
         </nav>
       </aside>
 
       <section class="commands-doc" id="tickets">
-        <p class="doc-kicker">Tickets</p>
         <h1>Ticket Commands</h1>
-        <p class="doc-lead">Hier ist kurz das Ticket-System. Du stellst einmal alles ein, postest ein Panel, und User koennen dann private Support-Tickets oeffnen.</p>
+        <p class="doc-lead">Set up a clean support flow for your server. Configure the panel once, let members open private tickets, and keep every support case in one place.</p>
 
         <div class="doc-panel">
-          <h2>Wie es laeuft</h2>
-          <p>Beacon fragt beim Oeffnen kurz Subject und Details ab. Danach erstellt der Bot einen privaten Channel fuer den User und dein Team. Kein wildes DM-Chaos, alles sauber in einem Ticket.</p>
+          <h2>How it works</h2>
+          <p>When someone opens a ticket, Beacon asks for a short subject and details, then creates a private channel for the member and your staff team. Simple, organized, and easy to close with a transcript when the issue is done.</p>
         </div>
 
         <div class="command-list">
           <article id="ticketsetup" class="command-card">
             <div>
               <code>/ticketsetup</code>
-              <p>Passt dein Ticket-System an. Also Support-Rolle, Texte, Button, Limits und wie der Channel heissen soll.</p>
+              <p>Customize the ticket system: support role, panel text, button labels, limits, transcripts, channel names, and more.</p>
             </div>
-            <span>+17 Optionen</span>
+            <span>+17 options</span>
           </article>
 
           <article id="ticketpanel" class="command-card">
             <div>
               <code>/ticketpanel</code>
-              <p>Postet das Ticket-Panel in den Channel. Da klicken User auf Open Ticket.</p>
+              <p>Post the ticket panel in the current channel so members can open a private ticket with one click.</p>
             </div>
             <span>Panel</span>
           </article>
@@ -83,7 +55,7 @@
           <article class="command-card">
             <div>
               <code>/ticketadd</code>
-              <p>Fuegt jemanden zum aktuellen Ticket dazu, falls noch jemand mit reinschauen soll.</p>
+              <p>Add another member or staff user to the current ticket when someone else needs access.</p>
             </div>
             <span>Staff</span>
           </article>
@@ -91,7 +63,7 @@
           <article class="command-card">
             <div>
               <code>/ticketclose</code>
-              <p>Schliesst das Ticket und erstellt einen Transcript, damit nichts verloren geht.</p>
+              <p>Close the current ticket and create a transcript so the conversation is saved.</p>
             </div>
             <span>Close</span>
           </article>
@@ -99,15 +71,15 @@
           <article class="command-card">
             <div>
               <code>/ticketinfo</code>
-              <p>Zeigt dir Details zum aktuellen Ticket, also wer es geoeffnet hat und was drin ist.</p>
+              <p>Show the current ticket details, including who opened it and what the ticket is about.</p>
             </div>
             <span>Info</span>
           </article>
         </div>
 
         <section class="options-block" aria-labelledby="setup-options">
-          <h2 id="setup-options">/ticketsetup Optionen</h2>
-          <p>Die wichtigsten Felder, die du beim Setup setzen kannst:</p>
+          <h2 id="setup-options">/ticketsetup options</h2>
+          <p>The main fields you can change during setup:</p>
           <div class="option-grid">
             <code>support_role</code>
             <code>panel_title</code>
@@ -130,7 +102,7 @@
         </section>
 
         <section class="preview-block" aria-label="Ticket panel preview">
-          <h2>Panel Beispiel</h2>
+          <h2>Panel preview</h2>
           <div class="discord-preview">
             <div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div>
             <div class="preview-card">
@@ -138,7 +110,7 @@
               <h3>Need help?</h3>
               <p>Open a private ticket and the team will pick it up as soon as possible.</p>
               <b>Before you open one</b>
-              <p>Use tickets fuer Support, Reports oder private Fragen. Bitte keine doppelten Tickets.</p>
+              <p>Use tickets for support, reports, orders, or private questions. Please do not open duplicate tickets.</p>
               <button type="button">Open Ticket</button>
             </div>
           </div>
