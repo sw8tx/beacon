@@ -64,11 +64,13 @@ function buildDays(stats) {
     const key = dateKey(date);
     const entry = history.get(key);
     const expected = expectedReports(key, stats.monitoringStartedAt);
+    const rawReports = Number(entry?.reports) || 0;
+    const reports = Math.min(expected, rawReports);
+    const pingTotal = Number(entry?.pingTotal || entry?.ping_total) || 0;
     let state = "unknown";
     let percent = null;
 
     if (key >= monitoringDay && expected > 0) {
-      const reports = Math.min(expected, Number(entry?.reports) || 0);
       percent = Math.max(0, Math.min(100, reports / expected * 100));
       state = percent >= 99 ? "up" : percent >= 95 ? "degraded" : "down";
     }
@@ -76,7 +78,15 @@ function buildDays(stats) {
       state = "down";
       percent = 0;
     }
-    days.push({ key, state, percent, today: offset === 0 });
+    days.push({
+      key,
+      state,
+      percent,
+      today: offset === 0,
+      reports,
+      expected,
+      avgPing: rawReports && pingTotal ? Math.round(pingTotal / rawReports) : null,
+    });
   }
   return days;
 }
@@ -122,16 +132,34 @@ async function fetchStats() {
 
 function withCurrentState(days, online) {
   return days.map((day) => day.today
-    ? { ...day, state: online ? "up" : "down", percent: online ? 100 : 0 }
+    ? { ...day, state: online ? "up" : "down", percent: online ? 100 : 0, reports: Math.max(1, day.reports || 0), expected: Math.max(1, day.expected || 1) }
     : day);
 }
 
-function renderHistory(container, days) {
+function dayLabel(key) {
+  const date = new Date(`${key}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) ? date.toLocaleDateString(undefined, { month: "short", day: "numeric" }) : key;
+}
+
+function historyTooltip(serviceName, day) {
+  if (day.percent === null) {
+    return `${serviceName}\n${dayLabel(day.key)}\nNo monitoring data yet`;
+  }
+
+  const stateLabel = day.state === "up" ? "Operational" : day.state === "degraded" ? "Degraded" : "Unavailable";
+  const checks = day.expected ? `${day.reports}/${day.expected} checks received` : "Live check pending";
+  const ping = day.avgPing ? `${day.avgPing} ms average ping` : "Ping data pending";
+  return `${serviceName}\n${formatPercent(day.percent)} uptime\n${stateLabel}\n${checks}\n${ping}`;
+}
+
+function renderHistory(container, days, serviceName) {
   container.replaceChildren(...days.map((day) => {
     const bar = document.createElement("span");
     if (day.state !== "unknown") bar.classList.add(`is-${day.state}`);
     if (day.today) bar.classList.add("is-today");
-    bar.title = `${day.key}: ${day.percent === null ? "No data" : `${day.percent.toFixed(2)}%`}`;
+    const tooltip = historyTooltip(serviceName, day);
+    bar.dataset.tooltip = tooltip;
+    bar.setAttribute("aria-label", tooltip.replace(/\n/g, ", "));
     return bar;
   }));
 }
@@ -141,7 +169,7 @@ function setService(service, online, label, detail, days) {
   service.querySelector(".service-check").textContent = online ? "\u2713" : "!";
   service.querySelector("[data-service-uptime]").textContent = label;
   service.querySelector("[data-service-detail]").textContent = detail;
-  renderHistory(service.querySelector("[data-history]"), days);
+  renderHistory(service.querySelector("[data-history]"), days, service.querySelector("h3")?.textContent || "Beacon service");
 }
 
 async function checkLandingPage() {
@@ -167,7 +195,7 @@ async function refreshStatus() {
 
     summary.classList.toggle("is-down", !allOnline);
     summaryIcon.textContent = allOnline ? "\u2713" : "!";
-    summaryTitle.textContent = allOnline ? "All systems operational" : "Service disruption detected";
+    summaryTitle.textContent = allOnline ? "All systems optimized" : "Service disruption detected";
     summaryCopy.textContent = allOnline ? "Beacon Bot and its public services are responding normally." : "At least one Beacon service is not responding normally.";
     incident.classList.toggle("is-down", !allOnline);
     incidentTitle.textContent = allOnline ? "No active incidents" : "Active service interruption";

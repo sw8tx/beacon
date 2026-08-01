@@ -1,4 +1,7 @@
 const fs = require("fs");
+const http = require("http");
+const https = require("https");
+const dns = require("dns");
 const path = require("path");
 require("dotenv").config();
 const {
@@ -11,6 +14,7 @@ const {
   Colors,
   EmbedBuilder,
   GatewayIntentBits,
+  MessageFlags,
   ModalBuilder,
   Partials,
   PermissionFlagsBits,
@@ -21,6 +25,10 @@ const {
   TextInputBuilder,
   TextInputStyle,
 } = require("discord.js");
+
+if (typeof dns.setDefaultResultOrder === "function") {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 const TOKEN = process.env.DISCORD_TOKEN || process.env.TOKEN || "PASTE_NEW_DISCORD_BOT_TOKEN_HERE";
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID || "1529195963787251784";
@@ -117,11 +125,18 @@ function saveData() {
   fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), "utf8");
 }
 
+function normalizeInteractionPayload(payload) {
+  if (!payload?.ephemeral) return payload;
+  const { ephemeral, flags, ...rest } = payload;
+  return { ...rest, flags: flags || MessageFlags.Ephemeral };
+}
+
 function withBrandFiles(payload) {
-  if (!fs.existsSync(LOGO_FILE)) return payload;
-  const files = payload.files ? [...payload.files] : [];
+  const responsePayload = normalizeInteractionPayload(payload);
+  if (!fs.existsSync(LOGO_FILE)) return responsePayload;
+  const files = responsePayload.files ? [...responsePayload.files] : [];
   files.push(new AttachmentBuilder(LOGO_FILE, { name: LOGO_ATTACHMENT_NAME }));
-  return { ...payload, files };
+  return { ...responsePayload, files };
 }
 
 async function getFetch() {
@@ -159,6 +174,77 @@ function buildStatsPayload() {
 let warnedMissingStatsAuth = false;
 let statsSyncInterval = null;
 let lastStatsSyncLogAt = 0;
+let lastStatsSyncErrorLogAt = 0;
+let warnedStatsFetchFallback = false;
+
+function summarizeNetworkError(err) {
+  const code = err?.code || err?.cause?.code;
+  const message = err?.message || "unknown error";
+  return code ? `${message} (${code})` : message;
+}
+
+function postJsonWithNode(urlString, payload, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const target = new URL(urlString);
+    const body = JSON.stringify(payload);
+    const transport = target.protocol === "https:" ? https : http;
+    const request = transport.request({
+      protocol: target.protocol,
+      hostname: target.hostname,
+      port: target.port || (target.protocol === "https:" ? 443 : 80),
+      path: `${target.pathname}${target.search}`,
+      method: "POST",
+      family: 4,
+      timeout: 12_000,
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+        ...headers,
+      },
+    }, (response) => {
+      let text = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk) => {
+        text += chunk;
+        if (text.length > 4096) text = text.slice(0, 4096);
+      });
+      response.on("end", () => {
+        resolve({
+          ok: response.statusCode >= 200 && response.statusCode < 300,
+          status: response.statusCode || 0,
+          statusText: response.statusMessage || "",
+          text: async () => text,
+        });
+      });
+    });
+
+    request.on("timeout", () => request.destroy(new Error("Stats sync request timed out")));
+    request.on("error", reject);
+    request.write(body);
+    request.end();
+  });
+}
+
+async function postStatsPayload(payload) {
+  const headers = { Authorization: `Bearer ${STATS_AUTH_TOKEN}` };
+  try {
+    const fetchImpl = await getFetch();
+    return await fetchImpl(STATS_SYNC_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    if (!warnedStatsFetchFallback) {
+      warnedStatsFetchFallback = true;
+      console.warn(`[stats-sync] fetch failed (${summarizeNetworkError(err)}); retrying with node https.`);
+    }
+    return postJsonWithNode(STATS_SYNC_ENDPOINT, payload, headers);
+  }
+}
 
 async function syncDiscordStats() {
   if (!STATS_AUTH_TOKEN || STATS_AUTH_TOKEN.startsWith("PASTE_")) {
@@ -170,15 +256,7 @@ async function syncDiscordStats() {
   }
 
   try {
-    const fetchImpl = await getFetch();
-    const response = await fetchImpl(STATS_SYNC_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${STATS_AUTH_TOKEN}`,
-      },
-      body: JSON.stringify(buildStatsPayload()),
-    });
+    const response = await postStatsPayload(buildStatsPayload());
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
@@ -188,10 +266,15 @@ async function syncDiscordStats() {
     const now = Date.now();
     if (!lastStatsSyncLogAt || now - lastStatsSyncLogAt > 5 * 60_000) {
       lastStatsSyncLogAt = now;
+      lastStatsSyncErrorLogAt = 0;
       console.log(`[stats-sync] Synced ${client.guilds.cache.size} server(s) to ${STATS_SYNC_ENDPOINT}`);
     }
   } catch (err) {
-    console.error(`[stats-sync] Failed to sync Discord stats: ${err.message}`);
+    const now = Date.now();
+    if (!lastStatsSyncErrorLogAt || now - lastStatsSyncErrorLogAt > 60_000) {
+      lastStatsSyncErrorLogAt = now;
+      console.error(`[stats-sync] Failed to sync Discord stats: ${summarizeNetworkError(err)}`);
+    }
   }
 }
 
@@ -934,7 +1017,7 @@ async function registerCommands() {
   }
 }
 
-client.once("ready", async () => {
+client.once("clientReady", async () => {
   console.log(`Beacon is online as ${client.user.tag}`);
   client.user.setPresence({
     activities: [{ name: BOT_STATUS, type: BOT_STATUS_TYPE }],

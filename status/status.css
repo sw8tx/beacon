@@ -33,8 +33,15 @@ h1 { margin-bottom: 11px; font: 700 clamp(2.25rem, 6vw, 4.4rem)/1 "Space Grotesk
 .service.is-down .service-check { color: #210707; background: var(--red); }
 .service.is-down .service-heading strong { color: var(--red); }
 .service-detail { margin: 7px 0 18px 37px; color: #6f766f; font-size: .73rem; }
-.history { display: grid; grid-template-columns: repeat(30, minmax(3px, 1fr)); gap: 3px; height: 46px; }
-.history span { min-width: 0; border-radius: 2px; background: #272b28; }
+.history { position: relative; display: grid; grid-template-columns: repeat(30, minmax(3px, 1fr)); gap: 3px; height: 46px; overflow: visible; }
+.history span { position: relative; min-width: 0; border-radius: 2px; background: #272b28; cursor: help; transition: transform .16s ease, filter .16s ease; }
+.history span:hover { z-index: 30; transform: translateY(-3px); filter: brightness(1.08); }
+.history span::before,
+.history span::after { pointer-events: none; position: absolute; left: 50%; z-index: 40; opacity: 0; transition: opacity .16s ease, transform .16s ease; }
+.history span::before { content: ""; bottom: calc(100% + 5px); transform: translateX(-50%) translateY(4px); border: 7px solid transparent; border-top-color: #454b5b; }
+.history span::after { content: attr(data-tooltip); bottom: calc(100% + 18px); width: max-content; min-width: 190px; max-width: 260px; padding: 12px 13px; transform: translateX(-50%) translateY(4px); border: 1px solid rgba(255,255,255,.12); border-radius: 4px; color: #fff; background: #454b5b; box-shadow: 0 18px 42px rgba(0,0,0,.36); font-size: .74rem; font-weight: 700; line-height: 1.45; white-space: pre-line; }
+.history span:hover::before,
+.history span:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
 .history span.is-up { background: var(--green); }
 .history span.is-degraded { background: var(--yellow); }
 .history span.is-down { background: var(--red); }
