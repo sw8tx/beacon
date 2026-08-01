@@ -1052,19 +1052,26 @@ const commands = [
     .setDescription("Show bot status, uptime and system info."),
 ].map((cmd) => cmd.toJSON());
 
-async function registerGuildCommands(rest, guildId) {
-  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, guildId), { body: commands });
-  console.log(`[commands] Synced ${commands.length} slash commands for guild ${guildId}`);
+async function clearGuildCommands(rest, guildId) {
+  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, guildId), { body: [] });
+  console.log(`[commands] Cleared guild slash commands for ${guildId}`);
+}
+
+async function clearCachedGuildCommands(rest) {
+  for (const guildId of client.guilds.cache.keys()) {
+    try {
+      await clearGuildCommands(rest, guildId);
+    } catch (err) {
+      console.error(`[commands] Failed to clear guild commands for ${guildId}: ${err.message}`);
+    }
+  }
 }
 
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
   await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
   console.log(`[commands] Synced ${commands.length} global slash commands`);
-
-  for (const guildId of client.guilds.cache.keys()) {
-    await registerGuildCommands(rest, guildId);
-  }
+  await clearCachedGuildCommands(rest);
 }
 
 client.once("clientReady", async () => {
@@ -1090,9 +1097,9 @@ client.on("guildCreate", async (guild) => {
   saveData();
   try {
     const rest = new REST({ version: "10" }).setToken(TOKEN);
-    await registerGuildCommands(rest, guild.id);
+    await clearGuildCommands(rest, guild.id);
   } catch (err) {
-    console.error(`[commands] Failed to sync slash commands for ${guild.id}: ${err.message}`);
+    console.error(`[commands] Failed to clear guild commands for ${guild.id}: ${err.message}`);
   }
   await syncDiscordStats(); // Immediately sync stats
 });
@@ -2302,8 +2309,7 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
-registerCommands()
-  .then(() => client.login(TOKEN))
+client.login(TOKEN)
   .catch((err) => {
     console.error(err);
     process.exit(1);
