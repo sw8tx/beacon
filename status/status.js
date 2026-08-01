@@ -95,11 +95,11 @@ function formatPercent(value) {
 
 function updateLastUpdated() {
   if (!Number.isFinite(lastReportAt)) {
-    lastUpdated.textContent = "Last updated: waiting for first report";
+    lastUpdated.textContent = "Last updated in seconds: waiting";
     return;
   }
   const seconds = Math.max(0, Math.floor((Date.now() - lastReportAt) / 1000));
-  lastUpdated.textContent = `Last updated: ${seconds} second${seconds === 1 ? "" : "s"} ago`;
+  lastUpdated.textContent = `Last updated in seconds: ${seconds}`;
 }
 
 async function fetchStats() {
@@ -210,7 +210,7 @@ async function refreshStatus() {
       setService(website, true, "Operational", `Responding \u00b7 ${landing.latency} ms browser check`, withCurrentState(emptyDays, true));
     }
     lastReportAt = null;
-    lastUpdated.textContent = "Last updated: live status check failed";
+    lastUpdated.textContent = "Last updated in seconds: unavailable";
   }
 }
 
