@@ -237,9 +237,40 @@ code {
   margin-top: 18px;
 }
 
-.option-grid code {
+.option-grid details {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .045);
+}
+
+.option-grid summary {
   display: block;
   min-width: 0;
+  cursor: pointer;
+  padding: 8px 9px;
+}
+
+.option-grid summary::-webkit-details-marker {
+  display: none;
+}
+
+.option-grid details[open] {
+  background: rgba(255, 195, 28, .08);
+  border-color: rgba(255, 195, 28, .28);
+}
+
+.option-grid details p {
+  margin: 0;
+  padding: 0 10px 10px;
+  color: #c9cdd8;
+  font-size: .86rem;
+  line-height: 1.45;
+}
+
+.option-grid code {
+  display: inline-block;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -254,12 +285,16 @@ code {
   background: #22232a;
 }
 
+.discord-preview + .discord-preview {
+  margin-top: 18px;
+}
+
 .preview-logo img {
   object-fit: contain;
 }
 
 .preview-card {
-  max-width: 620px;
+  max-width: 720px;
   padding: 18px;
   border-left: 4px solid var(--yellow);
   border-radius: 4px;
@@ -289,6 +324,33 @@ code {
   background: #3b3c44;
   font: inherit;
   font-weight: 800;
+}
+
+.ticket-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 14px 0;
+}
+
+.ticket-fields b,
+.ticket-fields span {
+  display: block;
+}
+
+.ticket-fields span {
+  margin-top: 4px;
+  color: #dce0ee;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.preview-actions .danger {
+  background: #e43f55;
 }
 
 @media (max-width: 520px) {

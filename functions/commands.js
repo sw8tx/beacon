@@ -6,7 +6,7 @@ const html = `<!doctype html>
     <meta name="theme-color" content="#000000" />
     <title>Beacon Commands</title>
     <link rel="icon" type="image/png" href="/assets/beacon-logo.png?v=92" />
-    <link rel="stylesheet" href="/commands.css?v=3" />
+    <link rel="stylesheet" href="/commands.css?v=4" />
   </head>
   <body>
     <nav class="commands-nav" aria-label="Beacon commands navigation">
@@ -20,8 +20,6 @@ const html = `<!doctype html>
       <aside class="commands-sidebar" aria-label="Command sections">
         <nav class="sidebar-list">
           <a class="is-active" href="#tickets"><span>#</span>Tickets</a>
-          <a href="#ticketsetup"><span>#</span>Setup</a>
-          <a href="#ticketpanel"><span>#</span>Panels</a>
         </nav>
       </aside>
       <section class="commands-doc" id="tickets">
@@ -40,14 +38,14 @@ const html = `<!doctype html>
         </div>
         <section class="options-block" aria-labelledby="setup-options">
           <h2 id="setup-options">/ticketsetup options</h2>
-          <p>The main fields you can change during setup:</p>
+          <p>Click an option to see what it changes.</p>
           <div class="option-grid">
-            <code>support_role</code><code>panel_title</code><code>panel_message</code><code>panel_rules</code><code>button_label</code><code>claim_label</code><code>close_label</code><code>welcome_title</code><code>welcome_message</code><code>name_format</code><code>close_message</code><code>subject_label</code><code>details_label</code><code>details_placeholder</code><code>max_open</code><code>dm_transcript</code><code>accent_color</code>
+            <details><summary><code>support_role</code></summary><p>Staff role that can see and handle opened tickets.</p></details><details><summary><code>panel_title</code></summary><p>Main title on the public ticket panel.</p></details><details><summary><code>panel_message</code></summary><p>Short text telling members what the ticket panel is for.</p></details><details><summary><code>panel_rules</code></summary><p>Small note before opening, like no duplicate tickets.</p></details><details><summary><code>button_label</code></summary><p>Text on the open button. Default is Open Ticket.</p></details><details><summary><code>claim_label</code></summary><p>Text on the staff claim button inside a ticket.</p></details><details><summary><code>close_label</code></summary><p>Text on the close button inside a ticket.</p></details><details><summary><code>welcome_title</code></summary><p>Title shown when a ticket channel is created.</p></details><details><summary><code>welcome_message</code></summary><p>First message inside the ticket. Supports placeholders like <code>{user}</code> and <code>{server}</code>.</p></details><details><summary><code>name_format</code></summary><p>Channel name format, for example <code>ticket-{username}</code>.</p></details><details><summary><code>close_message</code></summary><p>Message Beacon posts when the ticket is closed.</p></details><details><summary><code>subject_label</code></summary><p>Label for the short subject field in the open modal.</p></details><details><summary><code>details_label</code></summary><p>Label for the longer details field in the open modal.</p></details><details><summary><code>details_placeholder</code></summary><p>Gray helper text shown before the member types details.</p></details><details><summary><code>max_open</code></summary><p>How many open tickets one member can have at the same time.</p></details><details><summary><code>dm_transcript</code></summary><p>Sends the transcript by DM after closing, when possible.</p></details><details><summary><code>accent_color</code></summary><p>Embed accent color for ticket panels and ticket messages.</p></details>
           </div>
         </section>
         <section class="preview-block" aria-label="Ticket panel preview">
           <h2>Panel preview</h2>
-          <div class="discord-preview">
+          <div class="discord-preview discord-preview--panel">
             <div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div>
             <div class="preview-card">
               <strong>Beacon</strong>
@@ -56,6 +54,17 @@ const html = `<!doctype html>
               <b>Before you open one</b>
               <p>Use tickets for support, reports, orders, or private questions. Please do not open duplicate tickets.</p>
               <button type="button">Open Ticket</button>
+            </div>
+          </div>
+          <div class="discord-preview discord-preview--opened">
+            <div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div>
+            <div class="preview-card">
+              <strong>Beacon</strong>
+              <h3>Ticket opened</h3>
+              <p>Thanks. Tell us what you need and include screenshots, order IDs, or context if it helps.</p>
+              <div class="ticket-fields"><div><b>Owner</b><span>member</span></div><div><b>Status</b><span>Open</span></div><div><b>Team</b><span>staff</span></div></div>
+              <b>Subject</b><p>Order help</p><b>Details</b><p>I need help with my setup.</p>
+              <div class="preview-actions"><button type="button">Claim</button><button class="danger" type="button">Close</button></div>
             </div>
           </div>
         </section>
