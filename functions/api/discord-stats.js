@@ -15,6 +15,12 @@ const HISTORY_KEY = "daily-history";
 const MONITORING_STARTED_KEY = "monitoring-started-at";
 const STALE_AFTER_MS = 3 * 60 * 1000;
 const CACHE_STATS_URL = "https://beacon-bot.site/__discord-stats-cache";
+const DISCORD_API_BASE = "https://discord.com/api/v10";
+const KNOWN_GUILD_IDS = [
+  "1515797025885524049",
+  "1529195462735696053",
+  "1532057761557254244",
+];
 
 let memoryStats = { ...FALLBACK_STATS };
 
@@ -98,6 +104,58 @@ function normalizeStats(input) {
     online: true,
     updatedAt: new Date().toISOString()
   };
+}
+
+async function fetchDiscordServers(env) {
+  if (!env.DISCORD_BOT_TOKEN) return [];
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 4500);
+  try {
+    const response = await fetch(`${DISCORD_API_BASE}/users/@me/guilds?with_counts=true`, {
+      headers: {
+        authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+      },
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      console.error(`[discord-stats] Discord guild fallback returned ${response.status}`);
+      return [];
+    }
+
+    let guilds = await response.json();
+    if (!Array.isArray(guilds)) return [];
+    if (!guilds.length) {
+      guilds = await Promise.all(KNOWN_GUILD_IDS.map(async (guildId) => {
+        const guildResponse = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}?with_counts=true`, {
+          headers: {
+            authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+          },
+          signal: controller.signal,
+        });
+        if (!guildResponse.ok) return null;
+        return guildResponse.json();
+      }));
+    }
+
+    return guilds
+      .filter(Boolean)
+      .map((guild) => ({
+        name: cleanText(guild.name, 80),
+        members: cleanNumber(guild.approximate_member_count),
+        iconUrl: guild.icon
+          ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=64`
+          : null,
+      }))
+      .filter((guild) => guild.name)
+      .sort((left, right) => right.members - left.members)
+      .slice(0, 12);
+  } catch (err) {
+    console.error(`[discord-stats] Discord guild fallback failed: ${err.message}`);
+    return [];
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function readStats(env) {
@@ -259,6 +317,15 @@ async function writeStats(env, stats) {
 
 async function handleGet(env) {
   const stats = await readStats(env);
+  if (!Array.isArray(stats.servers) || !stats.servers.length) {
+    const discordServers = await fetchDiscordServers(env);
+    if (discordServers.length) {
+      stats.servers = discordServers;
+      const discordUsers = discordServers.reduce((sum, server) => sum + server.members, 0);
+      if (discordUsers > cleanNumber(stats.users)) stats.users = discordUsers;
+      if (discordServers.length > cleanNumber(stats.guilds)) stats.guilds = discordServers.length;
+    }
+  }
   const updatedAt = Date.parse(stats.updatedAt || "");
   const online = Boolean(stats.online && Number.isFinite(updatedAt) && Date.now() - updatedAt < STALE_AFTER_MS);
   let history = [];

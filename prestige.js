@@ -39,7 +39,7 @@ function createServerCard(server) {
 
 function createPendingCard() {
   return createServerCard({
-    name: "Live server sync pending",
+    name: "Beacon server",
     members: 0,
     iconUrl: null,
   });
