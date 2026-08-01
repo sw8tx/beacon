@@ -451,6 +451,56 @@ function ticketChannelName(member, data) {
     .replaceAll("{count}", String(count).padStart(3, "0")));
 }
 
+function shortText(value, fallback = "Not provided", maxLength = 1024) {
+  const text = String(value || "").trim() || fallback;
+  return text.length > maxLength ? `${text.slice(0, Math.max(0, maxLength - 3))}...` : text;
+}
+
+function memberLabel(guild, userId, fallback = "member") {
+  const member = guild.members.cache.get(userId);
+  return member?.displayName || member?.user?.username || fallback;
+}
+
+function supportTeamLabel(guild, data) {
+  if (!data.settings.ticketSupportRoleId) return "staff";
+  return guild.roles.cache.get(data.settings.ticketSupportRoleId)?.name || "staff";
+}
+
+function ticketControlRow(data, ticket) {
+  const claimed = Boolean(ticket?.claimedBy);
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("ticket_claim")
+      .setLabel(claimed ? "Claimed" : shortText(data.settings.ticketClaimButtonLabel, "Claim", 80))
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(claimed),
+    new ButtonBuilder()
+      .setCustomId("ticket_close")
+      .setLabel(shortText(data.settings.ticketCloseButtonLabel, "Close", 80))
+      .setStyle(ButtonStyle.Danger)
+  );
+}
+
+function ticketOpenedEmbed(data, ticket, guild, description) {
+  const claimedBy = ticket.claimedBy ? memberLabel(guild, ticket.claimedBy, "staff") : null;
+  return brandEmbed(data.settings.ticketWelcomeTitle, shortText(description, "Tell us what you need and include screenshots, order IDs or context if it helps.", 800))
+    .setThumbnail(null)
+    .addFields(
+      { name: "Owner", value: memberLabel(guild, ticket.ownerId, "member"), inline: true },
+      { name: "Status", value: claimedBy ? "Claimed" : "Open", inline: true },
+      { name: "Team", value: claimedBy || supportTeamLabel(guild, data), inline: true },
+      { name: "Subject", value: shortText(ticket.subject, "No subject", 1024), inline: false },
+      { name: "Details", value: shortText(ticket.details, "No details added yet.", 1024), inline: false },
+      {
+        name: "Controls",
+        value: claimedBy
+          ? `Claimed by ${claimedBy}. Close creates the transcript and removes the ticket channel.`
+          : `Claim marks ownership for staff. Close creates the transcript and removes the ticket channel.`,
+        inline: false,
+      }
+    );
+}
+
 async function buildTranscript(channel) {
   const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
   if (!messages) return Buffer.from("Transcript unavailable.", "utf8");
@@ -1997,20 +2047,9 @@ async function openTicket(interaction, data, subject, details) {
     guild: interaction.guild,
   });
 
-  const embed = brandEmbed(data.settings.ticketWelcomeTitle, description)
-    .addFields(
-      { name: "Owner", value: `${interaction.user}`, inline: true },
-      { name: "Status", value: "Open", inline: true },
-      { name: "Team", value: data.settings.ticketSupportRoleId ? `<@&${data.settings.ticketSupportRoleId}>` : "No support role set", inline: true },
-      { name: "Subject", value: subject.slice(0, 1024), inline: false },
-      { name: "Details", value: details.slice(0, 1024), inline: false },
-      { name: "Controls", value: `${data.settings.ticketClaimButtonLabel} marks ownership for staff\n${data.settings.ticketCloseButtonLabel} closes the channel${data.settings.ticketDmTranscript ? " and DMs a transcript" : ""}`, inline: false }
-    );
-
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId("ticket_claim").setLabel(data.settings.ticketClaimButtonLabel.slice(0, 80)).setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId("ticket_close").setLabel(data.settings.ticketCloseButtonLabel.slice(0, 80)).setStyle(ButtonStyle.Danger)
-  );
+  const ticket = data.tickets[channel.id];
+  const embed = ticketOpenedEmbed(data, ticket, interaction.guild, description);
+  const row = ticketControlRow(data, ticket);
 
   await channel.send(withBrandFiles({
     content: data.settings.ticketSupportRoleId ? `<@&${data.settings.ticketSupportRoleId}> ${interaction.user}` : `${interaction.user}`,
@@ -2032,17 +2071,27 @@ async function claimTicket(interaction, data) {
     await interaction.reply(withBrandFiles({ embeds: [errorEmbed("Only the support team can claim tickets.")], ephemeral: true }));
     return;
   }
+  if (ticket.claimedBy) {
+    await interaction.reply(withBrandFiles({ embeds: [errorEmbed(`This ticket is already claimed by ${memberLabel(interaction.guild, ticket.claimedBy, "staff")}.`)], ephemeral: true }));
+    return;
+  }
 
   ticket.claimedBy = interaction.user.id;
   saveData();
 
-  const embed = successEmbed("Ticket claimed", `${interaction.user} is handling this ticket now.`)
-    .addFields(
-      { name: "Owner", value: `<@${ticket.ownerId}>`, inline: true },
-      { name: "Claimed by", value: `${interaction.user}`, inline: true }
-    );
-
-  await interaction.reply(withBrandFiles({ embeds: [embed] }));
+  const ownerUser = interaction.client.users.cache.get(ticket.ownerId) || {
+    id: ticket.ownerId,
+    username: memberLabel(interaction.guild, ticket.ownerId, "member"),
+  };
+  const description = renderTemplate(data.settings.ticketWelcomeMessage, {
+    user: ownerUser,
+    guild: interaction.guild,
+  });
+  const embed = ticketOpenedEmbed(data, ticket, interaction.guild, description);
+  await interaction.update(withBrandFiles({
+    embeds: [embed],
+    components: [ticketControlRow(data, ticket)],
+  }));
 }
 
 async function closeTicket(interaction, data, reason) {
