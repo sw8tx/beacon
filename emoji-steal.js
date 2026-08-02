@@ -74,7 +74,7 @@ function emojiPreviewList(emojis, keepName) {
   return emojis
     .map((emoji, index) => {
       const name = keepName ? emoji.name : `stolen_${String(index + 1).padStart(2, "0")}`;
-      return `${index + 1}. ${emoji.mention} - name: \`${cleanEmojiName(name)}\``;
+      return `${index + 1}. [${emoji.name}](${emojiAssetUrl(emoji)}) - name: \`${cleanEmojiName(name)}\``;
     })
     .join("\n")
     .slice(0, 3500);
@@ -85,7 +85,7 @@ function emojiConfirmEmbed(emojis, keepName, deps) {
     "Are you sure you want to steal these emojis?",
     emojiPreviewList(emojis, keepName)
   )
-    .setThumbnail(null)
+    .setThumbnail(emojiAssetUrl(emojis[0]))
     .addFields(
       { name: "Amount", value: `${emojis.length}`, inline: true },
       { name: "Keep name", value: keepName ? "True" : "False", inline: true }
@@ -104,7 +104,7 @@ function emojiSuccessEmbed(created, deps) {
     .map((emoji) => `Successfully Stole Emoji: ${emoji} - name: \`${emoji.name}\``)
     .join("\n")
     .slice(0, 4000);
-  return deps.successEmbed(created.length === 1 ? "Emoji stolen" : "Emojis stolen", description).setThumbnail(null);
+  return deps.successEmbed(created.length === 1 ? "Emoji stolen" : "Emojis stolen", description).setThumbnail(created[0]?.imageURL?.() || null);
 }
 
 async function stealEmojiBatch(guild, emojis, keepName, moderatorTag) {
