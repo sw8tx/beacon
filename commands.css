@@ -78,6 +78,77 @@ a {
   min-height: calc(100vh - 72px);
 }
 
+.commands-page .commands-shell {
+  display: block;
+}
+
+.commands-page .commands-doc {
+  grid-column: auto;
+}
+
+.commands-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 34px;
+}
+
+.commands-tabs a {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0 15px;
+  color: #c8ccd8;
+  background: #0b0c10;
+  font-size: .84rem;
+  font-weight: 800;
+}
+
+.commands-tabs a:hover,
+.commands-tabs a.is-active {
+  border-color: rgba(255, 195, 28, .42);
+  color: #101010;
+  background: var(--yellow);
+}
+
+.commands-home-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 34px;
+}
+
+.commands-home-card {
+  display: block;
+  min-height: 180px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 26px;
+  transition: border-color .16s ease, transform .16s ease;
+}
+
+.commands-home-card:hover {
+  border-color: rgba(255, 195, 28, .5);
+  transform: translateY(-2px);
+}
+
+.commands-home-card strong {
+  display: block;
+  margin-bottom: 12px;
+  color: #fff;
+  font-size: 1.4rem;
+}
+
+.commands-home-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .commands-sidebar {
   position: sticky;
   top: 72px;
@@ -127,9 +198,15 @@ a {
 }
 
 .commands-doc {
+  grid-column: 2;
   width: min(100%, 1120px);
   margin: 0 auto;
   padding: 78px 64px 104px;
+  scroll-margin-top: 92px;
+}
+
+.commands-doc + .commands-doc {
+  border-top: 1px solid var(--line);
 }
 
 h1,
@@ -408,6 +485,190 @@ code {
   background: #e43f55;
 }
 
+.emoji-command-ui,
+.emoji-result-line {
+  margin-top: 18px;
+  border-radius: 8px;
+  background: #24252b;
+  color: #f7f7fb;
+}
+
+.emoji-command-list {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+}
+
+.emoji-command-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.mini-beacon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+}
+
+.mini-beacon img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.emoji-command-name {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.emoji-command-desc {
+  margin: 3px 0 0;
+  color: #aeb2bf;
+  font-size: .88rem;
+}
+
+.emoji-input-preview {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.emoji-input-label {
+  color: #aeb2bf;
+  font-size: .74rem;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.emoji-input-box {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 4px;
+  background: #313238;
+  padding: 0 12px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.emoji-pill {
+  display: inline-flex;
+  min-height: 27px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 4px;
+  background: #202127;
+  padding: 0 9px;
+}
+
+.emoji-pill img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.emoji-typed-command {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 16px;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+  background: #202126;
+  font-weight: 900;
+}
+
+.emoji-typed-command img {
+  width: 25px;
+  height: 25px;
+}
+
+.emoji-confirm-card {
+  position: relative;
+  min-height: 290px;
+  padding-right: 132px;
+  overflow: hidden;
+}
+
+.emoji-confirm-card::after {
+  content: "";
+  position: absolute;
+  right: 112px;
+  bottom: 72px;
+  width: 120px;
+  height: 1px;
+  background: rgba(255, 255, 255, .12);
+}
+
+.emoji-large {
+  position: absolute;
+  top: 74px;
+  right: 22px;
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  transform: rotate(-18deg);
+  filter: drop-shadow(0 14px 20px rgba(0, 0, 0, .36));
+}
+
+.emoji-confirm-list {
+  margin: 14px 0 28px;
+  color: #fff;
+  line-height: 1.65;
+}
+
+.emoji-confirm-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 190px));
+  gap: 16px;
+  margin: 20px 0 6px;
+}
+
+.emoji-confirm-meta b,
+.emoji-confirm-meta span {
+  display: block;
+}
+
+.emoji-confirm-meta span {
+  margin-top: 3px;
+  color: #e3e5ee;
+}
+
+.preview-actions .confirm {
+  background: #5965f2;
+}
+
+.emoji-note {
+  margin: 12px 0 0;
+  color: #aeb2bf;
+  font-size: .88rem;
+}
+
+.emoji-result-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  font-weight: 800;
+}
+
+.emoji-result-line img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.emoji-result-line code {
+  color: #dfe2f4;
+}
+
 @media (max-width: 520px) {
   .commands-nav {
     padding-inline: 20px;
@@ -442,6 +703,7 @@ code {
   }
 
   .commands-doc {
+    grid-column: 1;
     padding: 42px 20px 70px;
   }
 
@@ -475,6 +737,23 @@ code {
   }
 
   .ticket-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .commands-home-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .emoji-confirm-card {
+    padding-right: 18px;
+  }
+
+  .emoji-large {
+    position: static;
+    margin-top: 14px;
+  }
+
+  .emoji-confirm-meta {
     grid-template-columns: 1fr;
   }
 }

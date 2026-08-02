@@ -9,6 +9,8 @@ const discordAccount = document.querySelector("#discord-account");
 const discordAvatar = document.querySelector("#discord-avatar");
 const discordUsername = document.querySelector("#discord-username");
 const discordLogout = document.querySelector("#discord-logout");
+const heroTypewriter = document.querySelector("[data-typewriter-lines]");
+let heroTypewriterTimer = null;
 
 const translations = {
   en: { label: "English", code: "US", bot: "Beacon Bot", support: "Support Server", join: "Join our Discord", help: "Help", commands: "Commands", status: "Status", ping: "Ping", prestige: "Beacon Prestige", new: "New!", add: "Add to Server", login: "Login with Discord", eyebrow: "The ultimate server growth bot", heroLineOne: "Grow your server.", heroLineTwo: "Empower your community.", heroDescription: "Beacon is an all-in-one Discord bot built to help you grow, manage, and engage your server with powerful tools and an easy-to-use dashboard.", checkOne: "Ticket System", checkTwo: "Auto Responder", checkThree: "Sticky Notes", checkFour: "Server Statistics", checkFive: "/Say Command", checkSix: "And much more...", heroAdd: "Add to Server", heroLogin: "Login with Discord", docs: "View Docs", heroNote: "Trusted by growing communities everywhere", livePreview: "Live dashboard preview", builtFor: "Built for your next level", liveStatus: "Live system status", statServers: "Servers connected", statUsers: "Members reached", statPing: "Average ping", statUptime: "Always available", featureOverline: "Everything in one place", featureTitle: "Your community,\nin its element.", featureDescription: "Powerful automation, effortless moderation, and the clarity to make better decisions for your server.", featureOneTitle: "Automate the busywork", featureOneCopy: "Let Beacon handle repetitive tasks while you focus on the people who make your community special.", featureTwoTitle: "See what matters", featureTwoCopy: "Real-time server statistics and clean insights, right when you need them.", featureThreeTitle: "Make it yours", featureThreeCopy: "Flexible commands and thoughtful tools that fit the way your server works.", learnMore: "Explore feature", finalOverline: "Ready when you are", finalTitle: "Give your server\nthe Beacon treatment.", footer: "Built for communities with ambition." },
@@ -45,10 +47,60 @@ function setLanguage(language) {
     const value = dictionary[element.dataset.i18n];
     if (value) element.textContent = value;
   });
+  startHeroTypewriter(heroTypewriter?.dataset.typewriterLines || dictionary.heroLineOne || "");
   if (languageCode) languageCode.textContent = dictionary.code;
   if (languageLabel) languageLabel.textContent = dictionary.label;
   languageOptions.forEach((option) => option.classList.toggle("is-selected", option.dataset.lang === language));
   try { localStorage.setItem("beacon-language", language); } catch (_) { /* private browsing can block storage */ }
+}
+
+function startHeroTypewriter(text) {
+  if (!heroTypewriter) return;
+  if (heroTypewriterTimer) window.clearTimeout(heroTypewriterTimer);
+  const lines = String(text || "")
+    .split("|")
+    .map((line) => line.trim().replace(/\\n/g, "\n"))
+    .filter(Boolean);
+  if (reduceMotion || !lines.length) {
+    heroTypewriter.textContent = lines[0] || "";
+    heroTypewriter.classList.remove("hero-typewriter");
+    return;
+  }
+
+  heroTypewriter.classList.add("hero-typewriter");
+  heroTypewriter.setAttribute("aria-label", lines.join(" "));
+  let lineIndex = 0;
+  let index = 0;
+  let deleting = false;
+
+  const tick = () => {
+    const fullText = lines[lineIndex];
+    heroTypewriter.textContent = fullText.slice(0, index);
+
+    if (!deleting && index < fullText.length) {
+      index += 1;
+      heroTypewriterTimer = window.setTimeout(tick, fullText[index - 1] === "\n" ? 260 : 54);
+      return;
+    }
+
+    if (!deleting && index >= fullText.length) {
+      deleting = true;
+      heroTypewriterTimer = window.setTimeout(tick, 1750);
+      return;
+    }
+
+    if (deleting && index > 0) {
+      index -= 1;
+      heroTypewriterTimer = window.setTimeout(tick, fullText[index] === "\n" ? 150 : 32);
+      return;
+    }
+
+    deleting = false;
+    lineIndex = (lineIndex + 1) % lines.length;
+    heroTypewriterTimer = window.setTimeout(tick, 520);
+  };
+
+  tick();
 }
 
 languageOptions.forEach((option) => option.addEventListener("click", (event) => {
@@ -206,11 +258,27 @@ async function initThreeLaptop() {
   const stage = document.querySelector(".hero-stage");
   if (!stage || reduceMotion) return;
   try {
+    stage.classList.remove("is-fallback");
+    const waitForStageSize = () => new Promise((resolve) => {
+      const check = () => {
+        const width = stage.clientWidth;
+        const height = stage.clientHeight;
+        if (width > 40 && height > 40) {
+          resolve();
+          return;
+        }
+        requestAnimationFrame(check);
+      };
+      check();
+    });
+    await waitForStageSize();
+
     const THREE = await import("https://unpkg.com/three@0.166.1/build/three.module.js");
     const { RoundedBoxGeometry } = await import("https://unpkg.com/three@0.166.1/examples/jsm/geometries/RoundedBoxGeometry.js");
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(31, stage.clientWidth / stage.clientHeight, .1, 100);
-    camera.position.set(0, .45, 10.6);
+    const isCompactViewport = () => window.matchMedia("(max-width: 900px)").matches;
+    camera.position.set(0, .45, isCompactViewport() ? 11.9 : 10.6);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(stage.clientWidth, stage.clientHeight);
@@ -222,7 +290,7 @@ async function initThreeLaptop() {
     const key = new THREE.DirectionalLight(0xffc02c, 5.3); key.position.set(-4, 6, 7); scene.add(key);
     const rim = new THREE.PointLight(0xffa916, 11, 15); rim.position.set(4, 1, 3); scene.add(rim);
     const fill = new THREE.PointLight(0xffe5a1, 4, 16); fill.position.set(-4, 0, 4); scene.add(fill);
-    const laptop = new THREE.Group(); laptop.rotation.y = -.18; laptop.rotation.x = -.03; laptop.scale.setScalar(1.12); scene.add(laptop);
+    const laptop = new THREE.Group(); laptop.rotation.y = -.18; laptop.rotation.x = -.03; scene.add(laptop);
     const black = new THREE.MeshStandardMaterial({ color: 0x171b19, roughness: .36, metalness: .62 });
     const edge = new THREE.MeshStandardMaterial({ color: 0x454c47, roughness: .3, metalness: .58 });
     const yellow = new THREE.MeshStandardMaterial({ color: 0xffbd16, roughness: .27, metalness: .55, emissive: 0x8c5d00, emissiveIntensity: .23 });
@@ -247,8 +315,20 @@ async function initThreeLaptop() {
     const hinge = new THREE.Mesh(new THREE.CylinderGeometry(.14, .14, 5.3, 32), black); hinge.rotation.z = Math.PI / 2; hinge.position.set(0, -.77, -.77); laptop.add(hinge);
     const logo = new THREE.Mesh(new THREE.OctahedronGeometry(.22, 0), yellow); logo.position.set(0, -.64, 2.05); logo.rotation.y = Math.PI / 4; laptop.add(logo);
     const baseAccent = new THREE.Mesh(new THREE.BoxGeometry(2.6, .018, .018), yellow); baseAccent.position.set(0, -.845, 2.14); laptop.add(baseAccent);
-    const resize = () => { const width = stage.clientWidth; const height = stage.clientHeight; camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height); };
+    const resize = () => {
+      const width = Math.max(1, stage.clientWidth);
+      const height = Math.max(1, stage.clientHeight);
+      const compact = isCompactViewport();
+      camera.aspect = width / height;
+      camera.position.z = compact ? 11.9 : 10.6;
+      laptop.scale.setScalar(compact ? .9 : 1.12);
+      laptop.position.x = compact ? .08 : 0;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    };
     window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", () => setTimeout(resize, 120));
+    resize();
     const clock = new THREE.Clock();
     function animate() {
       const elapsed = clock.getElapsedTime();

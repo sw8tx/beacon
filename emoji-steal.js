@@ -2,15 +2,17 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ContainerBuilder,
+  MessageFlags,
   PermissionFlagsBits,
+  SectionBuilder,
+  SeparatorBuilder,
+  TextDisplayBuilder,
+  ThumbnailBuilder,
 } = require("discord.js");
 
 const pendingEmojiSteals = new Map();
-
-function shortText(value, fallback = "Not provided", maxLength = 1024) {
-  const text = String(value || "").trim() || fallback;
-  return text.length > maxLength ? `${text.slice(0, Math.max(0, maxLength - 3))}...` : text;
-}
+const BEACON_YELLOW = 0xffb800;
 
 function emojiAssetUrl(emoji) {
   return `https://cdn.discordapp.com/emojis/${emoji.id}.${emoji.animated ? "gif" : "png"}?quality=lossless`;
@@ -70,33 +72,83 @@ function botCanCreateGuildExpressions(guild) {
   return Boolean(me?.permissions.any(PermissionFlagsBits.CreateGuildExpressions | PermissionFlagsBits.ManageGuildExpressions));
 }
 
-function emojiPreviewList(emojis, keepName) {
+function emojiPreviewList(emojis, keepName, showEmoji = false) {
   return emojis
     .map((emoji, index) => {
       const name = keepName ? emoji.name : `stolen_${String(index + 1).padStart(2, "0")}`;
-      return `${index + 1}. [${emoji.name}](${emojiAssetUrl(emoji)}) - name: \`${cleanEmojiName(name)}\``;
+      const preview = showEmoji ? emoji.mention : `[${emoji.name}](${emojiAssetUrl(emoji)})`;
+      return `${index + 1}. ${preview} **${emoji.name}**  ->  \`${cleanEmojiName(name)}\``;
     })
     .join("\n")
     .slice(0, 3500);
 }
 
-function emojiConfirmEmbed(emojis, keepName, deps) {
-  return deps.brandEmbed(
-    "Are you sure you want to steal these emojis?",
-    emojiPreviewList(emojis, keepName)
-  )
-    .setThumbnail(emojiAssetUrl(emojis[0]))
-    .addFields(
-      { name: "Amount", value: `${emojis.length}`, inline: true },
-      { name: "Keep name", value: keepName ? "True" : "False", inline: true }
+function emojiConfirmRow(id) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`emoji_steal_confirm:${id}`).setLabel("Confirm").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId(`emoji_steal_cancel:${id}`).setLabel("Cancel").setStyle(ButtonStyle.Danger)
+  );
+}
+
+function emojiConfirmContainer(id, emojis, keepName) {
+  const heading = new TextDisplayBuilder().setContent(
+    "### Are you sure you want to steal these emojis?\n" +
+    "Review the source emojis and their new server names before continuing."
+  );
+  const preview = new SectionBuilder()
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(emojiPreviewList(emojis, keepName, true))
+    )
+    .setThumbnailAccessory(
+      new ThumbnailBuilder()
+        .setURL(emojiAssetUrl(emojis[0]))
+        .setDescription(`Preview of ${emojis[0].name}`)
+    );
+  const details = new TextDisplayBuilder().setContent(
+    `**Amount**\n${emojis.length}\n\n**Keep original names**\n${keepName ? "Yes" : "No"}`
+  );
+  const footer = new TextDisplayBuilder().setContent(
+    "-# This confirmation expires in 10 minutes. Nothing is added until you confirm."
+  );
+
+  return new ContainerBuilder()
+    .setAccentColor(BEACON_YELLOW)
+    .addTextDisplayComponents(heading)
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addSectionComponents(preview)
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addTextDisplayComponents(details)
+    .addActionRowComponents(emojiConfirmRow(id))
+    .addTextDisplayComponents(footer);
+}
+
+function emojiProgressContainer(count) {
+  return new ContainerBuilder()
+    .setAccentColor(BEACON_YELLOW)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `### Stealing ${count === 1 ? "emoji" : "emojis"}...\n` +
+        `Beacon is adding ${count} ${count === 1 ? "emoji" : "emojis"} to this server.`
+      )
     );
 }
 
-function emojiConfirmRow(id) {
-  return new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`emoji_steal_confirm:${id}`).setLabel("Confirm").setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`emoji_steal_cancel:${id}`).setLabel("Cancel").setStyle(ButtonStyle.Danger)
-  );
+function emojiResultContainer(title, description, success, failed = []) {
+  const container = new ContainerBuilder()
+    .setAccentColor(success ? 0x57f287 : 0xed4245)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`### ${title}\n${description}`)
+    );
+
+  if (failed.length) {
+    container
+      .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(`**Could not add**\n${failed.join("\n").slice(0, 3500)}`)
+      );
+  }
+
+  return container;
 }
 
 function emojiSuccessEmbed(created, deps) {
@@ -159,10 +211,10 @@ async function prepareEmojiSteal(interaction, bulk, deps) {
   });
   setTimeout(() => pendingEmojiSteals.delete(id), 10 * 60_000).unref?.();
 
-  await interaction.reply(deps.withBrandFiles({
-    embeds: [emojiConfirmEmbed(emojis, keepName, deps)],
-    components: [emojiConfirmRow(id)],
-  }));
+  await interaction.reply({
+    components: [emojiConfirmContainer(id, emojis, keepName)],
+    flags: MessageFlags.IsComponentsV2,
+  });
 }
 
 async function confirmEmojiSteal(interaction, id, deps) {
@@ -186,6 +238,10 @@ async function confirmEmojiSteal(interaction, id, deps) {
 
   pendingEmojiSteals.delete(id);
   await interaction.deferUpdate();
+  await interaction.editReply({
+    components: [emojiProgressContainer(pending.emojis.length)],
+    flags: MessageFlags.IsComponentsV2,
+  });
 
   const { created, failed } = await stealEmojiBatch(interaction.guild, pending.emojis, pending.keepName, interaction.user.tag);
   const channel = interaction.guild.channels.cache.get(pending.channelId) || interaction.channel;
@@ -194,15 +250,24 @@ async function confirmEmojiSteal(interaction, id, deps) {
     await channel.send(deps.withBrandFiles({ embeds: [emojiSuccessEmbed(created, deps)] })).catch(() => null);
   }
 
-  const doneEmbed = created.length
-    ? deps.successEmbed("Emoji steal complete", `${created.length}/${pending.emojis.length} emoji(s) added to this server.`)
-    : deps.errorEmbed("No emojis were added. Check the emoji limit, file size, and bot permissions.");
+  const doneContainer = created.length
+    ? emojiResultContainer(
+      "Emoji steal complete",
+      `${created.length}/${pending.emojis.length} ${pending.emojis.length === 1 ? "emoji was" : "emojis were"} added to this server.`,
+      true,
+      failed
+    )
+    : emojiResultContainer(
+      "No emojis were added",
+      "Check the server emoji limit, source file size, and Beacon's permissions.",
+      false,
+      failed
+    );
 
-  if (failed.length) {
-    doneEmbed.addFields({ name: "Failed", value: failed.join("\n").slice(0, 1024), inline: false });
-  }
-
-  await interaction.editReply(deps.withBrandFiles({ embeds: [doneEmbed], components: [] })).catch(() => null);
+  await interaction.editReply({
+    components: [doneContainer],
+    flags: MessageFlags.IsComponentsV2,
+  }).catch(() => null);
 }
 
 async function cancelEmojiSteal(interaction, id, deps) {
@@ -216,7 +281,10 @@ async function cancelEmojiSteal(interaction, id, deps) {
     return;
   }
   pendingEmojiSteals.delete(id);
-  await interaction.update(deps.withBrandFiles({ embeds: [deps.brandEmbed("Emoji steal canceled", "Nothing was added to the server.").setThumbnail(null)], components: [] }));
+  await interaction.update({
+    components: [emojiResultContainer("Emoji steal canceled", "Nothing was added to the server.", false)],
+    flags: MessageFlags.IsComponentsV2,
+  });
 }
 
 module.exports = {

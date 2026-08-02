@@ -374,13 +374,14 @@ async function handleGet(env) {
 async function handlePost(request, env) {
   try {
     const auth = request.headers.get("authorization");
+    const statsSecretHeader = request.headers.get("x-stats-secret");
     const allowedTokens = [env.STATS_SECRET, env.DISCORD_BOT_TOKEN].filter(Boolean);
 
     if (!allowedTokens.length) {
       return new Response("Server missing stats authentication", { status: 503 });
     }
 
-    if (!allowedTokens.some((token) => auth === `Bearer ${token}`)) {
+    if (!allowedTokens.some((token) => auth === `Bearer ${token}` || statsSecretHeader === token)) {
       return new Response("Unauthorized", { status: 401 });
     }
 

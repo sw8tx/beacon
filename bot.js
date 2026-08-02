@@ -30,21 +30,25 @@ const {
   confirmEmojiSteal,
   cancelEmojiSteal,
 } = require("./emoji-steal");
+const {
+  purgeCommands,
+  handlePurgeCommand,
+} = require("./purge");
 
 if (typeof dns.setDefaultResultOrder === "function") {
   dns.setDefaultResultOrder("ipv4first");
 }
 
-const TOKEN = process.env.DISCORD_TOKEN || process.env.TOKEN || "PASTE_NEW_DISCORD_BOT_TOKEN_HERE";
+const TOKEN = process.env.DISCORD_TOKEN || process.env.DISCORD_BOT_TOKEN || process.env.TOKEN || "PASTE_NEW_DISCORD_BOT_TOKEN_HERE";
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID || "1529195963787251784";
 const DEV_GUILD_ID = process.env.DEV_GUILD_ID || "";
 const STATS_SECRET = process.env.STATS_SECRET || "";
 const DASHBOARD_URL = process.env.DASHBOARD_URL || "https://beacon-bot.site";
-const STATS_SYNC_ENDPOINT = process.env.STATS_SYNC_ENDPOINT || "https://beacon-bot.site/api/discord-stats";
-const STATS_SYNC_INTERVAL_MS = Number(process.env.STATS_SYNC_INTERVAL_MS || 30_000);
+const STATS_SYNC_ENDPOINT = process.env.STATS_SYNC_ENDPOINT || process.env.SYNC_ENDPOINT || "https://beacon-bot.site/api/discord-stats";
+const STATS_SYNC_INTERVAL_MS = Number(process.env.STATS_SYNC_INTERVAL_MS || process.env.SYNC_INTERVAL_MS || 30_000);
 const BOT_STATUS = process.env.BOT_STATUS || "Community health";
 const BOT_STATUS_TYPE = Number(process.env.BOT_STATUS_TYPE || 3); // 0 = Playing, 2 = Listening, 3 = Watching, 5 = Competing
-const STATS_AUTH_TOKEN = STATS_SECRET || TOKEN;
+const STATS_AUTH_TOKEN = STATS_SECRET || process.env.DISCORD_BOT_TOKEN || TOKEN;
 const BOT_STARTED_AT = new Date().toISOString();
 const BOT_SESSION_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const DATA_FILE = path.join(__dirname, "beacon-data.json");
@@ -231,7 +235,10 @@ function postJsonWithNode(urlString, payload, headers = {}) {
 }
 
 async function postStatsPayload(payload) {
-  const headers = { Authorization: `Bearer ${STATS_AUTH_TOKEN}` };
+  const headers = {
+    Authorization: `Bearer ${STATS_AUTH_TOKEN}`,
+    "X-Stats-Secret": STATS_AUTH_TOKEN,
+  };
   try {
     const fetchImpl = await getFetch();
     return await fetchImpl(STATS_SYNC_ENDPOINT, {
@@ -268,6 +275,8 @@ async function syncDiscordStats() {
       throw new Error(`HTTP ${response.status} ${response.statusText}${text ? ` - ${text.slice(0, 200)}` : ""}`);
     }
 
+    await response.json().catch(() => null);
+
     const now = Date.now();
     if (!lastStatsSyncLogAt || now - lastStatsSyncLogAt > 5 * 60_000) {
       lastStatsSyncLogAt = now;
@@ -284,6 +293,8 @@ async function syncDiscordStats() {
 }
 
 function startStatsSync() {
+  const authSource = STATS_SECRET ? "STATS_SECRET" : process.env.DISCORD_BOT_TOKEN ? "DISCORD_BOT_TOKEN" : "DISCORD_TOKEN/TOKEN";
+  console.log(`[stats-sync] Enabled via ${authSource}; endpoint ${STATS_SYNC_ENDPOINT}; interval ${STATS_SYNC_INTERVAL_MS}ms`);
   syncDiscordStats();
   [2_000, 10_000, 30_000].forEach((delay) => {
     const timeout = setTimeout(syncDiscordStats, delay);
@@ -664,6 +675,8 @@ async function sendJoinDm(member, data) {
 }
 
 const commands = [
+  ...purgeCommands,
+
   new SlashCommandBuilder()
     .setName("help")
     .setDescription("Show Beacon commands and quick actions."),
@@ -1311,6 +1324,7 @@ async function handleCommand(interaction) {
   if (command === "dashboard") return dashboard(interaction, data);
   if (command === "emoji-steal") return prepareEmojiSteal(interaction, false, beaconUi());
   if (command === "emoji-steal-bulk") return prepareEmojiSteal(interaction, true, beaconUi());
+  if (command === "purge" || command.startsWith("purge-")) return handlePurgeCommand(interaction, beaconUi());
   if (command === "announce") return announce(interaction);
   if (command === "onboarding") return onboarding(interaction, data);
   if (command === "dmwelcome") return dmWelcome(interaction, data);

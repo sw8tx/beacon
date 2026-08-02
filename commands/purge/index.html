@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <title>Beacon Purge Commands</title>
+    <link rel="icon" type="image/png" href="/assets/beacon-logo.png?v=92" />
+    <link rel="stylesheet" href="/commands.css?v=7" />
+    <link rel="stylesheet" href="/cmd-page.css?v=1" />
+  </head>
+  <body class="commands-page">
+    <nav class="commands-nav" aria-label="Beacon commands navigation">
+      <a class="commands-brand" href="https://beacon-bot.site/">
+        <img src="/assets/beacon-logo.png?v=92" width="34" height="34" alt="" />
+        <span>Beacon</span>
+      </a>
+      <a class="commands-back" href="https://beacon-bot.site/">Back to Beacon</a>
+    </nav>
+
+    <main class="commands-shell">
+      <section class="commands-doc" id="purge">
+        <nav class="commands-tabs" aria-label="Command pages">
+          <a href="/commands/tickets/">Tickets</a>
+          <a href="/commands/emoji-steal/">Emoji Steal</a>
+          <a class="is-active" href="/commands/purge/">Purge</a>
+        </nav>
+
+        <h1>Purge Commands</h1>
+        <p class="doc-lead">Clean up recent channel messages fast. The main command is <code>/purge</code>, capped at 99 messages so staff can remove spam without nuking the whole channel by accident.</p>
+
+        <div class="doc-panel">
+          <h2>How it works</h2>
+          <p>Every purge command requires Manage Messages. Beacon scans recent messages in the current channel, deletes the matches it can delete, then replies privately with the cleanup result. Discord does not allow bulk deleting messages older than 14 days, so those are skipped automatically.</p>
+        </div>
+
+        <section class="flow-grid" aria-label="Purge flow">
+          <article><span>1</span><h2>Choose</h2><p>Use <code>/purge</code> for normal cleanup, or pick a focused command like <code>/purge-user</code> or <code>/purge-links</code>.</p></article>
+          <article><span>2</span><h2>Limit</h2><p>Set <code>count</code> from 1 to 99. Beacon never accepts more than 99 messages in one run.</p></article>
+          <article><span>3</span><h2>Clean</h2><p>Beacon deletes matching recent messages and privately confirms how many were removed.</p></article>
+        </section>
+
+        <div class="command-list">
+          <a class="command-card" href="#purge-normal"><div><code>/purge</code><p>Delete up to 99 recent messages. This is the normal cleanup command.</p></div><span>Main</span></a>
+          <a class="command-card" href="#purge-after"><div><code>/purge-after</code><p>Delete messages sent after a specific message ID or message link.</p></div><span>After</span></a>
+          <a class="command-card" href="#purge-user"><div><code>/purge-user</code><p>Delete recent messages from one selected user.</p></div><span>User</span></a>
+          <a class="command-card" href="#purge-bots"><div><code>/purge-bots</code><p>Delete recent messages sent by bots.</p></div><span>Bots</span></a>
+          <a class="command-card" href="#purge-humans"><div><code>/purge-humans</code><p>Delete recent messages sent by non-bot members.</p></div><span>Humans</span></a>
+          <a class="command-card" href="#purge-links"><div><code>/purge-links</code><p>Delete recent messages that contain links.</p></div><span>Links</span></a>
+          <a class="command-card" href="#purge-invites"><div><code>/purge-invites</code><p>Delete recent messages that contain Discord invite links.</p></div><span>Invites</span></a>
+          <a class="command-card" href="#purge-images"><div><code>/purge-images</code><p>Delete recent messages with files, images, image embeds, or thumbnails.</p></div><span>Files</span></a>
+          <a class="command-card" href="#purge-embeds"><div><code>/purge-embeds</code><p>Delete recent messages that contain embeds.</p></div><span>Embeds</span></a>
+          <a class="command-card" href="#purge-match"><div><code>/purge-match</code><p>Delete recent messages that contain a specific text match.</p></div><span>Text</span></a>
+        </div>
+
+        <section class="options-block" aria-labelledby="purge-options">
+          <h2 id="purge-options">Command options</h2>
+          <p>Click a field to see what it does.</p>
+          <div class="option-grid">
+            <details open id="purge-normal"><summary><code>count</code></summary><p>How many recent messages Beacon should delete or scan. Minimum 1, maximum 99.</p></details>
+            <details id="purge-after"><summary><code>message</code></summary><p>Message ID or Discord message link. Beacon deletes messages sent after this target in the same channel.</p></details>
+            <details id="purge-user"><summary><code>user</code></summary><p>The member whose recent messages should be removed.</p></details>
+            <details id="purge-match"><summary><code>text</code></summary><p>Text that must appear inside the message. Matching is case-insensitive.</p></details>
+            <details><summary><code>reason</code></summary><p>Optional note for staff. The purge result is sent privately to the moderator.</p></details>
+            <details><summary><code>14-day limit</code></summary><p>Discord blocks bulk deletion for messages older than 14 days. Beacon skips those safely.</p></details>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
