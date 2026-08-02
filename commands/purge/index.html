@@ -27,11 +27,12 @@
         </nav>
 
         <h1>Purge Commands</h1>
-        <p class="doc-lead">Clean up recent channel messages fast. The main command is <code>/purge</code>, capped at 99 messages so staff can remove spam without nuking the whole channel by accident.</p>
+        <p class="doc-lead">Clean up recent channel messages fast. The main command is <code>/purge</code>, capped at 99 messages so staff can remove spam without wiping a whole channel by accident. Focused purge commands scan the same recent window, then remove only the messages that match.</p>
 
         <div class="doc-panel">
           <h2>How it works</h2>
-          <p>Every purge command requires Manage Messages. Beacon scans recent messages in the current channel, deletes the matches it can delete, then replies privately with the cleanup result. Discord does not allow bulk deleting messages older than 14 days, so those are skipped automatically.</p>
+          <p>Every purge command requires Manage Messages for the staff member and for Beacon. The result is sent privately, so cleanup does not create more noise in the channel. Messages older than 14 days are skipped because Discord blocks bulk deletion for them.</p>
+          <p>Use <code>/purge</code> when you just need the latest messages gone. Use the focused commands when a raid, invite spam, link dump, bot loop, or copied phrase needs to be cleaned without touching normal chat around it.</p>
         </div>
 
         <section class="flow-grid" aria-label="Purge flow">
@@ -50,7 +51,11 @@
           <a class="command-card" href="#purge-invites"><div><code>/purge-invites</code><p>Delete recent messages that contain Discord invite links.</p></div><span>Invites</span></a>
           <a class="command-card" href="#purge-images"><div><code>/purge-images</code><p>Delete recent messages with files, images, image embeds, or thumbnails.</p></div><span>Files</span></a>
           <a class="command-card" href="#purge-embeds"><div><code>/purge-embeds</code><p>Delete recent messages that contain embeds.</p></div><span>Embeds</span></a>
+          <a class="command-card" href="#purge-mentions"><div><code>/purge-mentions</code><p>Delete recent messages that mention users, roles, or everyone.</p></div><span>Mentions</span></a>
           <a class="command-card" href="#purge-match"><div><code>/purge-match</code><p>Delete recent messages that contain a specific text match.</p></div><span>Text</span></a>
+          <a class="command-card" href="#purge-startswith"><div><code>/purge-startswith</code><p>Delete messages that start with a selected word, prefix, or phrase.</p></div><span>Start</span></a>
+          <a class="command-card" href="#purge-endswith"><div><code>/purge-endswith</code><p>Delete messages that end with selected text.</p></div><span>End</span></a>
+          <a class="command-card" href="#purge-not"><div><code>/purge-not</code><p>Delete recent messages that do not contain the selected text.</p></div><span>Not</span></a>
         </div>
 
         <section class="options-block" aria-labelledby="purge-options">
@@ -61,8 +66,22 @@
             <details id="purge-after"><summary><code>message</code></summary><p>Message ID or Discord message link. Beacon deletes messages sent after this target in the same channel.</p></details>
             <details id="purge-user"><summary><code>user</code></summary><p>The member whose recent messages should be removed.</p></details>
             <details id="purge-match"><summary><code>text</code></summary><p>Text that must appear inside the message. Matching is case-insensitive.</p></details>
+            <details id="purge-startswith"><summary><code>startswith text</code></summary><p>Text the message must start with. Useful for repeated spam prefixes, copied raid messages, or broken bot output.</p></details>
+            <details id="purge-endswith"><summary><code>endswith text</code></summary><p>Text the message must end with. Useful when spam shares the same final phrase or tag.</p></details>
+            <details id="purge-not"><summary><code>not text</code></summary><p>Deletes messages missing the selected text. Use carefully, because this is intentionally broad.</p></details>
+            <details id="purge-mentions"><summary><code>mentions</code></summary><p>Removes messages that ping users, roles, or everyone. Good for cleaning mention spam quickly.</p></details>
             <details><summary><code>reason</code></summary><p>Optional note for staff. The purge result is sent privately to the moderator.</p></details>
             <details><summary><code>14-day limit</code></summary><p>Discord blocks bulk deletion for messages older than 14 days. Beacon skips those safely.</p></details>
+          </div>
+        </section>
+
+        <section class="doc-panel">
+          <h2>Examples</h2>
+          <div class="command-list command-list-compact">
+            <a class="command-card" href="#purge-normal"><div><code>/purge count: 25</code><p>Removes the 25 newest messages from the current channel.</p></div><span>Fast</span></a>
+            <a class="command-card" href="#purge-user"><div><code>/purge-user user: member count: 50</code><p>Scans 50 recent messages and removes only that member's messages.</p></div><span>Staff</span></a>
+            <a class="command-card" href="#purge-links"><div><code>/purge-links count: 99</code><p>Scans the maximum recent window and removes messages with links.</p></div><span>Spam</span></a>
+            <a class="command-card" href="#purge-startswith"><div><code>/purge-startswith text: free nitro count: 99</code><p>Targets copied spam that starts with the same phrase.</p></div><span>Raid</span></a>
           </div>
         </section>
       </section>
