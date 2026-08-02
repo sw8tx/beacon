@@ -20,6 +20,7 @@ const html = `<!doctype html>
       <aside class="commands-sidebar" aria-label="Command sections">
         <nav class="sidebar-list">
           <a class="is-active" href="#tickets"><span>#</span>Tickets</a>
+          <a href="#emoji-steal"><span>#</span>Emoji Steal</a>
         </nav>
       </aside>
       <section class="commands-doc" id="tickets">
@@ -50,6 +51,16 @@ const html = `<!doctype html>
           <div class="screenshot-frame"><div class="screenshot-top"><span></span><strong>Ticket panel</strong></div><div class="discord-preview discord-preview--panel"><div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div><div class="preview-card"><strong>Beacon</strong><h3>Need help?</h3><p>Open a private ticket and the team will pick it up as soon as possible.</p><b>Before you open one</b><p>Use tickets for support, reports, orders, or private questions. Please do not open duplicate tickets.</p><b>What happens next</b><p>Beacon asks for a subject and details, then creates a private channel for you and the team.</p><button type="button">Open Ticket</button></div></div></div>
           <div class="screenshot-frame"><div class="screenshot-top"><span></span><strong>Opened ticket</strong></div><div class="discord-preview discord-preview--opened"><div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div><div class="preview-card"><strong>Beacon</strong><h3>Ticket opened</h3><p>Thanks. Tell us what you need and include screenshots, order IDs, or context if it helps.</p><div class="ticket-fields"><div><b>Owner</b><span>member</span></div><div><b>Status</b><span>Open</span></div><div><b>Team</b><span>staff</span></div></div><b>Subject</b><p>Order help</p><b>Details</b><p>I need help with my setup.</p><b>Controls</b><p>Claim marks ownership for staff. Close closes the channel and can send a transcript.</p><div class="preview-actions"><button type="button">Claim</button><button class="danger" type="button">Close</button></div></div></div></div>
         </section>
+      </section>
+      <section class="commands-doc" id="emoji-steal">
+        <h1>Emoji Steal Commands</h1>
+        <p class="doc-lead">Copy custom Discord emojis into your server without guessing names or pasting weird links. Paste the emoji, choose if Beacon should keep the original name, confirm it, and the result gets posted back into the channel.</p>
+        <div class="doc-panel"><h2>How it works</h2><p>Run one of the commands, paste custom emojis into the dark modal field, set <code>keep_name</code> to <code>true</code> or <code>false</code>, then confirm. Beacon lists every emoji before adding anything, so staff can cancel before the server changes.</p></div>
+        <div class="command-list">
+          <article class="command-card"><div><code>/emoji-steal</code><p>Steal one custom emoji into the current server with a confirm step.</p></div><span>Single</span></article>
+          <article class="command-card"><div><code>/emoji-steal-bulk</code><p>Paste multiple custom emojis and add them in one run after confirming the list.</p></div><span>Bulk</span></article>
+        </div>
+        <section class="flow-grid" aria-label="Emoji steal flow"><article><span>1</span><h2>Paste</h2><p>Use custom emojis like <code>&lt;:name:id&gt;</code> or animated ones like <code>&lt;a:name:id&gt;</code>.</p></article><article><span>2</span><h2>Confirm</h2><p>Beacon shows an embed with Confirm and Cancel buttons before stealing anything.</p></article><article><span>3</span><h2>Post</h2><p>After Confirm, Beacon posts <code>Successfully Stole Emoji</code> with the new emoji and name.</p></article></section>
       </section>
     </main>
   </body>
