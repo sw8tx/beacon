@@ -26,7 +26,6 @@ const {
   TextInputStyle,
 } = require("discord.js");
 const {
-  showEmojiStealModal,
   prepareEmojiSteal,
   confirmEmojiSteal,
   cancelEmojiSteal,
@@ -716,12 +715,38 @@ const commands = [
   new SlashCommandBuilder()
     .setName("emoji-steal")
     .setDescription("Steal one custom emoji into this server.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuildExpressions),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuildExpressions)
+    .addStringOption((opt) =>
+      opt
+        .setName("emoji")
+        .setDescription("Custom emoji to steal, like <:name:id> or <a:name:id>")
+        .setMaxLength(120)
+        .setRequired(true)
+    )
+    .addBooleanOption((opt) =>
+      opt
+        .setName("keep_name")
+        .setDescription("Keep the original emoji name")
+        .setRequired(true)
+    ),
 
   new SlashCommandBuilder()
     .setName("emoji-steal-bulk")
     .setDescription("Steal multiple custom emojis into this server.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuildExpressions),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuildExpressions)
+    .addStringOption((opt) =>
+      opt
+        .setName("emojis")
+        .setDescription("Custom emojis to steal, separated by spaces")
+        .setMaxLength(1800)
+        .setRequired(true)
+    )
+    .addBooleanOption((opt) =>
+      opt
+        .setName("keep_name")
+        .setDescription("Keep the original emoji names")
+        .setRequired(true)
+    ),
 
   new SlashCommandBuilder()
     .setName("announce")
@@ -1284,8 +1309,8 @@ async function handleCommand(interaction) {
   if (command === "setup") return setup(interaction, data);
   if (command === "health") return health(interaction, data);
   if (command === "dashboard") return dashboard(interaction, data);
-  if (command === "emoji-steal") return showEmojiStealModal(interaction, false, beaconUi());
-  if (command === "emoji-steal-bulk") return showEmojiStealModal(interaction, true, beaconUi());
+  if (command === "emoji-steal") return prepareEmojiSteal(interaction, false, beaconUi());
+  if (command === "emoji-steal-bulk") return prepareEmojiSteal(interaction, true, beaconUi());
   if (command === "announce") return announce(interaction);
   if (command === "onboarding") return onboarding(interaction, data);
   if (command === "dmwelcome") return dmWelcome(interaction, data);
@@ -2179,9 +2204,6 @@ async function handleModal(interaction) {
     return;
   }
 
-  if (interaction.customId.startsWith("emoji_steal_modal:")) {
-    await prepareEmojiSteal(interaction, interaction.customId.endsWith(":bulk"), beaconUi());
-  }
 }
 
 async function handleButton(interaction) {

@@ -169,18 +169,18 @@
 
       <section class="commands-doc" id="emoji-steal">
         <h1>Emoji Steal Commands</h1>
-        <p class="doc-lead">Copy custom Discord emojis into your server without guessing names or pasting weird links. Paste the emoji, choose if Beacon should keep the original name, confirm it, and the result gets posted back into the channel.</p>
+        <p class="doc-lead">Copy custom Discord emojis into your server without guessing names or pasting weird links. Fill the slash command fields, choose if Beacon should keep the original name, confirm it, and the result gets posted back into the channel.</p>
 
         <div class="doc-panel">
           <h2>How it works</h2>
-          <p>Run one of the commands, paste custom emojis into the dark modal field, set <code>keep_name</code> to <code>true</code> or <code>false</code>, then confirm. Beacon lists every emoji before adding anything, so staff can cancel before the server changes.</p>
+          <p>Run one of the commands, paste custom emojis into the dark command field, set <code>keep_name</code> to <code>true</code> or <code>false</code>, then confirm. Beacon lists every emoji before adding anything, so staff can cancel before the server changes.</p>
         </div>
 
         <div class="command-list">
           <article class="command-card">
             <div>
               <code>/emoji-steal</code>
-              <p>Steal one custom emoji into the current server with a confirm step.</p>
+              <p>Use the <code>emoji</code> and <code>keep_name</code> fields, then confirm before Beacon adds it.</p>
             </div>
             <span>Single</span>
           </article>
@@ -188,7 +188,7 @@
           <article class="command-card">
             <div>
               <code>/emoji-steal-bulk</code>
-              <p>Paste multiple custom emojis and add them in one run after confirming the list.</p>
+              <p>Use the <code>emojis</code> and <code>keep_name</code> fields to add multiple emojis after confirming the list.</p>
             </div>
             <span>Bulk</span>
           </article>

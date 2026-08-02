@@ -54,11 +54,11 @@ const html = `<!doctype html>
       </section>
       <section class="commands-doc" id="emoji-steal">
         <h1>Emoji Steal Commands</h1>
-        <p class="doc-lead">Copy custom Discord emojis into your server without guessing names or pasting weird links. Paste the emoji, choose if Beacon should keep the original name, confirm it, and the result gets posted back into the channel.</p>
-        <div class="doc-panel"><h2>How it works</h2><p>Run one of the commands, paste custom emojis into the dark modal field, set <code>keep_name</code> to <code>true</code> or <code>false</code>, then confirm. Beacon lists every emoji before adding anything, so staff can cancel before the server changes.</p></div>
+        <p class="doc-lead">Copy custom Discord emojis into your server without guessing names or pasting weird links. Fill the slash command fields, choose if Beacon should keep the original name, confirm it, and the result gets posted back into the channel.</p>
+        <div class="doc-panel"><h2>How it works</h2><p>Run one of the commands, paste custom emojis into the dark command field, set <code>keep_name</code> to <code>true</code> or <code>false</code>, then confirm. Beacon lists every emoji before adding anything, so staff can cancel before the server changes.</p></div>
         <div class="command-list">
-          <article class="command-card"><div><code>/emoji-steal</code><p>Steal one custom emoji into the current server with a confirm step.</p></div><span>Single</span></article>
-          <article class="command-card"><div><code>/emoji-steal-bulk</code><p>Paste multiple custom emojis and add them in one run after confirming the list.</p></div><span>Bulk</span></article>
+          <article class="command-card"><div><code>/emoji-steal</code><p>Use the <code>emoji</code> and <code>keep_name</code> fields, then confirm before Beacon adds it.</p></div><span>Single</span></article>
+          <article class="command-card"><div><code>/emoji-steal-bulk</code><p>Use the <code>emojis</code> and <code>keep_name</code> fields to add multiple emojis after confirming the list.</p></div><span>Bulk</span></article>
         </div>
         <section class="flow-grid" aria-label="Emoji steal flow"><article><span>1</span><h2>Paste</h2><p>Use custom emojis like <code>&lt;:name:id&gt;</code> or animated ones like <code>&lt;a:name:id&gt;</code>.</p></article><article><span>2</span><h2>Confirm</h2><p>Beacon shows an embed with Confirm and Cancel buttons before stealing anything.</p></article><article><span>3</span><h2>Post</h2><p>After Confirm, Beacon posts <code>Successfully Stole Emoji</code> with the new emoji and name.</p></article></section>
       </section>

@@ -2,10 +2,7 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ModalBuilder,
   PermissionFlagsBits,
-  TextInputBuilder,
-  TextInputStyle,
 } = require("discord.js");
 
 const pendingEmojiSteals = new Map();
@@ -40,13 +37,6 @@ function uniqueEmojiName(guild, baseName) {
   }
 
   return `emoji_${Date.now().toString(36).slice(-8)}`;
-}
-
-function parseBooleanText(value) {
-  const text = String(value || "").trim().toLowerCase();
-  if (["true", "yes", "y", "ja", "1", "keep", "keep name"].includes(text)) return true;
-  if (["false", "no", "n", "nein", "0", "rename"].includes(text)) return false;
-  return null;
 }
 
 function parseCustomEmojis(input, max = 25) {
@@ -139,47 +129,6 @@ async function stealEmojiBatch(guild, emojis, keepName, moderatorTag) {
   return { created, failed };
 }
 
-async function showEmojiStealModal(interaction, bulk, deps) {
-  if (!canManageGuildExpressions(interaction.member)) {
-    await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("You need Manage Expressions permission to steal emojis.")], ephemeral: true }));
-    return;
-  }
-  if (!botCanCreateGuildExpressions(interaction.guild)) {
-    await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("Beacon needs Create Expressions or Manage Expressions permission before it can add emojis.")], ephemeral: true }));
-    return;
-  }
-
-  const modal = new ModalBuilder()
-    .setCustomId(`emoji_steal_modal:${bulk ? "bulk" : "single"}`)
-    .setTitle(bulk ? "Emoji Steal Bulk" : "Emoji Steal");
-
-  const emojiInput = new TextInputBuilder()
-    .setCustomId("emoji_steal_emojis")
-    .setLabel(bulk ? "Paste custom emojis" : "Paste one custom emoji")
-    .setStyle(TextInputStyle.Paragraph)
-    .setMinLength(1)
-    .setMaxLength(1800)
-    .setPlaceholder(bulk ? "<:emoji_one:123> <:emoji_two:456> <a:animated:789>" : "<:ttkittylove:123456789012345678>")
-    .setRequired(true);
-
-  const keepNameInput = new TextInputBuilder()
-    .setCustomId("emoji_steal_keep_name")
-    .setLabel("keep_name true or false")
-    .setStyle(TextInputStyle.Short)
-    .setMinLength(4)
-    .setMaxLength(5)
-    .setPlaceholder("true")
-    .setValue("true")
-    .setRequired(true);
-
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(emojiInput),
-    new ActionRowBuilder().addComponents(keepNameInput)
-  );
-
-  await interaction.showModal(modal);
-}
-
 async function prepareEmojiSteal(interaction, bulk, deps) {
   if (!canManageGuildExpressions(interaction.member)) {
     await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("You need Manage Expressions permission to steal emojis.")], ephemeral: true }));
@@ -190,12 +139,8 @@ async function prepareEmojiSteal(interaction, bulk, deps) {
     return;
   }
 
-  const emojiText = interaction.fields.getTextInputValue("emoji_steal_emojis");
-  const keepName = parseBooleanText(interaction.fields.getTextInputValue("emoji_steal_keep_name"));
-  if (keepName === null) {
-    await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("Set keep_name to true or false.")], ephemeral: true }));
-    return;
-  }
+  const emojiText = interaction.options.getString(bulk ? "emojis" : "emoji", true);
+  const keepName = interaction.options.getBoolean("keep_name", true);
 
   const emojis = parseCustomEmojis(emojiText, bulk ? 25 : 1);
   if (!emojis.length) {
@@ -217,7 +162,6 @@ async function prepareEmojiSteal(interaction, bulk, deps) {
   await interaction.reply(deps.withBrandFiles({
     embeds: [emojiConfirmEmbed(emojis, keepName, deps)],
     components: [emojiConfirmRow(id)],
-    ephemeral: true,
   }));
 }
 
@@ -276,7 +220,6 @@ async function cancelEmojiSteal(interaction, id, deps) {
 }
 
 module.exports = {
-  showEmojiStealModal,
   prepareEmojiSteal,
   confirmEmojiSteal,
   cancelEmojiSteal,
