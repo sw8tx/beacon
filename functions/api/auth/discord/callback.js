@@ -21,7 +21,7 @@ export async function onRequestGet({ request, env }) {
 
   if (url.searchParams.has("error")) return errorResponse("Discord login was cancelled.", 400);
   if (!code || !state || !expectedState || state !== expectedState) return restartLogin(request);
-  if (!clientSecret || !botToken || !supportGuildId || !sessionSecret) return errorResponse("Discord login is not configured yet. Add the required Cloudflare secrets.", 503);
+  if (!clientSecret || !sessionSecret) return errorResponse("Discord login is not configured yet. Add the required Cloudflare secrets.", 503);
 
   try {
     const tokenBody = new URLSearchParams({
@@ -48,14 +48,16 @@ export async function onRequestGet({ request, env }) {
     const userResponse = await fetch(`${DISCORD_API}/users/@me`, { headers: { Authorization: `Bearer ${token.access_token}` } });
     if (!userResponse.ok) return errorResponse("Discord profile could not be loaded.", 400);
     const discordUser = await userResponse.json();
-    const joinResponse = await fetch(`${DISCORD_API}/guilds/${supportGuildId}/members/${discordUser.id}`, {
-      method: "PUT",
-      headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ access_token: token.access_token }),
-    });
-    if (!joinResponse.ok) {
-      console.error(`[discord-oauth] Support server join failed: ${joinResponse.status}`);
-      return errorResponse("Your Discord profile is ready, but the Support Server join could not be completed.", 400);
+    if (botToken && supportGuildId) {
+      const joinResponse = await fetch(`${DISCORD_API}/guilds/${supportGuildId}/members/${discordUser.id}`, {
+        method: "PUT",
+        headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ access_token: token.access_token }),
+      });
+      if (!joinResponse.ok && joinResponse.status !== 204) {
+        const joinDetails = await joinResponse.text().catch(() => "");
+        console.error(`[discord-oauth] Support server join skipped after failure: ${joinResponse.status} ${joinDetails.slice(0, 180)}`);
+      }
     }
 
     const user = {
