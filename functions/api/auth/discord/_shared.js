@@ -41,6 +41,15 @@ export function randomState() {
   return base64UrlEncode(value);
 }
 
+function cleanEnv(value) {
+  if (value == null) return "";
+  const text = String(value).trim();
+  if ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("'") && text.endsWith("'"))) {
+    return text.slice(1, -1).trim();
+  }
+  return text;
+}
+
 export async function createOauthState(secret) {
   const issuedAt = Math.floor(Date.now() / 1000).toString(36);
   const nonce = randomState();
@@ -63,12 +72,12 @@ export async function verifyOauthState(value, secret, maxAgeSeconds = 600) {
 
 export function getConfig(env) {
   return {
-    clientId: env.DISCORD_CLIENT_ID || CLIENT_ID,
-    clientSecret: env.DISCORD_CLIENT_SECRET || env.CLIENT_SECRET,
-    botToken: env.DISCORD_BOT_TOKEN || env.DISCORD_TOKEN || env.BOT_TOKEN || env.TOKEN,
-    supportGuildId: env.DISCORD_SUPPORT_GUILD_ID || env.SUPPORT_GUILD_ID || env.DEV_GUILD_ID,
-    sessionSecret: env.AUTH_SESSION_SECRET,
-    redirectUri: env.DISCORD_REDIRECT_URI || env.REDIRECT_URI || DEFAULT_REDIRECT_URI,
+    clientId: cleanEnv(env.DISCORD_CLIENT_ID || CLIENT_ID),
+    clientSecret: cleanEnv(env.DISCORD_CLIENT_SECRET || env.CLIENT_SECRET),
+    botToken: cleanEnv(env.DISCORD_BOT_TOKEN || env.DISCORD_TOKEN || env.BOT_TOKEN || env.TOKEN),
+    supportGuildId: cleanEnv(env.DISCORD_SUPPORT_GUILD_ID || env.SUPPORT_GUILD_ID || env.DEV_GUILD_ID),
+    sessionSecret: cleanEnv(env.AUTH_SESSION_SECRET),
+    redirectUri: cleanEnv(env.DISCORD_REDIRECT_URI || env.REDIRECT_URI || DEFAULT_REDIRECT_URI),
   };
 }
 
