@@ -23,5 +23,9 @@ export async function onRequest(context) {
     url.pathname = "/prestige/";
     return context.next(new Request(url, context.request));
   }
+  if (url.hostname === "badges.beacon-bot.site" && (url.pathname === "/" || url.pathname === "/index.html")) {
+    url.pathname = "/badges/";
+    return context.next(new Request(url, context.request));
+  }
   return context.next();
 }
