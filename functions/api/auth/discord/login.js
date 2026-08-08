@@ -1,4 +1,4 @@
-import { createCookie, getConfig, randomState } from "./_shared.js";
+import { createCookie, createOauthState, getConfig, randomState } from "./_shared.js";
 
 const CANONICAL_HOST = "beacon-bot.site";
 
@@ -11,8 +11,8 @@ export async function onRequestGet({ request, env }) {
     return Response.redirect(canonicalUrl.toString(), 302);
   }
 
-  const { clientId, redirectUri } = getConfig(env);
-  const state = randomState();
+  const { clientId, redirectUri, sessionSecret } = getConfig(env);
+  const state = sessionSecret ? await createOauthState(sessionSecret) : randomState();
   const authorizationUrl = new URL("https://discord.com/oauth2/authorize");
   authorizationUrl.searchParams.set("client_id", clientId);
   authorizationUrl.searchParams.set("response_type", "code");

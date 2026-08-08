@@ -1,4 +1,4 @@
-import { avatarUrl, createCookie, createSession, errorResponse, getConfig, getCookie } from "./_shared.js";
+import { avatarUrl, createCookie, createSession, errorResponse, getConfig, getCookie, verifyOauthState } from "./_shared.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token";
@@ -20,8 +20,10 @@ export async function onRequestGet({ request, env }) {
   const expectedState = getCookie(request, "discord_oauth_state");
 
   if (url.searchParams.has("error")) return errorResponse("Discord login was cancelled.", 400);
-  if (!code || !state || !expectedState || state !== expectedState) return restartLogin(request);
   if (!clientSecret || !sessionSecret) return errorResponse("Discord login is not configured yet. Add the required Cloudflare secrets.", 503);
+  const hasCookieState = Boolean(expectedState && state && state === expectedState);
+  const hasSignedState = await verifyOauthState(state, sessionSecret);
+  if (!code || !state || (!hasCookieState && !hasSignedState)) return restartLogin(request);
 
   try {
     const tokenBody = new URLSearchParams({

@@ -41,6 +41,26 @@ export function randomState() {
   return base64UrlEncode(value);
 }
 
+export async function createOauthState(secret) {
+  const issuedAt = Math.floor(Date.now() / 1000).toString(36);
+  const nonce = randomState();
+  const body = `${nonce}.${issuedAt}`;
+  return `${body}.${await sign(body, secret)}`;
+}
+
+export async function verifyOauthState(value, secret, maxAgeSeconds = 600) {
+  if (!value || !secret) return false;
+  const parts = value.split(".");
+  if (parts.length !== 3) return false;
+  const [nonce, issuedAt, signature] = parts;
+  if (!nonce || !issuedAt || !signature) return false;
+  const body = `${nonce}.${issuedAt}`;
+  if (signature !== await sign(body, secret)) return false;
+  const issuedAtSeconds = Number.parseInt(issuedAt, 36);
+  if (!Number.isFinite(issuedAtSeconds)) return false;
+  return Math.floor(Date.now() / 1000) - issuedAtSeconds <= maxAgeSeconds;
+}
+
 export function getConfig(env) {
   return {
     clientId: env.DISCORD_CLIENT_ID || CLIENT_ID,
