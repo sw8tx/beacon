@@ -17,20 +17,21 @@ export async function onRequestGet({ request, env }) {
   try {
     const tokenBody = new URLSearchParams({
       grant_type: "authorization_code",
+      client_id: clientId,
+      client_secret: clientSecret,
       code,
       redirect_uri: redirectUri,
     });
-    const clientCredentials = btoa(`${clientId}:${clientSecret}`);
     const tokenResponse = await fetch(DISCORD_TOKEN_URL, {
       method: "POST",
       headers: {
-        Authorization: `Basic ${clientCredentials}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: tokenBody.toString(),
     });
     if (!tokenResponse.ok) {
-      console.error(`[discord-oauth] Token exchange failed: ${tokenResponse.status}`);
+      const details = await tokenResponse.text().catch(() => "");
+      console.error(`[discord-oauth] Token exchange failed: ${tokenResponse.status} ${details.slice(0, 240)}`);
       return errorResponse("Discord could not finish the login. Please start the login again.", 400);
     }
 
@@ -56,7 +57,7 @@ export async function onRequestGet({ request, env }) {
     const session = await createSession(user, sessionSecret);
     const headers = new Headers({ Location: new URL("/", request.url).toString() });
     headers.append("Set-Cookie", createCookie("beacon_session", session, { maxAge: 60 * 60 * 24 * 7 }));
-    headers.append("Set-Cookie", createCookie("discord_oauth_state", "", { maxAge: 0, path: "/api/auth/discord/callback" }));
+    headers.append("Set-Cookie", createCookie("discord_oauth_state", "", { maxAge: 0, path: "/" }));
     return new Response(null, { status: 302, headers });
   } catch (error) {
     console.error(`[discord-oauth] Callback failed: ${error instanceof Error ? error.message : String(error)}`);

@@ -15,7 +15,7 @@ export async function onRequestGet({ env }) {
     status: 302,
     headers: {
       Location: authorizationUrl.toString(),
-      "Set-Cookie": createCookie("discord_oauth_state", state, { maxAge: 600, path: "/api/auth/discord/callback" }),
+      "Set-Cookie": createCookie("discord_oauth_state", state, { maxAge: 600, path: "/" }),
     },
   });
 }
