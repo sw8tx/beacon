@@ -67,6 +67,7 @@ export async function onRequestGet({ request, env }) {
     };
     const session = await createSession(user, sessionSecret);
     const headers = new Headers({ Location: new URL("/", request.url).toString() });
+    headers.append("Set-Cookie", createCookie("beacon_session", session, { maxAge: 60 * 60 * 24 * 7, domain: ".beacon-bot.site" }));
     headers.append("Set-Cookie", createCookie("beacon_session", session, { maxAge: 60 * 60 * 24 * 7 }));
     headers.append("Set-Cookie", createCookie("discord_oauth_state", "", { maxAge: 0, path: "/" }));
     return new Response(null, { status: 302, headers });

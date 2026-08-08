@@ -27,8 +27,9 @@ export function getCookie(request, name) {
   return entry ? entry.slice(prefix.length) : null;
 }
 
-export function createCookie(name, value, { maxAge = 0, path = "/", httpOnly = true } = {}) {
+export function createCookie(name, value, { maxAge = 0, path = "/", httpOnly = true, domain = "" } = {}) {
   const parts = [`${name}=${value}`, `Path=${path}`, "Secure", "SameSite=Lax"];
+  if (domain) parts.push(`Domain=${domain}`);
   if (httpOnly) parts.push("HttpOnly");
   if (maxAge >= 0) parts.push(`Max-Age=${maxAge}`);
   return parts.join("; ");

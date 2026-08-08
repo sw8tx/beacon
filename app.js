@@ -5,6 +5,7 @@ const languageOptions = [...document.querySelectorAll("[data-lang]")];
 const languageCode = document.querySelector(".language-current-code");
 const languageLabel = document.querySelector(".language-current-label");
 const discordLogin = document.querySelector("#discord-login");
+const discordLoginLinks = [...document.querySelectorAll('#discord-login, .hero-button--dark[href="/api/auth/discord/login"]')];
 const discordAccount = document.querySelector("#discord-account");
 const discordAvatar = document.querySelector("#discord-avatar");
 const discordUsername = document.querySelector("#discord-username");
@@ -123,8 +124,13 @@ async function loadDiscordSession() {
     discordAvatar.src = user.avatar;
     discordAvatar.alt = `${user.username} profile picture`;
     discordUsername.textContent = user.username;
-    discordLogin.hidden = true;
+    discordLoginLinks.forEach((link) => {
+      link.hidden = true;
+      link.setAttribute("aria-hidden", "true");
+      link.tabIndex = -1;
+    });
     discordAccount.hidden = false;
+    discordAccount.setAttribute("aria-label", `Signed in as ${user.username}`);
   } catch (_) {}
 }
 
