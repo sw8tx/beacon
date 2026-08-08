@@ -3,6 +3,15 @@ import { avatarUrl, createCookie, createSession, errorResponse, getConfig, getCo
 const DISCORD_API = "https://discord.com/api/v10";
 const DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token";
 
+function restartLogin(request) {
+  const loginUrl = new URL("/api/auth/discord/login", request.url);
+  loginUrl.searchParams.set("fresh", Date.now().toString(36));
+  const headers = new Headers({ Location: loginUrl.toString() });
+  headers.append("Set-Cookie", createCookie("discord_oauth_state", "", { maxAge: 0, path: "/" }));
+  headers.append("Set-Cookie", createCookie("discord_oauth_state", "", { maxAge: 0, path: "/api/auth/discord/callback" }));
+  return new Response(null, { status: 302, headers });
+}
+
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
   const { clientId, clientSecret, botToken, supportGuildId, sessionSecret, redirectUri } = getConfig(env);
@@ -11,7 +20,7 @@ export async function onRequestGet({ request, env }) {
   const expectedState = getCookie(request, "discord_oauth_state");
 
   if (url.searchParams.has("error")) return errorResponse("Discord login was cancelled.", 400);
-  if (!code || !state || !expectedState || state !== expectedState) return errorResponse("Discord login state is invalid. Please try again.", 400);
+  if (!code || !state || !expectedState || state !== expectedState) return restartLogin(request);
   if (!clientSecret || !botToken || !supportGuildId || !sessionSecret) return errorResponse("Discord login is not configured yet. Add the required Cloudflare secrets.", 503);
 
   try {
