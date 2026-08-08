@@ -49,14 +49,14 @@ export async function onRequestGet({ request, env }) {
   try {
     const tokenBody = new URLSearchParams({
       grant_type: "authorization_code",
-      client_id: clientId,
-      client_secret: clientSecret,
       code,
       redirect_uri: redirectUri,
     });
+    const basicAuth = btoa(`${encodeURIComponent(clientId)}:${encodeURIComponent(clientSecret)}`);
     const tokenResponse = await fetch(DISCORD_TOKEN_URL, {
       method: "POST",
       headers: {
+        Authorization: `Basic ${basicAuth}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: tokenBody.toString(),
