@@ -1,6 +1,16 @@
 import { createCookie, getConfig, randomState } from "./_shared.js";
 
-export async function onRequestGet({ env }) {
+const CANONICAL_HOST = "beacon-bot.site";
+
+export async function onRequestGet({ request, env }) {
+  const requestUrl = new URL(request.url);
+  const requestHost = request.headers.get("host") || requestUrl.hostname;
+  if (requestHost !== CANONICAL_HOST) {
+    const canonicalUrl = new URL(requestUrl.pathname, `https://${CANONICAL_HOST}`);
+    canonicalUrl.search = requestUrl.search;
+    return Response.redirect(canonicalUrl.toString(), 302);
+  }
+
   const { clientId, redirectUri } = getConfig(env);
   const state = randomState();
   const authorizationUrl = new URL("https://discord.com/oauth2/authorize");
