@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=109" />
+    <link rel="stylesheet" href="styles.css?v=110" />
     <script type="importmap">
       {"imports":{"three":"https://unpkg.com/three@0.166.1/build/three.module.js"}}
     </script>
@@ -26,7 +26,7 @@
       <div class="navbar-links">
         <a class="navbar-link" href="https://badges.beacon-bot.site/" data-i18n="navBadges">Badges</a>
         <a class="navbar-link navbar-link--primary" href="/commands" data-i18n="navCommands">Commands</a>
-        <a class="navbar-link navbar-link--primary" href="/api/auth/discord/login" data-i18n="navDashboard">Dashboard</a>
+        <a class="navbar-link navbar-link--primary" href="/dashboard" data-requires-auth="true" data-i18n="navDashboard">Dashboard</a>
         <a class="navbar-link" href="https://status.beacon-bot.site/" data-i18n="navStatus">Status</a>
         <a class="navbar-link" href="/api/auth/discord/login" data-i18n="navSupport">Support</a>
       </div>
@@ -54,10 +54,16 @@
         <a class="navbar-button navbar-button--login login-float" id="discord-login" href="/api/auth/discord/login"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="login">Login with Discord</span></a>
         <details class="account-menu" id="discord-account" hidden>
           <summary><img class="account-avatar" id="discord-avatar" src="assets/beacon-logo.png?v=92" alt="" /><span id="discord-username">Discord user</span></summary>
-          <button type="button" id="discord-logout">Log out</button>
+          <div class="account-menu-panel">
+            <a class="account-menu-action" href="/dashboard">Dashboard</a>
+            <a class="account-menu-action" href="https://status.beacon-bot.site/">Status</a>
+            <button class="account-menu-action" type="button" id="discord-logout">Log out</button>
+          </div>
         </details>
       </div>
     </nav>
+
+    <div class="auth-toast" id="auth-toast" role="status" aria-live="polite">Need to login first</div>
 
     <main id="top">
       <section class="hero-section">
@@ -112,6 +118,6 @@
         <a href="/api/auth/discord/login" data-i18n="navSupport">Support</a>
       </nav>
     </footer>
-    <script src="app.js?v=107"></script>
+    <script src="app.js?v=108"></script>
   </body>
 </html>
