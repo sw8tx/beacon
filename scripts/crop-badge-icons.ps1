@@ -12,30 +12,30 @@ if (!(Test-Path -LiteralPath $Source)) {
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
 $sourceImage = [System.Drawing.Bitmap]::FromFile((Resolve-Path -LiteralPath $Source))
-$scaleX = $sourceImage.Width / 1536.0
-$scaleY = $sourceImage.Height / 1024.0
+$scaleX = $sourceImage.Width / 257.0
+$scaleY = $sourceImage.Height / 189.0
 
 $badges = @(
-  @{ id = "verified"; x = 78; y = 45; w = 150; h = 142 },
-  @{ id = "beacon-member"; x = 357; y = 54; w = 128; h = 140 },
-  @{ id = "pioneer"; x = 615; y = 58; w = 220; h = 120 },
-  @{ id = "beacon-developer"; x = 928; y = 47; w = 145; h = 132 },
-  @{ id = "donator"; x = 1230; y = 56; w = 155; h = 126 },
-  @{ id = "premium"; x = 88; y = 304; w = 134; h = 116 },
-  @{ id = "staff"; x = 361; y = 283; w = 126; h = 151 },
-  @{ id = "helper"; x = 630; y = 316; w = 172; h = 118 },
-  @{ id = "bug-hunter"; x = 939; y = 300; w = 155; h = 142 },
-  @{ id = "server-booster"; x = 1252; y = 303; w = 105; h = 134 },
-  @{ id = "the-beacon"; x = 77; y = 551; w = 152; h = 133 },
-  @{ id = "beacons-princess"; x = 338; y = 553; w = 155; h = 132 },
-  @{ id = "not-found"; x = 649; y = 548; w = 135; h = 132 },
-  @{ id = "lost-signal"; x = 926; y = 558; w = 161; h = 121 },
-  @{ id = "night-owl"; x = 1236; y = 548; w = 126; h = 137 },
-  @{ id = "command-relic"; x = 93; y = 782; w = 128; h = 134 },
-  @{ id = "prismatic-key"; x = 365; y = 779; w = 130; h = 140 },
-  @{ id = "lucky-signal"; x = 648; y = 774; w = 142; h = 137 },
-  @{ id = "found-the-light"; x = 944; y = 773; w = 114; h = 147 },
-  @{ id = "witness"; x = 1234; y = 777; w = 126; h = 133 }
+  @{ id = "verified"; x = 10; y = 9; w = 31; h = 29 },
+  @{ id = "beacon-member"; x = 63; y = 8; w = 28; h = 34 },
+  @{ id = "pioneer"; x = 105; y = 10; w = 44; h = 31 },
+  @{ id = "beacon-developer"; x = 163; y = 8; w = 32; h = 34 },
+  @{ id = "donator"; x = 216; y = 8; w = 31; h = 34 },
+  @{ id = "premium"; x = 12; y = 62; w = 31; h = 32 },
+  @{ id = "staff"; x = 63; y = 57; w = 30; h = 40 },
+  @{ id = "helper"; x = 106; y = 64; w = 44; h = 31 },
+  @{ id = "bug-hunter"; x = 163; y = 60; w = 35; h = 37 },
+  @{ id = "server-booster"; x = 218; y = 60; w = 29; h = 38 },
+  @{ id = "the-beacon"; x = 9; y = 110; w = 36; h = 38 },
+  @{ id = "beacons-princess"; x = 59; y = 111; w = 39; h = 36 },
+  @{ id = "not-found"; x = 113; y = 112; w = 34; h = 34 },
+  @{ id = "lost-signal"; x = 162; y = 112; w = 39; h = 34 },
+  @{ id = "night-owl"; x = 217; y = 109; w = 31; h = 39 },
+  @{ id = "command-relic"; x = 9; y = 157; w = 34; h = 30 },
+  @{ id = "prismatic-key"; x = 62; y = 153; w = 32; h = 35 },
+  @{ id = "lucky-signal"; x = 111; y = 153; w = 36; h = 35 },
+  @{ id = "found-the-light"; x = 166; y = 152; w = 29; h = 36 },
+  @{ id = "witness"; x = 216; y = 153; w = 32; h = 35 }
 )
 
 function New-Rectangle($x, $y, $w, $h) {
@@ -47,16 +47,39 @@ function New-Rectangle($x, $y, $w, $h) {
   )
 }
 
+function Test-BackgroundPixel([System.Drawing.Color]$color) {
+  $max = [Math]::Max([Math]::Max($color.R, $color.G), $color.B)
+  $min = [Math]::Min([Math]::Min($color.R, $color.G), $color.B)
+  return $color.R -gt 205 -and $color.G -gt 205 -and $color.B -gt 205 -and ($max - $min) -lt 42
+}
+
 function Remove-WhiteBackground([System.Drawing.Bitmap]$bitmap) {
+  $visited = New-Object 'bool[,]' $bitmap.Width, $bitmap.Height
+  $queue = New-Object System.Collections.Generic.Queue[System.Drawing.Point]
+
+  for ($x = 0; $x -lt $bitmap.Width; $x++) {
+    $queue.Enqueue([System.Drawing.Point]::new($x, 0))
+    $queue.Enqueue([System.Drawing.Point]::new($x, $bitmap.Height - 1))
+  }
   for ($y = 0; $y -lt $bitmap.Height; $y++) {
-    for ($x = 0; $x -lt $bitmap.Width; $x++) {
-      $color = $bitmap.GetPixel($x, $y)
-      $whiteDistance = [Math]::Max([Math]::Max(255 - $color.R, 255 - $color.G), 255 - $color.B)
-      if ($color.R -gt 238 -and $color.G -gt 238 -and $color.B -gt 238) {
-        $alpha = [Math]::Min(255, [Math]::Max(0, $whiteDistance * 18))
-        $bitmap.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($alpha, $color.R, $color.G, $color.B))
-      }
-    }
+    $queue.Enqueue([System.Drawing.Point]::new(0, $y))
+    $queue.Enqueue([System.Drawing.Point]::new($bitmap.Width - 1, $y))
+  }
+
+  while ($queue.Count -gt 0) {
+    $point = $queue.Dequeue()
+    if ($point.X -lt 0 -or $point.Y -lt 0 -or $point.X -ge $bitmap.Width -or $point.Y -ge $bitmap.Height) { continue }
+    if ($visited[$point.X, $point.Y]) { continue }
+    $visited[$point.X, $point.Y] = $true
+
+    $color = $bitmap.GetPixel($point.X, $point.Y)
+    if (!(Test-BackgroundPixel $color)) { continue }
+
+    $bitmap.SetPixel($point.X, $point.Y, [System.Drawing.Color]::FromArgb(0, $color.R, $color.G, $color.B))
+    $queue.Enqueue([System.Drawing.Point]::new($point.X + 1, $point.Y))
+    $queue.Enqueue([System.Drawing.Point]::new($point.X - 1, $point.Y))
+    $queue.Enqueue([System.Drawing.Point]::new($point.X, $point.Y + 1))
+    $queue.Enqueue([System.Drawing.Point]::new($point.X, $point.Y - 1))
   }
 }
 
