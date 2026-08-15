@@ -14,9 +14,13 @@ function escapeHtml(value) {
 }
 
 function badgeCard(badge) {
+  const png = `/assets/badges/${escapeHtml(badge.id)}.png`;
   return `
     <article class="badge-card badge-card--${escapeHtml(badge.tone)}">
-      <div class="badge-symbol" aria-hidden="true">${iconForBadge(badge.id)}</div>
+      <div class="badge-symbol" aria-hidden="true">
+        <img class="badge-symbol-img" src="${png}" alt="" loading="lazy" decoding="async" />
+        <span class="badge-symbol-fallback">${iconForBadge(badge.id)}</span>
+      </div>
       <div>
         <div class="badge-topline">
           <h2>${escapeHtml(badge.name)}</h2>
@@ -32,4 +36,8 @@ function badgeCard(badge) {
 
 if (grid) {
   grid.innerHTML = BEACON_BADGES.map(badgeCard).join("");
+  grid.querySelectorAll(".badge-symbol-img").forEach((image) => {
+    image.addEventListener("load", () => image.closest(".badge-symbol")?.classList.add("has-png"));
+    image.addEventListener("error", () => image.remove());
+  });
 }

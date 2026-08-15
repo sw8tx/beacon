@@ -39,9 +39,13 @@ async function getUnlockedBadgeIds(env, userId) {
 function renderBadgeCard(badge, unlocked) {
   const stateClass = unlocked ? " is-unlocked" : " is-locked";
   const stateLabel = unlocked ? "Unlocked" : "Locked";
+  const png = `/assets/badges/${escapeHtml(badge.id)}.png`;
   return `
     <article class="dash-badge dash-badge--${escapeHtml(badge.tone)}${stateClass}">
-      <div class="dash-badge-icon" aria-hidden="true">${iconForBadge(badge.id)}</div>
+      <div class="dash-badge-icon" aria-hidden="true">
+        <img class="dash-badge-img" src="${png}" alt="" loading="lazy" decoding="async" />
+        <span class="dash-badge-fallback">${iconForBadge(badge.id)}</span>
+      </div>
       <div class="dash-badge-copy">
         <div class="dash-badge-top">
           <h3>${escapeHtml(badge.name)}</h3>
@@ -155,6 +159,9 @@ export async function onRequestGet({ request, env }) {
       .dash-badge:hover::after{animation:dash-sheen 1.05s ease;opacity:1}
       .dash-badge-icon{display:grid;width:58px;height:58px;place-items:center;border:1px solid rgba(255,195,28,.24);border-radius:14px;background:rgba(255,255,255,.04);color:#ffc31c;filter:drop-shadow(0 0 14px rgba(255,195,28,.18))}
       .dash-badge-icon svg{display:block;width:46px;height:46px}
+      .dash-badge-img{display:block;width:54px;height:54px;object-fit:contain}
+      .dash-badge-fallback{display:block}
+      .dash-badge-icon.has-png .dash-badge-fallback{display:none}
       .dash-badge-top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
       .dash-badge-top h3{margin:0;color:#fff;font-size:1rem;line-height:1}
       .dash-badge-top span{border:1px solid rgba(255,195,28,.24);border-radius:999px;color:#ffc31c;padding:3px 8px;font-size:.62rem;font-weight:900;text-transform:uppercase}
@@ -258,6 +265,10 @@ export async function onRequestGet({ request, env }) {
         });
       });
       activateDashboardTab(location.hash.slice(1) || "server-info");
+      document.querySelectorAll(".dash-badge-img").forEach((image) => {
+        image.addEventListener("load", () => image.closest(".dash-badge-icon")?.classList.add("has-png"));
+        image.addEventListener("error", () => image.remove());
+      });
     </script>
   </body>
 </html>`;

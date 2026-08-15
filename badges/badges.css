@@ -209,6 +209,21 @@ h1 span {
   display: block;
 }
 
+.badge-symbol-img {
+  display: block;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.badge-symbol-fallback {
+  display: block;
+}
+
+.badge-symbol.has-png .badge-symbol-fallback {
+  display: none;
+}
+
 .badge-icon span {
   color: currentColor;
   font-size: 2rem;
@@ -407,6 +422,11 @@ h1 span {
   .badge-icon,
   .badge-symbol,
   .badge-icon svg {
+    width: 52px;
+    height: 52px;
+  }
+
+  .badge-symbol-img {
     width: 52px;
     height: 52px;
   }
