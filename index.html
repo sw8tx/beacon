@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=113" />
+    <link rel="stylesheet" href="styles.css?v=114" />
     <script type="importmap">
       {"imports":{"three":"https://unpkg.com/three@0.166.1/build/three.module.js"}}
     </script>
@@ -103,6 +103,67 @@
           <div class="status-metric"><strong data-stat="guilds">--</strong><span data-i18n="statServers">Servers</span></div>
           <div class="status-metric"><strong data-stat="users">--</strong><span data-i18n="statUsers">Users</span></div>
         </div>
+      </section>
+
+      <section class="server-strip server-strip--home" aria-label="Featured servers using Beacon">
+        <p>Actual servers running Beacon</p>
+        <div class="marquee marquee--left">
+          <div class="marquee__track" data-server-track="primary"></div>
+        </div>
+        <div class="marquee marquee--right">
+          <div class="marquee__track" data-server-track="secondary"></div>
+        </div>
+      </section>
+
+      <section class="insights-section" aria-label="Beacon live community tools">
+        <article class="insight-card insight-card--giveaway" data-reveal>
+          <span class="insight-overline">Giveaways</span>
+          <h2>Reward your community</h2>
+          <p>Entry requirements, bonus entries, automatic winner DMs and clean anti-spam controls.</p>
+          <div class="giveaway-panel">
+            <div>
+              <strong>Nitro drop</strong>
+              <span>Ends in</span>
+            </div>
+            <div class="giveaway-status">
+              <span>Running</span>
+              <strong>02:14:09</strong>
+            </div>
+            <dl>
+              <div><dt>Entries</dt><dd data-live-field="entries">1,284</dd></div>
+              <div><dt>Winners</dt><dd>2</dd></div>
+            </dl>
+            <button type="button">Enter giveaway</button>
+          </div>
+        </article>
+
+        <article class="insight-card" data-reveal>
+          <span class="insight-overline">Message counting</span>
+          <h2>Measure real activity</h2>
+          <p>Per-member counts, live role rewards and readable growth over the last seven days.</p>
+          <div class="activity-panel">
+            <div class="panel-head"><span>Messages · 7 days</span><strong data-live-field="messages">12,408</strong></div>
+            <svg class="activity-chart" viewBox="0 0 360 130" role="img" aria-label="Rising message activity graph">
+              <polyline points="18,92 42,82 66,98 90,84 114,104 138,90 162,116 190,106 216,96 242,112 268,82 294,72 318,80 342,52" />
+              <circle cx="342" cy="52" r="5" />
+            </svg>
+            <div class="role-note"><i></i><span>@Regular granted at 10k messages</span></div>
+          </div>
+        </article>
+
+        <article class="insight-card" data-reveal>
+          <span class="insight-overline">Leaderboards</span>
+          <h2>Put champions on display</h2>
+          <p>Auto-updating boards, pinned where members see them with hourly syncs.</p>
+          <div class="leaderboard-panel">
+            <div class="panel-head"><span># Leaderboard</span><small>Updates hourly</small></div>
+            <ol>
+              <li><b>01</b><i>K</i><strong>Kira</strong><span>214</span></li>
+              <li><b>02</b><i>R</i><strong>Rex</strong><span>167</span></li>
+              <li><b>03</b><i>J</i><strong>Juno</strong><span>98</span></li>
+            </ol>
+          </div>
+        </article>
       </section>
     </main>
 
