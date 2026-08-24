@@ -198,7 +198,7 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .status-metric { display: flex; min-height: 50px; flex-direction: column; justify-content: center; gap: 3px; padding: 7px 18px; background: #0b0d0d; }
 .status-metric strong { color: var(--paper); font: 600 1rem/1 "Space Grotesk", sans-serif; }
 .status-metric span { color: #767d78; font-size: .62rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.site-footer { display: grid; grid-template-columns: minmax(260px, 1fr) auto; gap: 26px 60px; align-items: center; min-height: 138px; padding: 30px 5.2vw; border-top: 1px solid rgba(255,195,28,.23); color: #747a75; font-size: .75rem; background: #080909; }
+.site-footer { display: grid; grid-template-columns: minmax(260px, 1fr) auto; gap: 26px 60px; align-items: center; min-height: 138px; margin-bottom: clamp(190px, 24vh, 340px); padding: 30px 5.2vw; border-top: 1px solid rgba(255,195,28,.23); color: #747a75; font-size: .75rem; background: #080909; }
 .footer-brand { display: flex; flex-direction: column; gap: 10px; }
 .footer-brand > a { display: inline-flex; width: max-content; align-items: center; gap: 10px; color: #f6f3ea; font: 700 1rem "Space Grotesk", sans-serif; }
 .footer-brand img { object-fit: contain; }
