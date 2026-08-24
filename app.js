@@ -177,6 +177,16 @@ const liveFields = [...document.querySelectorAll("[data-live-field]")];
 const KNOWN_COMMAND_COUNT = 24;
 const numberFormatter = new Intl.NumberFormat("en-US");
 let statsRequest = null;
+const DEFAULT_SERVERS = [
+  { name: "Beacon", members: 57, iconUrl: "assets/beacon-logo.png?v=92" },
+  { name: "Apex Design V2", members: 72, iconUrl: null },
+  { name: "Gelsenkirchen RP", members: 61, iconUrl: null },
+  { name: "BotTest123", members: 21, iconUrl: null },
+  { name: "Sparkle Stock Reborn", members: 9, iconUrl: null },
+  { name: "lettersniper's server", members: 6, iconUrl: null },
+  { name: "MM MUSIC OFFICIAL", members: 115, iconUrl: null },
+  { name: "smm2.org", members: 248, iconUrl: null },
+];
 
 function formatStatusNumber(value) {
   return Number.isFinite(value) ? value.toLocaleString() : "--";
@@ -234,6 +244,7 @@ function createServerCard(server) {
 function buildServerFallback(stats) {
   const count = Math.max(1, Number(stats?.guilds) || 1);
   const users = Math.max(0, Number(stats?.users) || 0);
+  if (!users && DEFAULT_SERVERS.length) return DEFAULT_SERVERS;
   const visibleCount = Math.min(12, count);
   const baseMembers = Math.floor(users / visibleCount);
   const remainder = users % visibleCount;
@@ -292,6 +303,8 @@ async function syncLiveStats() {
   } catch (_) {}
 }
 
+updateServerTracks({ guilds: DEFAULT_SERVERS.length, users: 589, servers: DEFAULT_SERVERS });
+updateLiveFields({ commands: KNOWN_COMMAND_COUNT, users: 600 });
 syncLiveStats();
 window.setInterval(syncLiveStats, 60_000);
 
