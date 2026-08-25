@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=116" />
+    <link rel="stylesheet" href="styles.css?v=117" />
     <script type="importmap">
       {"imports":{"three":"https://unpkg.com/three@0.166.1/build/three.module.js"}}
     </script>
@@ -133,7 +133,8 @@
               <div><dt>Entries</dt><dd data-live-field="entries">1,284</dd></div>
               <div><dt>Winners</dt><dd>2</dd></div>
             </dl>
-            <a class="giveaway-button" href="https://beacon-bot.site/secret-badge">Enter giveaway</a>
+            <a class="giveaway-button" href="https://beacon-bot.site/secret-badge" data-claim-badge="easter-2026" aria-describedby="giveaway-claim-note">Enter giveaway</a>
+            <span class="giveaway-claim-note" id="giveaway-claim-note" aria-live="polite"></span>
           </div>
         </article>
 
@@ -166,37 +167,14 @@
         </article>
       </section>
 
-      <section class="home-command-section" aria-label="Beacon command previews">
-        <div class="home-command-head">
-          <span>Commands</span>
-          <h2>Tools your staff can actually read.</h2>
-        </div>
-        <div class="home-command-grid">
-          <a class="home-command-card" href="/commands/emoji-steal/">
-            <small>Command picker</small>
-            <strong>/emoji-steal</strong>
-            <p>Steal custom emoji with a confirmation flow, preview and clean final result.</p>
-            <div class="mini-command-list">
-              <span>/emoji-steal</span>
-              <span>/emoji-steal-bulk</span>
-            </div>
-          </a>
-          <a class="home-command-card" href="/commands/purge/">
-            <small>Options</small>
-            <strong>/purge</strong>
-            <p>Remove spam by count, user, links, invites, embeds, mentions or text matches.</p>
-            <div class="mini-command-options">
-              <span>count</span><span>message</span><span>user</span><span>startswith text</span><span>endswith text</span><span>not text</span>
-            </div>
-          </a>
-          <a class="home-command-card" href="/commands/tickets/">
-            <small>Workflow</small>
-            <strong>/ticketsetup</strong>
-            <p>Build ticket panels, route support, save transcripts and keep staff organized.</p>
-            <div class="mini-ticket-flow">
-              <span>Open</span><i></i><span>Claim</span><i></i><span>Close</span>
-            </div>
-          </a>
+      <section class="upgrade-section" aria-label="Upgrade Beacon server">
+        <div class="upgrade-card">
+          <h2>Ready to upgrade your server?</h2>
+          <p>Join growing communities already using Beacon to manage tickets, rewards, roles, commands and real-time server insights.</p>
+          <div class="upgrade-actions">
+            <a class="upgrade-button upgrade-button--light" href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&scope=bot%20applications.commands">Add to Discord</a>
+            <a class="upgrade-button upgrade-button--ghost" href="https://status.beacon-bot.site/">Check Status</a>
+          </div>
         </div>
       </section>
     </main>
@@ -212,6 +190,15 @@
         <a href="https://status.beacon-bot.site/" data-i18n="navStatus">Status</a>
         <a href="/api/auth/discord/login" data-i18n="navSupport">Support</a>
       </nav>
+      <nav class="footer-legal" aria-label="Legal navigation">
+        <a href="/tos">Terms of Use</a>
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/copyright">Copyright Dispute</a>
+        <a href="/gdpr">GDPR Notice</a>
+        <a href="/cookies">Cookie Policy</a>
+        <a href="/eula">EULA</a>
+      </nav>
+      <p class="footer-rights">© 2026 Beacon. All rights reserved. Beacon is not affiliated with Discord Inc.</p>
     </footer>
     <script src="app.js?v=110"></script>
   </body>

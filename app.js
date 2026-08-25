@@ -13,8 +13,33 @@ const discordLogout = document.querySelector("#discord-logout");
 const authToast = document.querySelector("#auth-toast");
 const authRequiredLinks = [...document.querySelectorAll("[data-requires-auth]")];
 const heroTypewriter = document.querySelector("[data-typewriter-lines]");
+const claimButtons = [...document.querySelectorAll("[data-claim-badge]")];
 let heroTypewriterTimer = null;
 let isDiscordSignedIn = false;
+
+function setClaimedState(button) {
+  button.classList.add("is-claimed");
+  button.innerHTML = '<span aria-hidden="true">✓</span>&nbsp; Already claimed';
+  button.setAttribute("aria-label", "Already claimed");
+  button.setAttribute("aria-disabled", "true");
+  const note = document.getElementById("giveaway-claim-note");
+  if (note) note.textContent = "This Easter badge has already been claimed in this browser.";
+}
+
+claimButtons.forEach((button) => {
+  const key = `beacon-claimed-${button.dataset.claimBadge}`;
+  try {
+    if (localStorage.getItem(key) === "true") setClaimedState(button);
+  } catch (_) {}
+  button.addEventListener("click", (event) => {
+    if (button.classList.contains("is-claimed")) {
+      event.preventDefault();
+      return;
+    }
+    try { localStorage.setItem(key, "true"); } catch (_) {}
+    setClaimedState(button);
+  });
+});
 
 const translations = {
   en: { label: "English", code: "US", bot: "Beacon Bot", support: "Support Server", join: "Join our Discord", help: "Help", commands: "Commands", status: "Status", ping: "Ping", prestige: "Beacon Prestige", new: "New!", add: "Add to Server", login: "Login with Discord", eyebrow: "The ultimate server growth bot", heroLineOne: "Grow your server.", heroLineTwo: "Empower your community.", heroDescription: "Beacon is an all-in-one Discord bot built to help you grow, manage, and engage your server with powerful tools and an easy-to-use dashboard.", checkOne: "Ticket System", checkTwo: "Auto Responder", checkThree: "Sticky Notes", checkFour: "Server Statistics", checkFive: "/Say Command", checkSix: "And much more...", heroAdd: "Add to Server", heroLogin: "Login with Discord", docs: "View Docs", heroNote: "Trusted by growing communities everywhere", livePreview: "Live dashboard preview", builtFor: "Built for your next level", liveStatus: "Live system status", statServers: "Servers connected", statUsers: "Members reached", statPing: "Average ping", statUptime: "Always available", featureOverline: "Everything in one place", featureTitle: "Your community,\nin its element.", featureDescription: "Powerful automation, effortless moderation, and the clarity to make better decisions for your server.", featureOneTitle: "Automate the busywork", featureOneCopy: "Let Beacon handle repetitive tasks while you focus on the people who make your community special.", featureTwoTitle: "See what matters", featureTwoCopy: "Real-time server statistics and clean insights, right when you need them.", featureThreeTitle: "Make it yours", featureThreeCopy: "Flexible commands and thoughtful tools that fit the way your server works.", learnMore: "Explore feature", finalOverline: "Ready when you are", finalTitle: "Give your server\nthe Beacon treatment.", footer: "Built for communities with ambition." },
