@@ -492,8 +492,8 @@ async function initThreeLaptop() {
     const camera = new THREE.PerspectiveCamera(31, stage.clientWidth / stage.clientHeight, .1, 100);
     const isCompactViewport = () => window.matchMedia("(max-width: 900px)").matches;
     camera.position.set(0, .45, isCompactViewport() ? 11.9 : 10.6);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.35));
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "low-power" });
+    renderer.setPixelRatio(1);
     renderer.setSize(stage.clientWidth, stage.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -545,6 +545,7 @@ async function initThreeLaptop() {
     const clock = new THREE.Clock();
     let animationFrame = 0;
     let lastTextureDraw = 0;
+    let lastRender = 0;
     let isVisible = true;
     const visibilityObserver = new IntersectionObserver(([entry]) => {
       isVisible = entry.isIntersecting;
@@ -553,12 +554,16 @@ async function initThreeLaptop() {
     visibilityObserver.observe(stage);
     function animate(now = performance.now()) {
       animationFrame = 0;
-      if (!isVisible) return;
+      if (!isVisible || now - lastRender < 33) {
+        if (isVisible) animationFrame = requestAnimationFrame(animate);
+        return;
+      }
+      lastRender = now;
       const elapsed = clock.getElapsedTime();
       laptop.rotation.y = -.1 + Math.sin(elapsed * .42) * .24;
       laptop.rotation.x = -.04 + Math.sin(elapsed * .55) * .025;
       laptop.position.y = Math.sin(elapsed * .8) * .075;
-      if (now - lastTextureDraw > 100) {
+      if (now - lastTextureDraw > 250) {
         screenCanvas.draw(now);
         lastTextureDraw = now;
       }
