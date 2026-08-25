@@ -1,7 +1,7 @@
 :root { --bg: #070808; --panel: #111414; --line: rgba(255,255,255,.1); --text: #f5f3ea; --muted: #a4aaa6; --accent: #31b6e6; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { min-width: 320px; margin: 0; color: var(--text); background: radial-gradient(circle at 12% 3%, rgba(49,182,230,.16), transparent 26%), radial-gradient(circle at 88% 25%, rgba(26,55,134,.2), transparent 30%), linear-gradient(145deg, #05070b, #0b1629 52%, #05070b); font: 16px/1.7 "DM Sans", system-ui, sans-serif; }
+body { min-width: 320px; margin: 0; color: var(--text); background: #07184f url("assets/beacon-background.png") center / cover fixed no-repeat; font: 16px/1.7 "DM Sans", system-ui, sans-serif; }
 a { color: inherit; }
 .legal-shell { width: min(100% - 40px, 760px); margin: 0 auto; padding: 28px 0 56px; }
 .legal-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 26px; border-bottom: 1px solid var(--line); }
