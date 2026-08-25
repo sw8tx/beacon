@@ -210,10 +210,10 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .status-metric { display: flex; min-height: 50px; flex-direction: column; justify-content: center; gap: 3px; padding: 7px 18px; background: #303030; }
 .status-metric strong { color: var(--paper); font: 600 1rem/1 "Space Grotesk", sans-serif; }
 .status-metric span { color: #767d78; font-size: .62rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.server-strip { position: relative; min-height: 360px; padding: 64px 0 66px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,.08); background: #1d1d1d; }
+.server-strip { position: relative; min-height: 360px; padding: 64px 0 66px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,.18); background: #686868; }
 .server-strip::before, .server-strip::after { content: ""; position: absolute; top: 0; bottom: 0; z-index: 4; width: 16vw; pointer-events: none; }
-.server-strip::before { left: 0; background: linear-gradient(90deg, var(--ink), transparent); }
-.server-strip::after { right: 0; background: linear-gradient(270deg, var(--ink), transparent); }
+.server-strip::before { left: 0; background: linear-gradient(90deg, #686868, transparent); }
+.server-strip::after { right: 0; background: linear-gradient(270deg, #686868, transparent); }
 .server-strip p { margin: 0 0 34px; color: #8b9098; font-size: .72rem; font-weight: 900; letter-spacing: .42em; text-align: center; text-transform: uppercase; }
 .marquee { display: flex; width: 100%; overflow: hidden; }
 .marquee + .marquee { margin-top: 16px; }
@@ -226,7 +226,7 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .server-card strong::before { content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 8px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff 0 12%, #39dd78 13% 55%, #18864d 56%); vertical-align: -2px; }
 .server-card small { color: #858b93; font-size: .78rem; font-weight: 700; }
 .server-card i { display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); }
-.insights-section { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding: 36px 5.2vw 74px; border-bottom: 1px solid rgba(255,255,255,.06); background: #181818; }
+.insights-section { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding: 36px 5.2vw 74px; border-bottom: 1px solid rgba(255,255,255,.06); background: #242424; }
 .insight-card { position: relative; min-width: 0; padding: 34px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: linear-gradient(180deg, rgba(12,13,15,.96), rgba(7,8,9,.96)); box-shadow: 0 24px 70px rgba(0,0,0,.34); }
 .insight-overline { display: block; margin-bottom: 26px; color: #7d83a0; font-size: .68rem; font-weight: 900; letter-spacing: .48em; text-transform: uppercase; }
 .insight-card h2 { color: #fff; font: 700 clamp(1.35rem, 2vw, 1.72rem)/1.12 "Space Grotesk", sans-serif; }
@@ -294,7 +294,7 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 @media (max-width: 1180px) { .site-navbar { gap: 13px; padding-inline: 18px; } .navbar-links { gap: 12px; } .hero-section { padding-inline: 3vw; } }
 @media (max-width: 900px) { .site-navbar { flex-wrap: wrap; min-height: 112px; padding-block: 9px; } .navbar-brand { order: 1; } .navbar-actions { order: 2; } .navbar-links { order: 3; flex-basis: 100%; } .hero-section { min-height: auto; padding-top: 155px; } .hero-copy { max-width: 760px; } .insights-section, .home-command-grid { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .site-navbar { min-height: 143px; padding: 9px 12px; overflow: hidden; } .navbar-brand, .navbar-actions, .navbar-links { flex-basis: 100%; } .navbar-actions { gap: 6px; margin-left: 0; overflow: hidden; } .language-current-label { display: none; } .language-menu summary { min-height: 34px; padding-inline: 7px; } .navbar-button { min-height: 34px; padding-inline: 8px; font-size: .68rem; } .navbar-button .discord-icon-wrap { width: 18px; height: 18px; } .navbar-links { gap: 12px; } .navbar-link { font-size: .7rem; } .navbar-name { font-size: 1rem; } .navbar-logo, .navbar-logo img { width: 30px; height: 30px; } .hero-section { display: block; width: 100%; padding: 181px 20px 54px; } .hero-copy, .hero-description { width: 100%; min-width: 0; max-width: none; } .hero-description { font-size: .98rem; overflow-wrap: anywhere; word-break: break-word; } h1 { width: 100%; max-width: 100%; font-size: clamp(2.35rem, 11.5vw, 3rem); overflow-wrap: normal; word-break: normal; } .hero-checks { grid-template-columns: 1fr; gap: 10px; font-size: .9rem; } .hero-actions { flex-direction: column; align-items: stretch; } .hero-button { width: 100%; } .stats-section { align-items: flex-start; flex-direction: column; gap: 13px; min-height: 0; padding: 18px 20px; } .status-metrics { width: 100%; grid-template-columns: repeat(2, 1fr); } .status-metric { min-height: 48px; padding: 7px 12px; } .server-strip { min-height: 360px; padding: 42px 0; } .server-strip p { padding-inline: 20px; font-size: .6rem; letter-spacing: .22em; } .marquee__track { gap: 14px; animation-duration: 34s; } .server-card { width: 270px; min-height: 76px; grid-template-columns: 44px minmax(0, 1fr); padding: 13px; } .server-avatar { width: 44px; height: 44px; } .insights-section { padding: 24px 20px 58px; } .insight-card { padding: 24px; } .site-footer { grid-template-columns: 1fr; gap: 24px; min-height: 0; padding: 28px 20px; text-align: left; } .footer-links { grid-column: 1; width: 100%; gap-inline: 12px; justify-content: flex-start; font-size: .7rem; } }
-.upgrade-section { padding: 0 5.2vw 82px; background: #050606; }
+.upgrade-section { padding: 0 5.2vw 82px; background: #242424; }
 .upgrade-card { width: min(100%, 1110px); margin: 0 auto; padding: clamp(32px, 4.4vw, 48px) 28px; border-radius: 20px; background: #31b6e6; color: #061018; text-align: center; box-shadow: 0 28px 90px rgba(49,182,230,.22); }
 .upgrade-card h2 { margin: 0; color: #fff; font: 800 clamp(2rem, 3.6vw, 3.2rem)/1.08 "Space Grotesk", sans-serif; text-shadow: 0 1px 0 rgba(0,0,0,.12); }
 .upgrade-card p { max-width: 760px; margin: 16px auto 0; color: rgba(255,255,255,.82); font-size: clamp(1rem, 1.4vw, 1.22rem); line-height: 1.5; }
