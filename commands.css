@@ -21,7 +21,7 @@ body {
 
 body {
   color: var(--text);
-  background: #07184f url("assets/beacon-background.png") center / cover fixed no-repeat;
+  background: #242424;
   font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
