@@ -194,6 +194,7 @@ export async function onRequestGet({ request, env }) {
       .save-bot{background:#3ca86a;padding:0 15px}
       .reset-changes{background:#247fbd;padding:0 15px}
       .dash-main.is-server-locked .dash-name,.dash-main.is-server-locked [data-dashboard-section]{display:none}
+      .dash-main:not(.is-server-locked) .server-select-gate{display:none}
       .server-select-gate{max-width:680px;margin:16vh auto 0;border:1px solid rgba(103,232,77,.24);border-radius:12px;background:rgba(18,24,28,.82);padding:30px;text-align:center}
       .server-select-gate h2{margin:0;color:#fff;font-size:1.55rem}
       .server-select-gate p{margin:10px 0 0;color:#9fa8b5;line-height:1.5}
@@ -447,7 +448,6 @@ export async function onRequestGet({ request, env }) {
           serverSelected = true;
           dashMain?.classList.remove("is-server-locked");
           activateDashboardTab("server-info");
-          showDashboardToast("Server selected");
         });
       });
       document.querySelectorAll(".dash-badge-img").forEach((image) => {
