@@ -166,10 +166,10 @@ export async function onRequestGet({ request, env }) {
       .server-activity-card svg{display:block;width:100%;height:150px;margin-top:10px;overflow:visible}
       .server-activity-card polyline{fill:none;stroke:#31bdf5;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
       .server-activity-card circle{fill:#31bdf5;filter:drop-shadow(0 0 12px rgba(49,189,245,.5))}
-      .customize-panel{max-width:1180px;background:#202b3b;border-color:rgba(255,255,255,.16)}
-      .customize-panel h2{text-align:center;font-size:1.6rem;border-bottom:1px solid rgba(255,255,255,.14);padding-bottom:26px}
-      .customize-media-grid{display:grid;grid-template-columns:minmax(260px,360px) minmax(0,1fr);gap:24px;margin-top:26px}
-      .asset-editor{display:grid;gap:18px;border-radius:16px;background:#151d29;padding:24px}
+      .customize-panel{max-width:1100px;background:#182332;border-color:rgba(255,255,255,.13)}
+      .customize-panel h2{text-align:center;font-size:1.45rem;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:20px}
+      .customize-media-grid{display:grid;grid-template-columns:minmax(240px,330px) minmax(0,1fr);gap:18px;margin-top:20px}
+      .asset-editor{display:grid;gap:14px;border-radius:11px;background:#121b28;padding:18px}
       .asset-editor strong,.bio-field span{color:#fff;font-size:.95rem}
       .asset-editor small,.bio-field small{color:#c9d4e8;font-size:.72rem}
       .bot-avatar-preview{display:grid;place-items:center;min-height:138px}
@@ -179,7 +179,7 @@ export async function onRequestGet({ request, env }) {
       .bot-banner-preview span{position:absolute;right:18px;bottom:16px;width:18px;height:18px;background:#caffd6;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%)}
       .asset-actions{display:grid;grid-template-columns:1fr 42px;gap:8px}
       .asset-actions button,.reset-bio,.save-bot{min-height:38px;border:0;border-radius:7px;color:#fff;font:800 .88rem "DM Sans",system-ui,sans-serif;cursor:pointer}
-      .asset-actions button{background:#2478b8}
+      .asset-actions button{background:#247fbd}
       .asset-actions .danger-mini,.reset-bio{background:#ff4f5e}
       .bio-field{display:grid;gap:10px;margin-top:24px}
       .bio-field textarea{min-height:170px;resize:vertical;border:1px solid rgba(255,255,255,.14);border-radius:7px;background:#2b3a4d;color:#fff;padding:14px;font:700 1rem/1.45 "DM Sans",system-ui,sans-serif}
@@ -282,12 +282,14 @@ export async function onRequestGet({ request, env }) {
               <article class="asset-editor asset-editor--avatar">
                 <strong>Avatar <small>(1024x1024)</small></strong>
                 <div class="bot-avatar-preview"><img src="/assets/beacon-logo.png?v=92" alt="" /></div>
-                <div class="asset-actions"><button type="button" data-coming-soon>Edit</button><button class="danger-mini" type="button" data-coming-soon>Delete</button></div>
+                <div class="asset-actions"><button type="button" data-upload-target="avatar-upload">Upload image</button><button class="danger-mini" type="button" data-reset-image="avatar">Delete</button></div>
+                <input id="avatar-upload" class="asset-upload" type="file" accept="image/*" hidden />
               </article>
               <article class="asset-editor asset-editor--banner">
                 <strong>Banner <small>(680x240)</small></strong>
                 <div class="bot-banner-preview"><img src="/assets/beacon-logo.png?v=92" alt="" /><span></span></div>
-                <div class="asset-actions"><button type="button" data-coming-soon>Edit</button><button class="danger-mini" type="button" data-coming-soon>Delete</button></div>
+                <div class="asset-actions"><button type="button" data-upload-target="banner-upload">Upload image</button><button class="danger-mini" type="button" data-reset-image="banner">Delete</button></div>
+                <input id="banner-upload" class="asset-upload" type="file" accept="image/*" hidden />
               </article>
             </div>
             <label class="bio-field">
@@ -359,6 +361,28 @@ export async function onRequestGet({ request, env }) {
         button.addEventListener("click", (event) => {
           event.preventDefault();
           showDashboardToast("Coming soon");
+        });
+      });
+      const defaultImage = "/assets/beacon-logo.png?v=92";
+      document.querySelectorAll("[data-upload-target]").forEach((button) => {
+        button.addEventListener("click", () => document.getElementById(button.dataset.uploadTarget)?.click());
+      });
+      document.querySelectorAll(".asset-upload").forEach((input) => {
+        input.addEventListener("change", () => {
+          const file = input.files?.[0];
+          if (!file || !file.type.startsWith("image/")) return;
+          const preview = input.closest(".asset-editor")?.querySelector("img");
+          if (!preview) return;
+          const reader = new FileReader();
+          reader.addEventListener("load", () => { preview.src = reader.result; showDashboardToast("Image preview updated"); });
+          reader.readAsDataURL(file);
+        });
+      });
+      document.querySelectorAll("[data-reset-image]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const preview = button.closest(".asset-editor")?.querySelector("img");
+          if (preview) preview.src = defaultImage;
+          showDashboardToast("Image removed");
         });
       });
       document.querySelectorAll(".sync-button,.server-sync,.manage-button").forEach((button) => {

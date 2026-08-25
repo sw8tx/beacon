@@ -235,7 +235,7 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .giveaway-claim-note { display: block; grid-column: 1 / -1; min-height: 0; color: #7f8897; font-size: .72rem; line-height: 1.4; text-align: center; }
 .giveaway-claim-note:empty { display: none; }
 .giveaway-confetti { position: absolute; top: 28px; left: 50%; z-index: 2; width: 1px; height: 1px; pointer-events: none; }
-.giveaway-confetti i { position: absolute; display: block; width: 5px; height: 10px; border-radius: 1px; background: var(--confetti-color); opacity: 0; transform: translate(-50%, 0) rotate(0deg); }
+.giveaway-confetti i { position: absolute; display: block; width: 3px; height: 7px; border-radius: 1px; background: var(--confetti-color); opacity: 0; transform: translate(-50%, 0) rotate(0deg); }
 .giveaway-confetti.is-active i { animation: giveaway-confetti-pop .9s cubic-bezier(.18,.74,.35,1) var(--confetti-delay) both; }
 @keyframes giveaway-confetti-pop { 0% { opacity: 0; transform: translate(-50%, 0) rotate(0deg) scale(.5); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--confetti-x)), var(--confetti-y)) rotate(var(--confetti-rotate)) scale(1); } }
 .insight-card { transition: transform .18s ease, border-color .18s ease, background .18s ease; }
@@ -289,7 +289,7 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .upgrade-card p { max-width: 760px; margin: 16px auto 0; color: rgba(255,255,255,.82); font-size: clamp(1rem, 1.4vw, 1.22rem); line-height: 1.5; }
 .upgrade-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 34px; }
 .upgrade-button { display: inline-flex; min-height: 50px; align-items: center; justify-content: center; gap: 9px; border-radius: 999px; padding: 0 25px; font-size: .96rem; font-weight: 900; transition: transform .18s ease, filter .18s ease, background .18s ease; }
-.upgrade-button__icon { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.upgrade-button__icon { display: block; width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .upgrade-button:hover { transform: translateY(-3px); filter: brightness(1.04); }
 .upgrade-button--light { color: #121623; background: #fff; box-shadow: 0 12px 34px rgba(0,0,0,.12); }
 .upgrade-button--ghost { border: 1px solid rgba(255,255,255,.38); color: #fff; background: rgba(255,255,255,.14); }

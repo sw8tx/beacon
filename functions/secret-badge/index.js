@@ -19,7 +19,23 @@ async function unlockSecretBadge(env, userId) {
   return true;
 }
 
-function renderPage({ signedIn }) {
+async function hasClaimedSecretBadge(env, userId) {
+  if (!env.STATUS_DB || !userId) return false;
+  await env.STATUS_DB.prepare(`
+    CREATE TABLE IF NOT EXISTS badge_unlocks (
+      user_id TEXT NOT NULL,
+      badge_id TEXT NOT NULL,
+      unlocked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, badge_id)
+    )
+  `).run();
+  const result = await env.STATUS_DB.prepare(
+    "SELECT 1 FROM badge_unlocks WHERE user_id = ? AND badge_id = ? LIMIT 1"
+  ).bind(userId, "found-the-light").first();
+  return Boolean(result);
+}
+
+function renderPage({ signedIn, claimed }) {
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -46,6 +62,9 @@ function renderPage({ signedIn }) {
       form{margin-top:26px}
       button,.login{display:inline-flex;width:100%;min-height:48px;align-items:center;justify-content:center;border:0;border-radius:8px;background:#ffc31c;color:#070600;font:900 .95rem "DM Sans",system-ui,sans-serif;text-decoration:none;cursor:pointer;box-shadow:0 16px 40px rgba(255,195,28,.18);transition:transform .16s ease,filter .16s ease}
       button:hover,.login:hover{filter:brightness(1.05);transform:translateY(-2px)}
+      button.claimed-button{color:#d9fff0;background:rgba(46,219,132,.16);box-shadow:inset 0 0 0 1px rgba(86,239,158,.35);cursor:default}
+      button.claimed-button:hover{filter:none;transform:none}
+      .claimed-note{margin-top:10px;text-align:center;color:#7f8897;font-size:.78rem}
       .back{display:block;margin-top:16px;color:#8e96a6;text-align:center;text-decoration:none;font-size:.86rem;font-weight:800}
       @media(max-width:560px){.badge-preview{grid-template-columns:76px 1fr}.tag{grid-column:1/-1;width:max-content}.secret-card{padding:22px}h1{font-size:1.75rem}}
     </style>
@@ -63,7 +82,9 @@ function renderPage({ signedIn }) {
         <span class="tag">Easter Egg</span>
       </div>
       ${signedIn
-        ? `<form method="post"><button type="submit">Claim Badge</button></form>`
+        ? claimed
+          ? `<button class="claimed-button" type="button" disabled><span aria-hidden="true">✓</span> Already claimed</button><p class="claimed-note">You have already claimed this badge. It can only be claimed once.</p>`
+          : `<form method="post"><button type="submit">Claim Badge</button></form>`
         : `<a class="login" href="/api/auth/discord/login?next=/secret-badge">Login to claim badge</a>`}
       <a class="back" href="/">Back to Beacon</a>
     </main>
@@ -74,7 +95,9 @@ function renderPage({ signedIn }) {
 export async function onRequestGet({ request, env }) {
   const { sessionSecret } = getConfig(env);
   const session = await readSession(getCookie(request, "beacon_session"), sessionSecret);
-  return new Response(renderPage({ signedIn: Boolean(session?.user) }), {
+  const signedIn = Boolean(session?.user);
+  const claimed = signedIn ? await hasClaimedSecretBadge(env, session.user.id) : false;
+  return new Response(renderPage({ signedIn, claimed }), {
     headers: {
       "cache-control": "no-store",
       "content-type": "text/html; charset=utf-8",
