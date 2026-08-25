@@ -580,10 +580,4 @@ async function initThreeLaptop() {
   }
 }
 
-const startLaptopPreview = () => initThreeLaptop();
-if ("requestIdleCallback" in window) {
-  window.requestIdleCallback(startLaptopPreview, { timeout: 2200 });
-} else {
-  window.setTimeout(startLaptopPreview, 1400);
-}
 requestAnimationFrame(revealOnScroll);
