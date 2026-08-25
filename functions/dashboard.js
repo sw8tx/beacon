@@ -71,6 +71,13 @@ export async function onRequestGet({ request, env }) {
     ? escapeHtml(session.user.avatar)
     : "/assets/beacon-logo.png?v=92";
   const serverName = `${username}'s server`;
+  const selectionServers = [
+    { name: "//", owner: "Eigentümer", tone: "red", icon: "/assets/beacon-logo.png?v=92" },
+    { name: "Beacon", owner: "Eigentümer", tone: "gold", icon: "/assets/beacon-logo.png?v=92" },
+    { name: "smm2.org", owner: "Bot Master", tone: "green", icon: "/assets/beacon-logo.png?v=92" },
+    { name: "Sparkle Stock Reborn", owner: "Eigentümer", tone: "gray", icon: "/assets/beacon-logo.png?v=92" },
+    { name: "test", owner: "Eigentümer", tone: "dark", icon: "" },
+  ];
   const unlockedIds = await getUnlockedBadgeIds(env, session.user.id);
   const unlockedBadges = BEACON_BADGES.filter((badge) => unlockedIds.has(badge.id));
   const lockedBadges = BEACON_BADGES.filter((badge) => !unlockedIds.has(badge.id));
@@ -117,8 +124,8 @@ export async function onRequestGet({ request, env }) {
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@700;800;900&display=swap" rel="stylesheet" />
     <style>
       *{box-sizing:border-box}
-      html,body{min-height:100%;margin:0;background:#000;color:#f6f3ea;font-family:"DM Sans",system-ui,sans-serif}
-      body{min-height:100vh;background:radial-gradient(circle at 54% 10%,rgba(255,195,28,.1),transparent 26rem),#000}
+      html,body{min-height:100%;margin:0;background:#292b36;color:#f6f3ea;font-family:"DM Sans",system-ui,sans-serif}
+      body{min-height:100vh;background:#292b36}
       .dash-topbar{position:sticky;top:0;z-index:30;display:flex;min-height:74px;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,195,28,.26);padding:0 clamp(18px,5vw,70px);background:rgba(0,0,0,.88);backdrop-filter:blur(14px)}
       .dash-brand{display:inline-flex;align-items:center;gap:12px;color:#fff9e7;text-decoration:none;font-size:1.08rem;font-weight:900}
       .dash-brand img{width:34px;height:34px;object-fit:contain}
@@ -195,9 +202,26 @@ export async function onRequestGet({ request, env }) {
       .reset-changes{background:#247fbd;padding:0 15px}
       .dash-main.is-server-locked .dash-name,.dash-main.is-server-locked [data-dashboard-section]{display:none}
       .dash-main:not(.is-server-locked) .server-select-gate{display:none}
-      .server-select-gate{max-width:680px;margin:16vh auto 0;border:1px solid rgba(103,232,77,.24);border-radius:12px;background:rgba(18,24,28,.82);padding:30px;text-align:center}
-      .server-select-gate h2{margin:0;color:#fff;font-size:1.55rem}
-      .server-select-gate p{margin:10px 0 0;color:#9fa8b5;line-height:1.5}
+      .dash-layout:has(.dash-main.is-server-locked){display:block;padding:0 clamp(18px,5vw,70px) 70px}
+      .dash-layout:has(.dash-main.is-server-locked) .dash-sidebar{display:none}
+      .server-select-gate{max-width:900px;margin:0 auto;padding:10px 0 40px;text-align:center}
+      .server-select-gate h1{margin:0 0 54px;color:#fff;font-size:clamp(2rem,3vw,2.55rem);font-weight:900}
+      .server-choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px 40px;text-align:left}
+      .server-choice{min-width:0}
+      .server-choice-card{display:grid;min-height:153px;place-items:center;border:0;border-radius:8px;background:var(--choice-bg,#20222b);overflow:hidden;box-shadow:inset 0 1px rgba(255,255,255,.04)}
+      .server-choice-card--red{--choice-bg:linear-gradient(135deg,#6e2d38,#1b1c23 72%)}
+      .server-choice-card--gold{--choice-bg:linear-gradient(135deg,#77766f,#282a31 75%)}
+      .server-choice-card--green{--choice-bg:linear-gradient(135deg,#66676b,#25272b 75%)}
+      .server-choice-card--gray{--choice-bg:linear-gradient(135deg,#44464e,#20222a 75%)}
+      .server-choice-card--dark{--choice-bg:#20222b}
+      .server-choice-card img,.server-choice-initial{display:grid;width:82px;height:82px;place-items:center;border:2px solid rgba(255,255,255,.92);border-radius:50%;object-fit:cover;background:#f8f8f8;color:#20222b;font-size:1.5rem;font-weight:900}
+      .server-choice-copy{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px}
+      .server-choice-copy strong{display:block;color:#fff;font-size:.92rem;line-height:1.4}
+      .server-choice-copy small{display:block;margin-top:3px;color:#9ca4b5;font-size:.78rem}
+      .server-choice-copy button{min-width:118px;min-height:48px;border:0;border-radius:8px;background:#3a3d49;color:#fff;font:800 .84rem "DM Sans",system-ui,sans-serif;cursor:pointer}
+      .server-choice-copy button:hover{background:#4a4e5b}
+      @media (max-width:900px){.server-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 20px}}
+      @media (max-width:620px){.server-choice-grid{grid-template-columns:1fr}.server-select-gate h1{margin-bottom:32px}}
       .dash-section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:18px}
       .dash-section-head strong{color:#ffc31c;font-size:.78rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
       .dash-badge-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -266,8 +290,20 @@ export async function onRequestGet({ request, env }) {
       </aside>
       <main class="dash-main is-server-locked">
         <div class="server-select-gate">
-          <h2>Select a server to continue</h2>
-          <p>Choose a server with Beacon on the left, then click Manage Server to open its dashboard.</p>
+          <h1>Server auswählen</h1>
+          <div class="server-choice-grid">
+            ${selectionServers.map((server) => `
+              <article class="server-choice">
+                <div class="server-choice-card server-choice-card--${server.tone}">
+                  ${server.icon ? `<img src="${server.icon}" alt="" />` : `<span class="server-choice-initial">t</span>`}
+                </div>
+                <div class="server-choice-copy">
+                  <div><strong>${escapeHtml(server.name)}</strong><small>${escapeHtml(server.owner)}</small></div>
+                  <button type="button" class="server-choice-button">Einrichten</button>
+                </div>
+              </article>
+            `).join("")}
+          </div>
         </div>
         <h1 class="dash-name">Welcome, <span>${username}</span></h1>
         <section class="dash-content-section is-active" id="server-info" data-dashboard-section="server-info">
@@ -444,6 +480,13 @@ export async function onRequestGet({ request, env }) {
         });
       });
       document.querySelectorAll(".server-sync,.manage-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          serverSelected = true;
+          dashMain?.classList.remove("is-server-locked");
+          activateDashboardTab("server-info");
+        });
+      });
+      document.querySelectorAll(".server-choice-button").forEach((button) => {
         button.addEventListener("click", () => {
           serverSelected = true;
           dashMain?.classList.remove("is-server-locked");
