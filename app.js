@@ -469,7 +469,12 @@ function makeDashboardTexture(THREE) {
 
 async function initThreeLaptop() {
   const stage = document.querySelector(".hero-stage");
-  if (!stage || reduceMotion) return;
+  // Keep the landing page responsive on laptops and mobile devices. The CSS
+  // fallback is intentionally used by default; the WebGL preview was the
+  // main source of input lag and unnecessary GPU/CPU work.
+  if (!stage) return;
+  stage.classList.add("is-fallback");
+  return;
   try {
     stage.classList.remove("is-fallback");
     const waitForStageSize = () => new Promise((resolve) => {

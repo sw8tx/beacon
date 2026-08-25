@@ -177,16 +177,15 @@ export async function onRequestGet({ request, env }) {
       .bot-banner-preview{position:relative;display:grid;min-height:320px;place-items:center;border:2px solid rgba(72,130,207,.7);border-radius:4px;background:#35c86c;overflow:hidden}
       .bot-banner-preview img{width:190px;height:190px;object-fit:contain;filter:brightness(0) invert(1)}
       .bot-banner-preview span{position:absolute;right:18px;bottom:16px;width:18px;height:18px;background:#caffd6;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%)}
-      .asset-actions{display:grid;grid-template-columns:1fr 42px;gap:8px}
-      .asset-actions button,.reset-bio,.save-bot{min-height:38px;border:0;border-radius:7px;color:#fff;font:800 .88rem "DM Sans",system-ui,sans-serif;cursor:pointer}
+      .asset-actions{display:grid;grid-template-columns:minmax(0,1fr) 54px;gap:8px}
+      .asset-actions button,.reset-bio,.save-bot{min-width:0;min-height:38px;border:0;border-radius:7px;color:#fff;font:800 .84rem "DM Sans",system-ui,sans-serif;cursor:pointer;white-space:nowrap}
       .asset-actions button{background:#247fbd}
       .asset-actions .danger-mini,.reset-bio{background:#ff4f5e}
       .bio-field{display:grid;gap:10px;margin-top:24px}
       .bio-field textarea{min-height:170px;resize:vertical;border:1px solid rgba(255,255,255,.14);border-radius:7px;background:#2b3a4d;color:#fff;padding:14px;font:700 1rem/1.45 "DM Sans",system-ui,sans-serif}
       .customize-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:10px}
       .reset-bio{padding:0 15px}
-      .save-bot{background:#4b9160;padding:0 15px;opacity:.86}
-      .customize-actions span{margin-left:auto;color:#ffc31c;font-size:.78rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+      .save-bot{background:#3ca86a;padding:0 15px}
       .dash-section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:18px}
       .dash-section-head strong{color:#ffc31c;font-size:.78rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
       .dash-badge-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -217,7 +216,7 @@ export async function onRequestGet({ request, env }) {
     </style>
   </head>
   <body>
-    <div class="dash-toast" id="dash-toast" role="status" aria-live="polite">Coming soon</div>
+    <div class="dash-toast" id="dash-toast" role="status" aria-live="polite"></div>
     <header class="dash-topbar">
       <a class="dash-brand" href="/">
         <img src="/assets/beacon-logo.png?v=92" width="34" height="34" alt="" />
@@ -297,9 +296,8 @@ export async function onRequestGet({ request, env }) {
               <textarea maxlength="190">${escapeHtml(botBio)}</textarea>
             </label>
             <div class="customize-actions">
-              <button class="reset-bio" type="button" data-coming-soon>Reset Bio</button>
-              <button class="save-bot" type="button" data-coming-soon>Save Bot Changes</button>
-              <span>Coming soon</span>
+              <button class="reset-bio" type="button">Reset Bio</button>
+              <button class="save-bot" type="button">Save Bot Changes</button>
             </div>
           </div>
         </section>
@@ -357,13 +355,31 @@ export async function onRequestGet({ request, env }) {
         window.clearTimeout(toastTimer);
         toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2200);
       }
-      document.querySelectorAll("[data-coming-soon]").forEach((button) => {
-        button.addEventListener("click", (event) => {
-          event.preventDefault();
-          showDashboardToast("Coming soon");
-        });
-      });
+      const customizeStorageKey = "beacon-customize-preview";
+      const bioInput = document.querySelector(".bio-field textarea");
+      const avatarPreview = document.querySelector(".asset-editor--avatar img");
+      const bannerPreview = document.querySelector(".asset-editor--banner img");
+      const saveButton = document.querySelector(".save-bot");
+      const resetButton = document.querySelector(".reset-bio");
+      const defaultBio = bioInput?.value || "";
       const defaultImage = "/assets/beacon-logo.png?v=92";
+      try {
+        const saved = JSON.parse(localStorage.getItem(customizeStorageKey) || "null");
+        if (saved?.bio && bioInput) bioInput.value = saved.bio;
+        if (saved?.avatar && avatarPreview) avatarPreview.src = saved.avatar;
+        if (saved?.banner && bannerPreview) bannerPreview.src = saved.banner;
+      } catch (_) {}
+      saveButton?.addEventListener("click", () => {
+        const payload = { bio: bioInput?.value || "", avatar: avatarPreview?.src || defaultImage, banner: bannerPreview?.src || defaultImage };
+        try { localStorage.setItem(customizeStorageKey, JSON.stringify(payload)); } catch (_) {}
+        saveButton.textContent = "Saved ✓";
+        showDashboardToast("Bot changes saved");
+        window.setTimeout(() => { saveButton.textContent = "Save Bot Changes"; }, 1800);
+      });
+      resetButton?.addEventListener("click", () => {
+        if (bioInput) bioInput.value = defaultBio;
+        showDashboardToast("Bio reset");
+      });
       document.querySelectorAll("[data-upload-target]").forEach((button) => {
         button.addEventListener("click", () => document.getElementById(button.dataset.uploadTarget)?.click());
       });
