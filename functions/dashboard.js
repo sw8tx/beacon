@@ -186,6 +186,7 @@ export async function onRequestGet({ request, env }) {
       .customize-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:10px}
       .reset-bio{padding:0 15px}
       .save-bot{background:#3ca86a;padding:0 15px}
+      .reset-changes{background:#247fbd;padding:0 15px}
       .dash-section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:18px}
       .dash-section-head strong{color:#ffc31c;font-size:.78rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
       .dash-badge-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -298,6 +299,7 @@ export async function onRequestGet({ request, env }) {
             <div class="customize-actions">
               <button class="reset-bio" type="button">Reset Bio</button>
               <button class="save-bot" type="button">Save Bot Changes</button>
+              <button class="reset-changes" type="button">Reset Changes</button>
             </div>
           </div>
         </section>
@@ -361,6 +363,7 @@ export async function onRequestGet({ request, env }) {
       const bannerPreview = document.querySelector(".asset-editor--banner img");
       const saveButton = document.querySelector(".save-bot");
       const resetButton = document.querySelector(".reset-bio");
+      const resetChangesButton = document.querySelector(".reset-changes");
       const defaultBio = bioInput?.value || "";
       const defaultImage = "/assets/beacon-logo.png?v=92";
       try {
@@ -379,6 +382,13 @@ export async function onRequestGet({ request, env }) {
       resetButton?.addEventListener("click", () => {
         if (bioInput) bioInput.value = defaultBio;
         showDashboardToast("Bio reset");
+      });
+      resetChangesButton?.addEventListener("click", () => {
+        try { localStorage.removeItem(customizeStorageKey); } catch (_) {}
+        if (bioInput) bioInput.value = defaultBio;
+        if (avatarPreview) avatarPreview.src = defaultImage;
+        if (bannerPreview) bannerPreview.src = defaultImage;
+        showDashboardToast("All changes reset");
       });
       document.querySelectorAll("[data-upload-target]").forEach((button) => {
         button.addEventListener("click", () => document.getElementById(button.dataset.uploadTarget)?.click());
