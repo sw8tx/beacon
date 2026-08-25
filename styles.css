@@ -93,7 +93,7 @@ body.auth-flash::after { content: ""; position: fixed; inset: 0; z-index: 55; po
 
 main { position: relative; flex: 0 0 auto; }
 main::after { content: ""; display: block; height: 0; background: var(--ink); }
-.hero-section { position: relative; display: grid; grid-template-columns: 1fr; align-items: center; min-height: calc(100vh - 150px); padding: 126px 4.2vw 55px; border-bottom: 1px solid rgba(255,255,255,.12); background: linear-gradient(90deg, rgba(4, 8, 24, .62), rgba(4, 8, 24, .2)), url("assets/beacon-background.png") center / cover no-repeat; }
+.hero-section { position: relative; display: grid; grid-template-columns: 1fr; align-items: center; min-height: calc(100vh - 150px); padding: 126px 4.2vw 55px; border-bottom: 1px solid rgba(255,255,255,.12); background: linear-gradient(90deg, rgba(4, 8, 24, .62), rgba(4, 8, 24, .2)), url("assets/beacon-background.png?v=2") center / cover no-repeat; }
 .hero-section::before { content: none; }
 .hero-copy { position: relative; z-index: 2; max-width: 700px; min-width: 0; }
 .eyebrow, .section-overline { color: var(--yellow); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
@@ -210,7 +210,7 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .status-metric { display: flex; min-height: 50px; flex-direction: column; justify-content: center; gap: 3px; padding: 7px 18px; background: #303030; }
 .status-metric strong { color: var(--paper); font: 600 1rem/1 "Space Grotesk", sans-serif; }
 .status-metric span { color: #767d78; font-size: .62rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.server-strip { position: relative; min-height: 360px; padding: 64px 0 66px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,.18); background: #686868; }
+.server-strip { position: relative; min-height: 360px; padding: 64px 0 66px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,.18); background: #686868 !important; background-image: none !important; }
 .server-strip::before, .server-strip::after { content: ""; position: absolute; top: 0; bottom: 0; z-index: 4; width: 16vw; pointer-events: none; }
 .server-strip::before { left: 0; background: linear-gradient(90deg, #686868, transparent); }
 .server-strip::after { right: 0; background: linear-gradient(270deg, #686868, transparent); }
