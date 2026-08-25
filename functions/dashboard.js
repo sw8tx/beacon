@@ -130,6 +130,12 @@ export async function onRequestGet({ request, env }) {
       .dash-sidebar{position:sticky;top:98px;align-self:start;max-height:calc(100vh - 116px);overflow:auto;border:1px solid rgba(255,255,255,.09);border-radius:10px;background:linear-gradient(180deg,rgba(17,18,24,.96),rgba(10,11,15,.96));padding:16px;box-shadow:0 24px 80px rgba(0,0,0,.34)}
       .server-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
       .server-title{color:#fff;font-size:.86rem;font-weight:900}
+      .server-group{display:grid;gap:10px;margin-top:16px}
+      .server-group-label{font-size:.78rem;font-weight:900}
+      .server-group--with .server-group-label{color:#67e84d}
+      .server-group--without .server-group-label{color:#858d9b}
+      .server-group--without{border-top:1px solid rgba(255,255,255,.1);padding-top:14px}
+      .server-group--without p{margin:0;color:#727b89;font-size:.74rem;font-weight:700;line-height:1.4}
       .sync-button,.server-sync{border:1px solid rgba(255,195,28,.52);border-radius:7px;background:linear-gradient(135deg,#ffb000,#ffc31c);color:#0c0900;font:inherit;font-size:.78rem;font-weight:900;cursor:pointer}
       .sync-button{min-height:34px;padding:0 12px}
       .server-sync{min-width:62px;min-height:32px}
@@ -177,8 +183,8 @@ export async function onRequestGet({ request, env }) {
       .bot-banner-preview{position:relative;display:grid;min-height:320px;place-items:center;border:2px solid rgba(72,130,207,.7);border-radius:4px;background:#35c86c;overflow:hidden}
       .bot-banner-preview img{width:190px;height:190px;object-fit:contain;filter:brightness(0) invert(1)}
       .bot-banner-preview span{position:absolute;right:18px;bottom:16px;width:18px;height:18px;background:#caffd6;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%)}
-      .asset-actions{display:grid;grid-template-columns:minmax(0,1fr) 54px;gap:8px}
-      .asset-actions button,.reset-bio,.save-bot{min-width:0;min-height:38px;border:0;border-radius:7px;color:#fff;font:800 .84rem "DM Sans",system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+      .asset-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+      .asset-actions button,.reset-bio,.save-bot,.reset-changes{min-width:0;min-height:38px;border:0;border-radius:7px;color:#fff;font:800 .84rem "DM Sans",system-ui,sans-serif;cursor:pointer;white-space:nowrap}
       .asset-actions button{background:#247fbd}
       .asset-actions .danger-mini,.reset-bio{background:#ff4f5e}
       .bio-field{display:grid;gap:10px;margin-top:24px}
@@ -187,6 +193,10 @@ export async function onRequestGet({ request, env }) {
       .reset-bio{padding:0 15px}
       .save-bot{background:#3ca86a;padding:0 15px}
       .reset-changes{background:#247fbd;padding:0 15px}
+      .dash-main.is-server-locked .dash-name,.dash-main.is-server-locked [data-dashboard-section]{display:none}
+      .server-select-gate{max-width:680px;margin:16vh auto 0;border:1px solid rgba(103,232,77,.24);border-radius:12px;background:rgba(18,24,28,.82);padding:30px;text-align:center}
+      .server-select-gate h2{margin:0;color:#fff;font-size:1.55rem}
+      .server-select-gate p{margin:10px 0 0;color:#9fa8b5;line-height:1.5}
       .dash-section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:18px}
       .dash-section-head strong{color:#ffc31c;font-size:.78rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
       .dash-badge-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -229,27 +239,35 @@ export async function onRequestGet({ request, env }) {
       <aside class="dash-sidebar" aria-label="Dashboard navigation">
         <section class="server-picker" aria-label="Server picker">
           <div class="server-head">
-            <span class="server-title">Servers with Beacon</span>
+            <span class="server-title">Choose a server</span>
             <button class="sync-button" type="button">Sync Servers</button>
           </div>
-          <div class="server-card">
-            <img class="server-avatar" src="${avatar}" width="48" height="48" alt="" />
-            <div>
-              <span class="server-name">${serverName}</span>
-              <span class="server-members">6 members</span>
+          <div class="server-group server-group--with">
+            <span class="server-group-label">Servers with Beacon</span>
+            <div class="server-card">
+              <img class="server-avatar" src="${avatar}" width="48" height="48" alt="" />
+              <div>
+                <span class="server-name">${serverName}</span>
+                <span class="server-members">6 members</span>
+              </div>
+              <button class="server-sync" type="button">Select</button>
             </div>
-            <button class="server-sync" type="button">Sync</button>
+            <button class="manage-button" type="button">Manage Server</button>
           </div>
-          <button class="manage-button" type="button">Manage Server</button>
-          <div class="server-muted">
-            Servers without Beacon appear here after syncing. Add Beacon first, then manage the server from this dashboard.
+          <div class="server-group server-group--without">
+            <span class="server-group-label">Servers without Beacon</span>
+            <p>Servers you manage without Beacon appear here after syncing.</p>
           </div>
         </section>
         <nav class="dash-side-nav" aria-label="Dashboard sections">
           ${navHtml}
         </nav>
       </aside>
-      <main class="dash-main">
+      <main class="dash-main is-server-locked">
+        <div class="server-select-gate">
+          <h2>Select a server to continue</h2>
+          <p>Choose a server with Beacon on the left, then click Manage Server to open its dashboard.</p>
+        </div>
         <h1 class="dash-name">Welcome, <span>${username}</span></h1>
         <section class="dash-content-section is-active" id="server-info" data-dashboard-section="server-info">
           <div class="dash-panel">
@@ -335,7 +353,13 @@ export async function onRequestGet({ request, env }) {
     <script>
       const tabs = [...document.querySelectorAll("[data-dashboard-tab]")];
       const sections = [...document.querySelectorAll("[data-dashboard-section]")];
+      let serverSelected = false;
+      const dashMain = document.querySelector(".dash-main");
       function activateDashboardTab(id) {
+        if (!serverSelected) {
+          showDashboardToast("Select a server first");
+          return;
+        }
         const targetId = sections.some((section) => section.dataset.dashboardSection === id) ? id : "server-info";
         sections.forEach((section) => section.classList.toggle("is-active", section.dataset.dashboardSection === targetId));
         tabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.dashboardTab === targetId));
@@ -347,7 +371,6 @@ export async function onRequestGet({ request, env }) {
           activateDashboardTab(tab.dataset.dashboardTab);
         });
       });
-      activateDashboardTab(location.hash.slice(1) || "server-info");
       const toast = document.querySelector("#dash-toast");
       let toastTimer = null;
       function showDashboardToast(message) {
@@ -357,6 +380,7 @@ export async function onRequestGet({ request, env }) {
         window.clearTimeout(toastTimer);
         toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2200);
       }
+      if (serverSelected) activateDashboardTab(location.hash.slice(1) || "server-info");
       const customizeStorageKey = "beacon-customize-preview";
       const bioInput = document.querySelector(".bio-field textarea");
       const avatarPreview = document.querySelector(".asset-editor--avatar img");
@@ -411,11 +435,19 @@ export async function onRequestGet({ request, env }) {
           showDashboardToast("Image removed");
         });
       });
-      document.querySelectorAll(".sync-button,.server-sync,.manage-button").forEach((button) => {
+      document.querySelectorAll(".sync-button").forEach((button) => {
         button.addEventListener("click", () => {
           const pill = document.querySelector("[data-sync-pill]");
           if (pill) pill.textContent = "Synced just now";
           showDashboardToast("Servers synced");
+        });
+      });
+      document.querySelectorAll(".server-sync,.manage-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          serverSelected = true;
+          dashMain?.classList.remove("is-server-locked");
+          activateDashboardTab("server-info");
+          showDashboardToast("Server selected");
         });
       });
       document.querySelectorAll(".dash-badge-img").forEach((image) => {
