@@ -46,11 +46,11 @@ function celebrateGiveaway(card) {
   const container = card.querySelector(".giveaway-confetti");
   if (!container || container.childElementCount) return;
   const colors = ["#31b6e6", "#ffc31c", "#8875ff", "#4bee94", "#ff6b92"];
-  for (let index = 0; index < 18; index += 1) {
+  for (let index = 0; index < 24; index += 1) {
     const piece = document.createElement("i");
     piece.style.setProperty("--confetti-color", colors[index % colors.length]);
     piece.style.setProperty("--confetti-x", `${Math.round((Math.random() - .5) * 210)}px`);
-    piece.style.setProperty("--confetti-y", `${Math.round(-55 - Math.random() * 105)}px`);
+      piece.style.setProperty("--confetti-y", `${Math.round(-42 - Math.random() * 86)}px`);
     piece.style.setProperty("--confetti-rotate", `${Math.round((Math.random() - .5) * 620)}deg`);
     piece.style.setProperty("--confetti-delay", `${Math.round(Math.random() * 160)}ms`);
     container.append(piece);
@@ -65,8 +65,22 @@ if (giveawayCards.length && "IntersectionObserver" in window) {
       celebrateGiveaway(entry.target);
       giveawayObserver.unobserve(entry.target);
     });
-  }, { threshold: .45 });
+  }, { threshold: .2, rootMargin: "0px 0px -10% 0px" });
   giveawayCards.forEach((card) => giveawayObserver.observe(card));
+} else if (giveawayCards.length) {
+  let giveawayCelebrated = false;
+  const checkGiveawayScroll = () => {
+    if (giveawayCelebrated) return;
+    const card = giveawayCards[0];
+    const rect = card.getBoundingClientRect();
+    if (rect.top < window.innerHeight * .8 && rect.bottom > 0) {
+      giveawayCelebrated = true;
+      celebrateGiveaway(card);
+      window.removeEventListener("scroll", checkGiveawayScroll);
+    }
+  };
+  window.addEventListener("scroll", checkGiveawayScroll, { passive: true });
+  checkGiveawayScroll();
 }
 
 const translations = {
