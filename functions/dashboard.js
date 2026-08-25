@@ -12,6 +12,34 @@ function escapeHtml(value) {
   }[character]));
 }
 
+const KNOWN_GUILD_IDS = [
+  "1515797025885524049",
+  "1529195462735696053",
+  "1532057761557254244",
+];
+
+async function getDashboardServers(env) {
+  const { botToken } = getConfig(env);
+  if (!botToken) return [];
+  const servers = await Promise.all(KNOWN_GUILD_IDS.map(async (guildId) => {
+    try {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}?with_counts=true`, {
+        headers: { authorization: `Bot ${botToken}` },
+      });
+      if (!response.ok) return null;
+      const guild = await response.json();
+      return {
+        name: guild.name || "Discord server",
+        owner: "Server with Beacon",
+        iconUrl: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=256` : "",
+      };
+    } catch (_) {
+      return null;
+    }
+  }));
+  return servers.filter(Boolean);
+}
+
 async function getUnlockedBadgeIds(env, userId) {
   const defaults = new Set(["beacon-member"]);
   if (!env.STATUS_DB || !userId) return defaults;
@@ -78,6 +106,13 @@ export async function onRequestGet({ request, env }) {
     { name: "Sparkle Stock Reborn", owner: "Eigentümer", tone: "gray", icon: "/assets/beacon-logo.png?v=92" },
     { name: "test", owner: "Eigentümer", tone: "dark", icon: "" },
   ];
+  const liveSelectionServers = await getDashboardServers(env);
+  const resolvedServerName = liveSelectionServers[0]?.name || serverName;
+  const resolvedServerIcon = liveSelectionServers[0]?.iconUrl || "";
+  const dashboardAvatar = resolvedServerIcon ? escapeHtml(resolvedServerIcon) : avatar;
+  const dashboardSelectionServers = liveSelectionServers.length
+    ? liveSelectionServers.map((server, index) => ({ ...server, tone: ["red", "gold", "green", "gray", "dark"][index % 5], icon: server.iconUrl }))
+    : selectionServers;
   const unlockedIds = await getUnlockedBadgeIds(env, session.user.id);
   const unlockedBadges = BEACON_BADGES.filter((badge) => unlockedIds.has(badge.id));
   const lockedBadges = BEACON_BADGES.filter((badge) => !unlockedIds.has(badge.id));
@@ -270,18 +305,18 @@ export async function onRequestGet({ request, env }) {
           <div class="server-group server-group--with">
             <span class="server-group-label">Servers with Beacon</span>
             <div class="server-card">
-              <img class="server-avatar" src="${avatar}" width="48" height="48" alt="" />
+              <img class="server-avatar" src="${dashboardAvatar}" width="48" height="48" alt="" />
               <div>
-                <span class="server-name">${serverName}</span>
+                <span class="server-name">${resolvedServerName}</span>
                 <span class="server-members">6 members</span>
               </div>
-              <button class="server-sync" type="button">Select</button>
+              <button class="server-sync" type="button">Manage</button>
             </div>
             <button class="manage-button" type="button">Manage Server</button>
           </div>
           <div class="server-group server-group--without">
             <span class="server-group-label">Servers without Beacon</span>
-            <p>Servers you manage without Beacon appear here after syncing.</p>
+            <p>Servers you manage without Beacon will appear here after syncing.</p>
           </div>
         </section>
         <nav class="dash-side-nav" aria-label="Dashboard sections">
@@ -292,14 +327,14 @@ export async function onRequestGet({ request, env }) {
         <div class="server-select-gate">
           <h1>Server auswählen</h1>
           <div class="server-choice-grid">
-            ${selectionServers.map((server) => `
+            ${dashboardSelectionServers.map((server) => `
               <article class="server-choice">
                 <div class="server-choice-card server-choice-card--${server.tone}">
                   ${server.icon ? `<img src="${server.icon}" alt="" />` : `<span class="server-choice-initial">t</span>`}
                 </div>
                 <div class="server-choice-copy">
                   <div><strong>${escapeHtml(server.name)}</strong><small>${escapeHtml(server.owner)}</small></div>
-                  <button type="button" class="server-choice-button">Einrichten</button>
+                  <button type="button" class="server-choice-button">Manage</button>
                 </div>
               </article>
             `).join("")}
@@ -310,7 +345,7 @@ export async function onRequestGet({ request, env }) {
           <div class="dash-panel">
             <div class="server-info-head">
               <div>
-                <h2>${serverName}</h2>
+                <h2>${resolvedServerName}</h2>
                 <p>Live server overview synced from Beacon. Pick the server on the left, then manage stats, commands and badges from here.</p>
               </div>
               <span class="sync-pill" data-sync-pill>Synced just now</span>
