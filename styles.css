@@ -157,7 +157,7 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
   transform: perspective(900px) rotateX(4deg) rotateY(-10deg);
 }
 .static-laptop { position:absolute; inset:12% 7% 9%; z-index:2; overflow:hidden; contain:layout paint; filter:drop-shadow(0 30px 28px rgba(0,0,0,.5)); transform:perspective(900px) rotateX(4deg) rotateY(-5deg); }
-.static-screen { position:absolute; inset:0 5% 18%; display:grid; grid-template-columns:18% 1fr; overflow:hidden; border:10px solid #171b19; border-radius:12px; background:#202a26; box-shadow:0 0 30px rgba(255,195,28,.12); }
+.static-screen { position:absolute; inset:0 5% 18%; overflow:hidden; border:10px solid #171b19; border-radius:12px; background:linear-gradient(90deg,#111916 0 18%,transparent 18%),linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px),radial-gradient(circle at 70% 20%,rgba(255,195,28,.18),transparent 34%),#202a26; background-size:auto,42px 42px,42px 42px,auto,auto; box-shadow:0 0 30px rgba(255,195,28,.12); }
 .static-sidebar { display:grid; align-content:start; gap:9%; padding:13% 10%; color:#758079; background:#111916; font-size:clamp(5px,.65vw,10px); font-weight:700; }
 .static-sidebar b { color:#f2f1e9; font-size:clamp(6px,.75vw,11px); }
 .static-sidebar span { padding:5px 7px; border-radius:3px; }
