@@ -14,6 +14,7 @@ const authToast = document.querySelector("#auth-toast");
 const authRequiredLinks = [...document.querySelectorAll("[data-requires-auth]")];
 const heroTypewriter = document.querySelector("[data-typewriter-lines]");
 const claimButtons = [...document.querySelectorAll("[data-claim-badge]")];
+const giveawayCards = [...document.querySelectorAll(".insight-card--giveaway")];
 let heroTypewriterTimer = null;
 let isDiscordSignedIn = false;
 
@@ -40,6 +41,33 @@ claimButtons.forEach((button) => {
     setClaimedState(button);
   });
 });
+
+function celebrateGiveaway(card) {
+  const container = card.querySelector(".giveaway-confetti");
+  if (!container || container.childElementCount) return;
+  const colors = ["#31b6e6", "#ffc31c", "#8875ff", "#4bee94", "#ff6b92"];
+  for (let index = 0; index < 18; index += 1) {
+    const piece = document.createElement("i");
+    piece.style.setProperty("--confetti-color", colors[index % colors.length]);
+    piece.style.setProperty("--confetti-x", `${Math.round((Math.random() - .5) * 210)}px`);
+    piece.style.setProperty("--confetti-y", `${Math.round(-55 - Math.random() * 105)}px`);
+    piece.style.setProperty("--confetti-rotate", `${Math.round((Math.random() - .5) * 620)}deg`);
+    piece.style.setProperty("--confetti-delay", `${Math.round(Math.random() * 160)}ms`);
+    container.append(piece);
+  }
+  requestAnimationFrame(() => container.classList.add("is-active"));
+}
+
+if (giveawayCards.length && "IntersectionObserver" in window) {
+  const giveawayObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      celebrateGiveaway(entry.target);
+      giveawayObserver.unobserve(entry.target);
+    });
+  }, { threshold: .45 });
+  giveawayCards.forEach((card) => giveawayObserver.observe(card));
+}
 
 const translations = {
   en: { label: "English", code: "US", bot: "Beacon Bot", support: "Support Server", join: "Join our Discord", help: "Help", commands: "Commands", status: "Status", ping: "Ping", prestige: "Beacon Prestige", new: "New!", add: "Add to Server", login: "Login with Discord", eyebrow: "The ultimate server growth bot", heroLineOne: "Grow your server.", heroLineTwo: "Empower your community.", heroDescription: "Beacon is an all-in-one Discord bot built to help you grow, manage, and engage your server with powerful tools and an easy-to-use dashboard.", checkOne: "Ticket System", checkTwo: "Auto Responder", checkThree: "Sticky Notes", checkFour: "Server Statistics", checkFive: "/Say Command", checkSix: "And much more...", heroAdd: "Add to Server", heroLogin: "Login with Discord", docs: "View Docs", heroNote: "Trusted by growing communities everywhere", livePreview: "Live dashboard preview", builtFor: "Built for your next level", liveStatus: "Live system status", statServers: "Servers connected", statUsers: "Members reached", statPing: "Average ping", statUptime: "Always available", featureOverline: "Everything in one place", featureTitle: "Your community,\nin its element.", featureDescription: "Powerful automation, effortless moderation, and the clarity to make better decisions for your server.", featureOneTitle: "Automate the busywork", featureOneCopy: "Let Beacon handle repetitive tasks while you focus on the people who make your community special.", featureTwoTitle: "See what matters", featureTwoCopy: "Real-time server statistics and clean insights, right when you need them.", featureThreeTitle: "Make it yours", featureThreeCopy: "Flexible commands and thoughtful tools that fit the way your server works.", learnMore: "Explore feature", finalOverline: "Ready when you are", finalTitle: "Give your server\nthe Beacon treatment.", footer: "Built for communities with ambition." },
@@ -451,7 +479,7 @@ async function initThreeLaptop() {
     const isCompactViewport = () => window.matchMedia("(max-width: 900px)").matches;
     camera.position.set(0, .45, isCompactViewport() ? 11.9 : 10.6);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.35));
     renderer.setSize(stage.clientWidth, stage.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -501,16 +529,29 @@ async function initThreeLaptop() {
     window.addEventListener("orientationchange", () => setTimeout(resize, 120));
     resize();
     const clock = new THREE.Clock();
-    function animate() {
+    let animationFrame = 0;
+    let lastTextureDraw = 0;
+    let isVisible = true;
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      isVisible = entry.isIntersecting;
+      if (isVisible && !animationFrame) animationFrame = requestAnimationFrame(animate);
+    }, { threshold: 0 });
+    visibilityObserver.observe(stage);
+    function animate(now = performance.now()) {
+      animationFrame = 0;
+      if (!isVisible) return;
       const elapsed = clock.getElapsedTime();
       laptop.rotation.y = -.1 + Math.sin(elapsed * .42) * .24;
       laptop.rotation.x = -.04 + Math.sin(elapsed * .55) * .025;
       laptop.position.y = Math.sin(elapsed * .8) * .075;
-      screenCanvas.draw(performance.now());
+      if (now - lastTextureDraw > 100) {
+        screenCanvas.draw(now);
+        lastTextureDraw = now;
+      }
       renderer.render(scene, camera);
-      requestAnimationFrame(animate);
+      animationFrame = requestAnimationFrame(animate);
     }
-    animate();
+    animationFrame = requestAnimationFrame(animate);
   } catch (error) {
     stage.classList.add("is-fallback");
   }

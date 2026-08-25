@@ -216,7 +216,7 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .server-card small { color: #858b93; font-size: .78rem; font-weight: 700; }
 .server-card i { display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); }
 .insights-section { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding: 36px 5.2vw 74px; border-bottom: 1px solid rgba(255,255,255,.06); background: #050606; }
-.insight-card { min-width: 0; padding: 34px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: linear-gradient(180deg, rgba(12,13,15,.96), rgba(7,8,9,.96)); box-shadow: 0 24px 70px rgba(0,0,0,.34); }
+.insight-card { position: relative; min-width: 0; padding: 34px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: linear-gradient(180deg, rgba(12,13,15,.96), rgba(7,8,9,.96)); box-shadow: 0 24px 70px rgba(0,0,0,.34); }
 .insight-overline { display: block; margin-bottom: 26px; color: #7d83a0; font-size: .68rem; font-weight: 900; letter-spacing: .48em; text-transform: uppercase; }
 .insight-card h2 { color: #fff; font: 700 clamp(1.35rem, 2vw, 1.72rem)/1.12 "Space Grotesk", sans-serif; }
 .insight-card > p { margin-top: 14px; color: #a2a7b1; font-size: 1.02rem; line-height: 1.55; }
@@ -234,6 +234,10 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .giveaway-button.is-claimed { color: #d9fff0; background: rgba(46,219,132,.16); box-shadow: inset 0 0 0 1px rgba(86,239,158,.35); cursor: default; }
 .giveaway-claim-note { display: block; grid-column: 1 / -1; min-height: 0; color: #7f8897; font-size: .72rem; line-height: 1.4; text-align: center; }
 .giveaway-claim-note:empty { display: none; }
+.giveaway-confetti { position: absolute; top: 28px; left: 50%; z-index: 2; width: 1px; height: 1px; pointer-events: none; }
+.giveaway-confetti i { position: absolute; display: block; width: 5px; height: 10px; border-radius: 1px; background: var(--confetti-color); opacity: 0; transform: translate(-50%, 0) rotate(0deg); }
+.giveaway-confetti.is-active i { animation: giveaway-confetti-pop .9s cubic-bezier(.18,.74,.35,1) var(--confetti-delay) both; }
+@keyframes giveaway-confetti-pop { 0% { opacity: 0; transform: translate(-50%, 0) rotate(0deg) scale(.5); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--confetti-x)), var(--confetti-y)) rotate(var(--confetti-rotate)) scale(1); } }
 .insight-card { transition: transform .18s ease, border-color .18s ease, background .18s ease; }
 .insight-card:hover { border-color: rgba(255,195,28,.36); background: linear-gradient(180deg, rgba(16,17,20,.98), rgba(9,10,12,.98)); transform: translateY(-4px); }
 .activity-panel { padding: 20px; }
