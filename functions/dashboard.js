@@ -89,8 +89,8 @@ export async function onRequestGet({ request, env }) {
     const active = index === 0 ? " is-active" : "";
     return `<a class="dash-side-link${active}" href="#${id}" data-dashboard-tab="${id}"><span class="nav-mark"></span>${label}</a>`;
   }).join("");
+  const botBio = "Beacon Community OS\nhttps://beacon-bot.site";
   const simplePanels = [
-    ["customize-bot", "Customize Bot", "Bot theme, messages and small server defaults will live here."],
     ["command-configs", "Command Configs", "Enable, disable and tune Beacon commands for this server."],
     ["server-configs", "Server Configs", "General server settings, roles and moderation defaults will show here."],
     ["dashboard-history", "Dashboard History", "Recent dashboard changes and sync events will be listed here."],
@@ -151,6 +151,42 @@ export async function onRequestGet({ request, env }) {
       .dash-content-section.is-active{display:block}
       .dash-panel h2{margin:0 0 8px;color:#fff;font-size:1.25rem}
       .dash-panel p{margin:0;color:#9ea6b5;font-size:.98rem;line-height:1.6}
+      .dash-toast{position:fixed;top:88px;left:50%;z-index:80;display:flex;min-height:42px;align-items:center;justify-content:center;border:1px solid rgba(255,195,28,.42);border-radius:8px;background:rgba(12,13,15,.96);color:#ffc31c;padding:0 18px;font-size:.86rem;font-weight:900;box-shadow:0 20px 50px rgba(255,195,28,.16);opacity:0;pointer-events:none;transform:translate(-50%,-12px);transition:opacity .2s ease,transform .2s ease}
+      .dash-toast.is-visible{opacity:1;transform:translate(-50%,0)}
+      .server-info-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+      .sync-pill{display:inline-flex;min-height:30px;align-items:center;border:1px solid rgba(103,232,77,.28);border-radius:999px;background:rgba(103,232,77,.1);color:#67e84d;padding:0 12px;font-size:.72rem;font-weight:900;white-space:nowrap}
+      .server-info-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:22px}
+      .server-info-grid article{border:1px solid rgba(255,255,255,.08);border-radius:9px;background:#101219;padding:16px}
+      .server-info-grid span,.panel-mini-head span{display:block;color:#8790a1;font-size:.68rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
+      .server-info-grid strong{display:block;margin-top:10px;color:#fff;font-size:1.65rem;line-height:1}
+      .server-info-grid small{display:block;margin-top:8px;color:#7f8796;font-size:.75rem;font-weight:800}
+      .server-activity-card{margin-top:14px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#101219;padding:18px}
+      .panel-mini-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+      .panel-mini-head strong{color:#ffc31c;font-size:.78rem;text-transform:uppercase}
+      .server-activity-card svg{display:block;width:100%;height:150px;margin-top:10px;overflow:visible}
+      .server-activity-card polyline{fill:none;stroke:#31bdf5;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+      .server-activity-card circle{fill:#31bdf5;filter:drop-shadow(0 0 12px rgba(49,189,245,.5))}
+      .customize-panel{max-width:1180px;background:#202b3b;border-color:rgba(255,255,255,.16)}
+      .customize-panel h2{text-align:center;font-size:1.6rem;border-bottom:1px solid rgba(255,255,255,.14);padding-bottom:26px}
+      .customize-media-grid{display:grid;grid-template-columns:minmax(260px,360px) minmax(0,1fr);gap:24px;margin-top:26px}
+      .asset-editor{display:grid;gap:18px;border-radius:16px;background:#151d29;padding:24px}
+      .asset-editor strong,.bio-field span{color:#fff;font-size:.95rem}
+      .asset-editor small,.bio-field small{color:#c9d4e8;font-size:.72rem}
+      .bot-avatar-preview{display:grid;place-items:center;min-height:138px}
+      .bot-avatar-preview img{width:128px;height:128px;border:3px solid rgba(58,221,126,.66);border-radius:50%;object-fit:contain;background:#35c86c;padding:24px}
+      .bot-banner-preview{position:relative;display:grid;min-height:320px;place-items:center;border:2px solid rgba(72,130,207,.7);border-radius:4px;background:#35c86c;overflow:hidden}
+      .bot-banner-preview img{width:190px;height:190px;object-fit:contain;filter:brightness(0) invert(1)}
+      .bot-banner-preview span{position:absolute;right:18px;bottom:16px;width:18px;height:18px;background:#caffd6;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%)}
+      .asset-actions{display:grid;grid-template-columns:1fr 42px;gap:8px}
+      .asset-actions button,.reset-bio,.save-bot{min-height:38px;border:0;border-radius:7px;color:#fff;font:800 .88rem "DM Sans",system-ui,sans-serif;cursor:pointer}
+      .asset-actions button{background:#2478b8}
+      .asset-actions .danger-mini,.reset-bio{background:#ff4f5e}
+      .bio-field{display:grid;gap:10px;margin-top:24px}
+      .bio-field textarea{min-height:170px;resize:vertical;border:1px solid rgba(255,255,255,.14);border-radius:7px;background:#2b3a4d;color:#fff;padding:14px;font:700 1rem/1.45 "DM Sans",system-ui,sans-serif}
+      .customize-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:10px}
+      .reset-bio{padding:0 15px}
+      .save-bot{background:#4b9160;padding:0 15px;opacity:.86}
+      .customize-actions span{margin-left:auto;color:#ffc31c;font-size:.78rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
       .dash-section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:18px}
       .dash-section-head strong{color:#ffc31c;font-size:.78rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
       .dash-badge-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -175,12 +211,13 @@ export async function onRequestGet({ request, env }) {
       .dash-badge--violet .dash-badge-icon,.dash-badge--violet .dash-badge-top span{color:#b261ff}
       .dash-badge--orange .dash-badge-icon,.dash-badge--orange .dash-badge-top span{color:#ff8a00}
       @keyframes dash-sheen{from{transform:translateX(-100%)}to{transform:translateX(120%)}}
-      @media (max-width:1100px){.dash-badge-grid{grid-template-columns:1fr}}
+      @media (max-width:1100px){.dash-badge-grid{grid-template-columns:1fr}.server-info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.customize-media-grid{grid-template-columns:1fr}.bot-banner-preview{min-height:260px}}
       @media (max-width:900px){.dash-layout{grid-template-columns:1fr}.dash-sidebar{position:relative;top:auto;max-height:none}.dash-main{padding-top:18px}.dash-name{text-align:left}.dash-topbar{padding-inline:16px}.dash-back{min-height:38px;padding-inline:13px}}
-      @media (max-width:620px){.dash-badge{grid-template-columns:48px 1fr}.dash-badge-state{grid-column:1/-1;width:max-content}.server-card{grid-template-columns:42px 1fr}.server-sync{grid-column:1/-1;width:100%}.server-avatar{width:42px;height:42px}.dash-side-link{min-height:44px}.dash-name{font-size:2.35rem}}
+      @media (max-width:620px){.dash-badge{grid-template-columns:48px 1fr}.dash-badge-state{grid-column:1/-1;width:max-content}.server-card{grid-template-columns:42px 1fr}.server-sync{grid-column:1/-1;width:100%}.server-avatar{width:42px;height:42px}.dash-side-link{min-height:44px}.dash-name{font-size:2.35rem}.server-info-head{display:block}.sync-pill{margin-top:14px}.server-info-grid{grid-template-columns:1fr}.customize-panel{padding:18px}.bot-banner-preview{min-height:210px}.bot-banner-preview img{width:140px;height:140px}.customize-actions span{width:100%;margin-left:0}}
     </style>
   </head>
   <body>
+    <div class="dash-toast" id="dash-toast" role="status" aria-live="polite">Coming soon</div>
     <header class="dash-topbar">
       <a class="dash-brand" href="/">
         <img src="/assets/beacon-logo.png?v=92" width="34" height="34" alt="" />
@@ -216,8 +253,52 @@ export async function onRequestGet({ request, env }) {
         <h1 class="dash-name">Welcome, <span>${username}</span></h1>
         <section class="dash-content-section is-active" id="server-info" data-dashboard-section="server-info">
           <div class="dash-panel">
-            <h2>Select a server to start</h2>
-            <p>Sync your Discord servers, pick the one Beacon is in, then use the left menu for server info, bot settings, command configs, statistics and badges.</p>
+            <div class="server-info-head">
+              <div>
+                <h2>${serverName}</h2>
+                <p>Live server overview synced from Beacon. Pick the server on the left, then manage stats, commands and badges from here.</p>
+              </div>
+              <span class="sync-pill" data-sync-pill>Synced just now</span>
+            </div>
+            <div class="server-info-grid">
+              <article><span>Members</span><strong>6</strong><small>Current server size</small></article>
+              <article><span>Commands</span><strong>40</strong><small>Available tools</small></article>
+              <article><span>Ping</span><strong>188 ms</strong><small>Gateway health</small></article>
+              <article><span>Badges</span><strong>${unlockedBadges.length}/20</strong><small>Unlocked profile badges</small></article>
+            </div>
+            <div class="server-activity-card">
+              <div class="panel-mini-head"><span>Member activity</span><strong>7 days</strong></div>
+              <svg viewBox="0 0 520 150" aria-label="Server activity graph">
+                <polyline points="20,112 66,98 112,104 158,74 204,88 250,54 296,68 342,45 388,58 434,34 500,26" />
+                <circle cx="500" cy="26" r="6" />
+              </svg>
+            </div>
+          </div>
+        </section>
+        <section class="dash-content-section" id="customize-bot" data-dashboard-section="customize-bot">
+          <div class="dash-panel customize-panel">
+            <h2>Customize Bot</h2>
+            <div class="customize-media-grid">
+              <article class="asset-editor asset-editor--avatar">
+                <strong>Avatar <small>(1024x1024)</small></strong>
+                <div class="bot-avatar-preview"><img src="/assets/beacon-logo.png?v=92" alt="" /></div>
+                <div class="asset-actions"><button type="button" data-coming-soon>Edit</button><button class="danger-mini" type="button" data-coming-soon>Delete</button></div>
+              </article>
+              <article class="asset-editor asset-editor--banner">
+                <strong>Banner <small>(680x240)</small></strong>
+                <div class="bot-banner-preview"><img src="/assets/beacon-logo.png?v=92" alt="" /><span></span></div>
+                <div class="asset-actions"><button type="button" data-coming-soon>Edit</button><button class="danger-mini" type="button" data-coming-soon>Delete</button></div>
+              </article>
+            </div>
+            <label class="bio-field">
+              <span>Bio <small>(190 character limit)</small></span>
+              <textarea maxlength="190">${escapeHtml(botBio)}</textarea>
+            </label>
+            <div class="customize-actions">
+              <button class="reset-bio" type="button" data-coming-soon>Reset Bio</button>
+              <button class="save-bot" type="button" data-coming-soon>Save Bot Changes</button>
+              <span>Coming soon</span>
+            </div>
           </div>
         </section>
         ${simplePanels}
@@ -265,6 +346,28 @@ export async function onRequestGet({ request, env }) {
         });
       });
       activateDashboardTab(location.hash.slice(1) || "server-info");
+      const toast = document.querySelector("#dash-toast");
+      let toastTimer = null;
+      function showDashboardToast(message) {
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.add("is-visible");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2200);
+      }
+      document.querySelectorAll("[data-coming-soon]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          showDashboardToast("Coming soon");
+        });
+      });
+      document.querySelectorAll(".sync-button,.server-sync,.manage-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          const pill = document.querySelector("[data-sync-pill]");
+          if (pill) pill.textContent = "Synced just now";
+          showDashboardToast("Servers synced");
+        });
+      });
       document.querySelectorAll(".dash-badge-img").forEach((image) => {
         image.addEventListener("load", () => image.closest(".dash-badge-icon")?.classList.add("has-png"));
         image.addEventListener("error", () => image.remove());

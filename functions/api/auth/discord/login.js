@@ -13,6 +13,8 @@ export async function onRequestGet({ request, env }) {
 
   const { clientId, redirectUri, sessionSecret } = getConfig(env);
   const state = sessionSecret ? await createOauthState(sessionSecret) : randomState();
+  const next = requestUrl.searchParams.get("next");
+  const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next.slice(0, 180) : "/";
   const authorizationUrl = new URL("https://discord.com/oauth2/authorize");
   authorizationUrl.searchParams.set("client_id", clientId);
   authorizationUrl.searchParams.set("response_type", "code");
@@ -21,11 +23,13 @@ export async function onRequestGet({ request, env }) {
   authorizationUrl.searchParams.set("state", state);
   authorizationUrl.searchParams.set("prompt", "consent");
 
-  return new Response(null, {
+  const response = new Response(null, {
     status: 302,
     headers: {
       Location: authorizationUrl.toString(),
       "Set-Cookie": createCookie("discord_oauth_state", state, { maxAge: 600, path: "/" }),
     },
   });
+  response.headers.append("Set-Cookie", createCookie("beacon_login_next", safeNext, { maxAge: 600, path: "/" }));
+  return response;
 }

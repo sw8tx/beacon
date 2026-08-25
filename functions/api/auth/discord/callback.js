@@ -89,10 +89,13 @@ export async function onRequestGet({ request, env }) {
       avatar: avatarUrl(discordUser),
     };
     const session = await createSession(user, sessionSecret);
-    const headers = new Headers({ Location: new URL("/", request.url).toString() });
+    const next = getCookie(request, "beacon_login_next");
+    const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+    const headers = new Headers({ Location: new URL(safeNext, request.url).toString() });
     headers.append("Set-Cookie", createCookie("beacon_session", session, { maxAge: 60 * 60 * 24 * 7, domain: ".beacon-bot.site" }));
     headers.append("Set-Cookie", createCookie("beacon_session", session, { maxAge: 60 * 60 * 24 * 7 }));
     headers.append("Set-Cookie", createCookie("discord_oauth_state", "", { maxAge: 0, path: "/" }));
+    headers.append("Set-Cookie", createCookie("beacon_login_next", "", { maxAge: 0, path: "/" }));
     return new Response(null, { status: 302, headers });
   } catch (error) {
     console.error(`[discord-oauth] Callback failed: ${error instanceof Error ? error.message : String(error)}`);

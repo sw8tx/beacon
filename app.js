@@ -265,7 +265,9 @@ function fillServerTrack(track, servers, stats) {
 
 function updateServerTracks(stats) {
   if (!serverTracks.length) return;
-  const servers = Array.isArray(stats?.servers) ? stats.servers : [];
+  const servers = (Array.isArray(stats?.servers) ? stats.servers : [])
+    .slice()
+    .sort((left, right) => (Number(right?.members) || 0) - (Number(left?.members) || 0));
   serverTracks.forEach((track, index) => {
     fillServerTrack(track, index % 2 === 0 ? servers : [...servers].reverse(), stats);
   });
