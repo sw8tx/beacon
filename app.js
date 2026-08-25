@@ -469,14 +469,8 @@ function makeDashboardTexture(THREE) {
 
 async function initThreeLaptop() {
   const stage = document.querySelector(".hero-stage");
-  // Keep the landing page responsive on laptops and mobile devices. The CSS
-  // fallback is intentionally used by default; the WebGL preview was the
-  // main source of input lag and unnecessary GPU/CPU work.
-  if (!stage) return;
-  stage.classList.add("is-fallback");
-  return;
+  if (!stage || reduceMotion) return;
   try {
-    stage.classList.remove("is-fallback");
     const waitForStageSize = () => new Promise((resolve) => {
       const check = () => {
         const width = stage.clientWidth;
@@ -498,12 +492,13 @@ async function initThreeLaptop() {
     const isCompactViewport = () => window.matchMedia("(max-width: 900px)").matches;
     camera.position.set(0, .45, isCompactViewport() ? 11.9 : 10.6);
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "low-power" });
-    renderer.setPixelRatio(1);
+    renderer.setPixelRatio(.8);
     renderer.setSize(stage.clientWidth, stage.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.24;
     stage.appendChild(renderer.domElement);
+    stage.classList.remove("is-fallback");
     scene.add(new THREE.HemisphereLight(0xfff1cf, 0x111513, 2.35));
     const key = new THREE.DirectionalLight(0xffc02c, 5.3); key.position.set(-4, 6, 7); scene.add(key);
     const rim = new THREE.PointLight(0xffa916, 11, 15); rim.position.set(4, 1, 3); scene.add(rim);
@@ -559,7 +554,7 @@ async function initThreeLaptop() {
     visibilityObserver.observe(stage);
     function animate(now = performance.now()) {
       animationFrame = 0;
-      if (!isVisible || now - lastRender < 33) {
+      if (!isVisible || now - lastRender < 50) {
         if (isVisible) animationFrame = requestAnimationFrame(animate);
         return;
       }
@@ -568,7 +563,7 @@ async function initThreeLaptop() {
       laptop.rotation.y = -.1 + Math.sin(elapsed * .42) * .24;
       laptop.rotation.x = -.04 + Math.sin(elapsed * .55) * .025;
       laptop.position.y = Math.sin(elapsed * .8) * .075;
-      if (now - lastTextureDraw > 250) {
+      if (now - lastTextureDraw > 350) {
         screenCanvas.draw(now);
         lastTextureDraw = now;
       }
@@ -581,5 +576,10 @@ async function initThreeLaptop() {
   }
 }
 
-initThreeLaptop();
+const startLaptopPreview = () => initThreeLaptop();
+if ("requestIdleCallback" in window) {
+  window.requestIdleCallback(startLaptopPreview, { timeout: 2200 });
+} else {
+  window.setTimeout(startLaptopPreview, 1400);
+}
 requestAnimationFrame(revealOnScroll);
