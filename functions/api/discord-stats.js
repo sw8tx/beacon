@@ -85,14 +85,19 @@ function normalizeServers(input) {
   if (!Array.isArray(input)) return [];
   return input
     .map((server) => ({
-      id: cleanText(server?.id, 30),
+      id: cleanText(server?.id, 30) || extractGuildId(server?.iconUrl),
       name: cleanText(server?.name, 80),
       members: cleanNumber(server?.members),
       iconUrl: cleanUrl(server?.iconUrl),
     }))
     .filter((server) => server.name)
     .sort((left, right) => right.members - left.members)
-    .slice(0, 12);
+    .slice(0, 100);
+}
+
+function extractGuildId(iconUrl) {
+  const match = String(iconUrl || "").match(/\/icons\/(\d+)\//);
+  return match ? match[1] : "";
 }
 
 function normalizeStats(input) {

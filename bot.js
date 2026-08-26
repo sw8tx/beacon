@@ -161,8 +161,9 @@ function buildStatsPayload() {
       members: guild.memberCount || guild.members.cache.size || 0,
       iconUrl: guild.iconURL({ extension: "png", size: 64 }) || null,
     }))
-    .sort((left, right) => right.members - left.members)
-    .slice(0, 12);
+    .sort((left, right) => right.members - left.members);
+    // Keep every guild in the sync payload so the dashboard can determine
+    // Beacon membership for every server, not only the largest 12.
 
   return {
     guilds: client.guilds.cache.size,
