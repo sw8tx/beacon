@@ -112,7 +112,7 @@ function renderBadgeCard(badge, unlocked) {
 }
 
 export async function onRequestGet({ request, env }) {
-  const { sessionSecret } = getConfig(env);
+  const { sessionSecret, clientId } = getConfig(env);
   const session = await readSession(getCookie(request, "beacon_session"), sessionSecret);
   if (!session?.user) {
     return Response.redirect(new URL("/?login_required=1", request.url).toString(), 302);
@@ -146,8 +146,10 @@ export async function onRequestGet({ request, env }) {
                   ${server.icon ? `<img src="${escapeHtml(server.icon)}" alt="" onerror="this.onerror=null;this.src='/assets/beacon-mark-gold.png?v=1'" />` : `<span class="server-choice-initial">${escapeHtml(String(server.name || "S").slice(0, 1).toUpperCase())}</span>`}
                 </div>
                 <div class="server-choice-copy">
-                  <div><strong>${escapeHtml(server.name)}</strong><small>${escapeHtml(server.owner || "Server owner")}</small></div>
-                  <button type="button" class="server-choice-button" data-can-manage="${server.withBeacon && server.isOwner ? "true" : "false"}" data-denial-reason="${server.withBeacon ? "owner" : "beacon"}" data-server-id="${escapeHtml(server.id || "")}" data-server-name="${escapeHtml(server.name)}" data-server-members="${Number(server.members) || 0}">${actionLabel}</button>
+                  <div><strong>${escapeHtml(server.name)}</strong><small>${server.withBeacon ? "Beacon is active" : "Server owner"}</small></div>
+                  ${server.withBeacon
+                    ? `<button type="button" class="server-choice-button" data-can-manage="true" data-server-id="${escapeHtml(server.id || "")}" data-server-name="${escapeHtml(server.name)}" data-server-members="${Number(server.members) || 0}">${actionLabel}</button>`
+                    : `<a class="server-choice-button server-choice-button--invite" href="https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&amp;scope=bot%20applications.commands&amp;guild_id=${encodeURIComponent(server.id || "")}&amp;disable_guild_select=true">Add Beacon</a>`}
                 </div>
               </article>
             `).join("")
@@ -311,8 +313,21 @@ export async function onRequestGet({ request, env }) {
       .server-choice-copy small{display:block;margin-top:3px;color:#9ca4b5;font-size:.78rem}
       .server-choice-copy button{min-width:118px;min-height:48px;border:0;border-radius:8px;background:#3a3d49;color:#fff;font:800 .84rem "DM Sans",system-ui,sans-serif;cursor:pointer}
       .server-choice-copy button:hover{background:#4a4e5b}
-      @media (max-width:900px){.server-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 20px}}
-      @media (max-width:620px){.server-choice-grid{grid-template-columns:1fr}.server-select-gate h1{margin-bottom:32px}}
+      .server-choice-copy .server-choice-button{display:inline-flex;min-width:132px;min-height:42px;align-items:center;justify-content:center;border:0;border-radius:7px;background:#303542;color:#fff;font:800 .8rem "DM Sans",system-ui,sans-serif;text-decoration:none;cursor:pointer}
+      .server-choice-copy .server-choice-button:hover{background:#414858}
+      .server-choice-copy .server-choice-button--invite{background:#ffc31c;color:#0b0900}
+      .server-choice-copy .server-choice-button--invite:hover{background:#ffd45c}
+      .server-choice{display:grid;grid-template-columns:84px minmax(0,1fr);gap:16px;align-items:center;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(13,15,21,.78);padding:14px;box-shadow:0 12px 30px rgba(0,0,0,.12)}
+      .server-choice-card{min-height:76px;padding:0!important;background:linear-gradient(135deg,#282d3a,#171a22);border-radius:8px}
+      .server-choice-card img,.server-choice-initial{width:58px;height:58px}
+      .server-choice-copy{margin-top:0;min-width:0}
+      .server-choice-copy strong{font-size:1rem}
+      .server-choice-group h2{text-transform:uppercase;letter-spacing:.1em}
+      .server-choice-group--with h2{color:#67e84d}
+      .server-choice-group--without h2{color:#9aa2b2}
+      @media (min-width:621px){.dash-topbar{justify-content:center}.dash-back{display:none}.server-select-gate{max-width:700px}.server-choice-grid{grid-template-columns:1fr;gap:16px}.server-choice-card{min-height:76px;place-items:center;padding-left:0}.server-choice-card img,.server-choice-initial{width:72px;height:72px}.server-choice-copy{margin-top:0}}
+      @media (max-width:900px){.server-choice-grid{grid-template-columns:1fr;gap:16px}}
+      @media (max-width:620px){.dash-topbar{justify-content:center}.dash-back{display:none}.server-choice-grid{grid-template-columns:1fr}.server-select-gate h1{margin-bottom:32px}.server-choice{grid-template-columns:62px minmax(0,1fr);gap:12px;padding:10px}.server-choice-card{min-height:62px;place-items:center}.server-choice-card img,.server-choice-initial{width:48px;height:48px}.server-choice-copy{display:block}.server-choice-copy .server-choice-button{width:100%;margin-top:10px}}
       .dash-section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:18px}
       .dash-section-head strong{color:#ffc31c;font-size:.78rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
       .dash-badge-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -368,29 +383,15 @@ export async function onRequestGet({ request, env }) {
       </aside>
       <main class="dash-main is-server-locked">
         <div class="server-select-gate">
-          <h1 class="server-select-title">Choose a server</h1>
+          <h1 class="server-select-title">Your servers</h1>
           <section class="server-choice-group server-choice-group--with">
-            <h2>Servers with Beacon</h2>
+            <h2>✓ Beacon is on the server</h2>
             <div class="server-choice-grid">${renderServerChoices(serversWithBeacon, "Manage")}</div>
           </section>
           <section class="server-choice-group server-choice-group--without">
-            <h2>Servers without Beacon</h2>
-            <div class="server-choice-grid">${renderServerChoices(serversWithoutBeacon, "Manage")}</div>
+            <h2>+ Beacon is not on the server</h2>
+            <div class="server-choice-grid">${renderServerChoices(serversWithoutBeacon, "Add Beacon")}</div>
           </section>
-          <h1>Server auswählen</h1>
-          <div class="server-choice-grid">
-            ${dashboardSelectionServers.map((server) => `
-              <article class="server-choice">
-                <div class="server-choice-card server-choice-card--${server.tone}">
-                  ${server.icon ? `<img src="${server.icon}" alt="" />` : `<span class="server-choice-initial">t</span>`}
-                </div>
-                <div class="server-choice-copy">
-                  <div><strong>${escapeHtml(server.name)}</strong><small>${escapeHtml(server.owner)}</small></div>
-                  <button type="button" class="server-choice-button">Manage</button>
-                </div>
-              </article>
-            `).join("")}
-          </div>
         </div>
         <h1 class="dash-name">Welcome, <span>${username}</span></h1>
         <section class="dash-content-section is-active" id="server-info" data-dashboard-section="server-info">
