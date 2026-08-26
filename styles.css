@@ -282,8 +282,8 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .footer-legal a:hover { color: #31b6e6; }
 .footer-rights { grid-column: 1 / -1; color: #707782; text-align: center; font-size: .72rem; }
 .feature-showcase { position: relative; overflow: hidden; padding: 20px 5.2vw 50px; background: #282b39; }
-.feature-showcase__row:not(.feature-showcase__row--feature) { display: none; }
-.feature-showcase__row--feature:nth-child(3), .feature-showcase__row--feature:nth-child(4) { display: none; }
+.feature-showcase__row { display: none !important; }
+.feature-showcase__row--clean { display: grid !important; }
 .feature-showcase__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .86fr); gap: clamp(50px, 9vw, 150px); align-items: center; max-width: 1220px; min-height: 560px; margin: 0 auto; padding: 74px 0; }
 .feature-showcase__row--reverse { grid-template-columns: minmax(320px, .86fr) minmax(0, 1fr); }
 .feature-showcase__copy { max-width: 500px; }
@@ -295,7 +295,7 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .feature-showcase__button:hover { transform: translateY(-3px); filter: brightness(1.08); }
 .feature-showcase__visual { position: relative; min-height: 390px; }
 .feature-showcase__visual--image { display: grid; min-height: 430px; place-items: center; perspective: 1100px; }
-.feature-showcase__image { display: block; width: min(100%, 620px); max-height: 470px; object-fit: contain; filter: drop-shadow(0 28px 46px rgba(0,0,0,.42)); transform: translateZ(0) rotateY(-2deg); transition: transform .45s ease, filter .45s ease; }
+.feature-showcase__image { display: block; width: min(100%, 500px); max-height: 350px; object-fit: contain; filter: drop-shadow(0 28px 46px rgba(0,0,0,.42)); transform: translateZ(0) rotateY(-2deg); transition: transform .45s ease, filter .45s ease; }
 .feature-showcase__row--reverse .feature-showcase__image { transform: translateZ(0) rotateY(2deg); }
 .feature-showcase__visual--image:hover .feature-showcase__image { filter: drop-shadow(0 34px 60px rgba(49,182,230,.2)); transform: translateY(-7px) rotateY(-4deg) scale(1.015); }
 .feature-showcase__row--reverse .feature-showcase__visual--image:hover .feature-showcase__image { transform: translateY(-7px) rotateY(4deg) scale(1.015); }
