@@ -319,7 +319,8 @@ async function writeStats(env, stats) {
 
 async function handleGet(env) {
   const stats = await readStats(env);
-  if (!Array.isArray(stats.servers) || !stats.servers.length) {
+  const missingServerIds = !Array.isArray(stats.servers) || !stats.servers.length || stats.servers.some((server) => !server.id);
+  if (missingServerIds) {
     const discordServers = await fetchDiscordServers(env);
     if (discordServers.length) {
       stats.servers = discordServers;
