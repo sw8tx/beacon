@@ -134,10 +134,14 @@ export async function onRequestGet({ request, env }) {
     { name: "test", owner: "Eigentümer", tone: "dark", icon: "" },
   ];
   const liveSelectionServers = await getDashboardServers(env, session.discordAccessToken, request);
-  const resolvedServerName = liveSelectionServers[0]?.name || serverName;
-  const resolvedServerIcon = liveSelectionServers[0]?.iconUrl || "";
+  const requestedServerId = new URL(request.url).searchParams.get("server");
+  const requestedServer = liveSelectionServers.find((server) => server.id === requestedServerId && server.withBeacon && server.isOwner);
+  const selectedServer = requestedServer || liveSelectionServers[0];
+  const resolvedServerName = selectedServer?.name || serverName;
+  const resolvedServerIcon = selectedServer?.iconUrl || "";
   const dashboardAvatar = resolvedServerIcon ? escapeHtml(resolvedServerIcon) : avatar;
   const dashboardSelectionServers = liveSelectionServers.map((server, index) => ({ ...server, tone: ["red", "gold", "green", "gray", "dark"][index % 5], icon: server.iconUrl }));
+  const hasRequestedServer = Boolean(requestedServer);
   const canManageResolvedServer = Boolean(liveSelectionServers[0]?.withBeacon && liveSelectionServers[0]?.isOwner);
   const renderServerChoices = (servers, actionLabel) => servers.length
     ? servers.map((server) => `
@@ -148,7 +152,7 @@ export async function onRequestGet({ request, env }) {
                 <div class="server-choice-copy">
                   <div><strong>${escapeHtml(server.name)}</strong><small>${server.withBeacon ? "Beacon is active" : "Server owner"}</small></div>
                   ${server.withBeacon
-                    ? `<button type="button" class="server-choice-button" data-can-manage="true" data-server-id="${escapeHtml(server.id || "")}" data-server-name="${escapeHtml(server.name)}" data-server-members="${Number(server.members) || 0}">${actionLabel}</button>`
+                    ? `<a class="server-choice-button" href="/dashboard?server=${encodeURIComponent(server.id || "")}#server-info" data-can-manage="true" data-server-id="${escapeHtml(server.id || "")}" data-server-name="${escapeHtml(server.name)}" data-server-members="${Number(server.members) || 0}">${actionLabel}</a>`
                     : `<a class="server-choice-button server-choice-button--invite" href="https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&amp;scope=bot%20applications.commands&amp;guild_id=${encodeURIComponent(server.id || "")}&amp;disable_guild_select=true">Add Beacon</a>`}
                 </div>
               </article>
@@ -381,7 +385,7 @@ export async function onRequestGet({ request, env }) {
           ${navHtml}
         </nav>
       </aside>
-      <main class="dash-main is-server-locked">
+      <main class="dash-main${hasRequestedServer ? "" : " is-server-locked"}">
         <div class="server-select-gate">
           <h1 class="server-select-title">Your servers</h1>
           <section class="server-choice-group server-choice-group--with">
@@ -404,7 +408,7 @@ export async function onRequestGet({ request, env }) {
               <span class="sync-pill" data-sync-pill>Synced just now</span>
             </div>
             <div class="server-info-grid">
-              <article><span>Members</span><strong data-server-info-members>${Number(liveSelectionServers[0]?.members) || 0}</strong><small>Current server size</small></article>
+              <article><span>Members</span><strong data-server-info-members>${Number(selectedServer?.members) || 0}</strong><small>Current server size</small></article>
               <article><span>Ping</span><strong>188 ms</strong><small>Gateway health</small></article>
               <article><span>Badges</span><strong>${unlockedBadges.length}/20</strong><small>Unlocked profile badges</small></article>
             </div>
@@ -478,7 +482,7 @@ export async function onRequestGet({ request, env }) {
     <script>
       const tabs = [...document.querySelectorAll("[data-dashboard-tab]")];
       const sections = [...document.querySelectorAll("[data-dashboard-section]")];
-      let serverSelected = false;
+      let serverSelected = ${hasRequestedServer ? "true" : "false"};
       const dashMain = document.querySelector(".dash-main");
       function activateDashboardTab(id) {
         if (!serverSelected) {
@@ -611,10 +615,14 @@ export async function onRequestGet({ request, env }) {
           activateDashboardTab("server-info");
         });
       });
-      document.querySelectorAll("button.server-choice-button").forEach((button) => {
+      document.querySelectorAll(".server-choice-button").forEach((button) => {
         button.addEventListener("click", (event) => {
+          if (button.dataset.canManage !== "true") {
+            if (button.tagName === "A") return;
+            event.preventDefault();
+            return denyServerAccess(button.dataset.denialReason);
+          }
           event.preventDefault();
-          if (button.dataset.canManage !== "true") return denyServerAccess(button.dataset.denialReason);
           selectServer(button);
         });
       });
