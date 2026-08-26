@@ -16,16 +16,12 @@ async function getDashboardServers(env, discordAccessToken, request) {
   const { botToken } = getConfig(env);
   if (!discordAccessToken) return [];
   let beaconServerIds = new Set();
-  let beaconServerNames = new Set();
-  let statsAvailable = false;
   try {
     const statsResponse = await fetch(new URL("/api/discord-stats", request.url), { headers: { accept: "application/json" } });
     if (statsResponse.ok) {
       const stats = await statsResponse.json();
       if (Array.isArray(stats.servers)) {
-        statsAvailable = stats.servers.length > 0;
         beaconServerIds = new Set(stats.servers.map((server) => String(server.id || "")).filter(Boolean));
-        beaconServerNames = new Set(stats.servers.map((server) => String(server.name || "").trim().toLowerCase()).filter(Boolean));
       }
     }
   } catch (_) {
@@ -39,15 +35,15 @@ async function getDashboardServers(env, discordAccessToken, request) {
     const userGuilds = await response.json();
     if (!Array.isArray(userGuilds)) return [];
     const servers = await Promise.all(userGuilds.map(async (guild) => {
-      let withBeacon = beaconServerIds.has(String(guild.id)) || beaconServerNames.has(String(guild.name || "").trim().toLowerCase());
-      if (!withBeacon && !statsAvailable && botToken) {
+      let withBeacon = beaconServerIds.has(String(guild.id));
+      if (botToken) {
         try {
           const botGuildResponse = await fetch(`https://discord.com/api/v10/guilds/${guild.id}`, {
             headers: { authorization: `Bot ${botToken}` },
           });
-          withBeacon = botGuildResponse.ok;
+          if (botGuildResponse.ok || botGuildResponse.status === 404) withBeacon = botGuildResponse.ok;
         } catch (_) {
-          withBeacon = false;
+          // Keep the ID-based stats result if Discord is temporarily unavailable.
         }
       }
       return {
