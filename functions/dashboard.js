@@ -526,12 +526,12 @@ export async function onRequestGet({ request, env }) {
         const base = Math.max(3, Math.round((Number(button.dataset.serverMembers) || 6) / 8));
         const values = Array.from({ length: 7 }, (_, index) => Math.max(1, base + ((seed + index * 7) % Math.max(6, base + 9)) - 2));
         const max = Math.max(...values, 1);
-        const points = values.map((value, index) => `${20 + index * 80},${126 - (value / max) * 94}`).join(" ");
+        const points = values.map((value, index) => (20 + index * 80) + "," + (126 - (value / max) * 94)).join(" ");
         memberGraph?.setAttribute("points", points);
         memberGraphPoint?.setAttribute("cy", String(126 - (values[6] / max) * 94));
         if (serverInfoName) serverInfoName.textContent = button.dataset.serverName || "Selected server";
         if (serverInfoMembers) serverInfoMembers.textContent = button.dataset.serverMembers || "0";
-        if (memberJoinDays) memberJoinDays.innerHTML = values.map((value, index) => `<span class="member-join-day"><b>${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index]}</b><strong>${value}</strong></span>`).join("");
+        if (memberJoinDays) memberJoinDays.innerHTML = values.map((value, index) => "<span class=\"member-join-day\"><b>" + ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index] + "</b><strong>" + value + "</strong></span>").join("");
       }
       if (serverSelected) activateDashboardTab(location.hash.slice(1) || "server-info");
       const customizeStorageKey = "beacon-customize-preview";
