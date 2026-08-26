@@ -14,24 +14,22 @@ const {
   Colors,
   EmbedBuilder,
   GatewayIntentBits,
+  ContainerBuilder,
   MessageFlags,
+  ModalBuilder,
   Partials,
   PermissionFlagsBits,
   REST,
   Routes,
+  SectionBuilder,
+  SeparatorBuilder,
   SlashCommandBuilder,
+  TextDisplayBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ThumbnailBuilder,
   StringSelectMenuBuilder,
 } = require("discord.js");
-const {
-  prepareEmojiSteal,
-  confirmEmojiSteal,
-  cancelEmojiSteal,
-} = require("./emoji-steal");
-const {
-  purgeCommands,
-  handlePurgeCommand,
-} = require("./purge");
-const ticketHandlers = require("./ticket");
 
 if (typeof dns.setDefaultResultOrder === "function") {
   dns.setDefaultResultOrder("ipv4first");
@@ -580,6 +578,1064 @@ async function sendJoinDm(member, data) {
     return false;
   }
 }
+
++
+/* Inlined command modules: kept in one deployable bot file. */
+
+function cleanChannelName(value) {
+  return String(value || "ticket")
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 90) || "ticket";
+}
+
+function shortText(value, fallback = "Not provided", maxLength = 1024) {
+  const text = String(value || "").trim() || fallback;
+  return text.length > maxLength ? `${text.slice(0, Math.max(0, maxLength - 3))}...` : text;
+}
+
+function ticketRenderTemplate(template, context) {
+  return String(template || "")
+    .replaceAll("{user}", `<@${context.user.id}>`)
+    .replaceAll("{username}", context.user.username)
+    .replaceAll("{server}", context.guild.name)
+    .replaceAll("{memberCount}", `${context.guild.memberCount || 0}`);
+}
+
+function ticketForChannel(data, channelId) {
+  return Object.values(data.tickets || {}).find((ticket) => ticket.channelId === channelId && ticket.status === "open");
+}
+
+function isTicketStaff(member, data) {
+  return member.permissions.has(PermissionFlagsBits.ManageGuild) ||
+    (data.settings.ticketSupportRoleId && member.roles.cache.has(data.settings.ticketSupportRoleId));
+}
+
+function ticketChannelName(member, data) {
+  const count = Object.keys(data.tickets || {}).length + 1;
+  return cleanChannelName(data.settings.ticketNameFormat
+    .replaceAll("{username}", member.user.username)
+    .replaceAll("{userId}", member.user.id)
+    .replaceAll("{count}", String(count).padStart(3, "0")));
+}
+
+function memberLabel(guild, userId, fallback = "member") {
+  const member = guild.members.cache.get(userId);
+  return member?.displayName || member?.user?.username || fallback;
+}
+
+function supportTeamLabel(guild, data) {
+  if (!data.settings.ticketSupportRoleId) return "staff";
+  return guild.roles.cache.get(data.settings.ticketSupportRoleId)?.name || "staff";
+}
+
+function ticketControlRow(data, ticket) {
+  const claimed = Boolean(ticket?.claimedBy);
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("ticket_claim")
+      .setLabel(claimed ? "Claimed" : shortText(data.settings.ticketClaimButtonLabel, "Claim", 80))
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(claimed),
+    new ButtonBuilder()
+      .setCustomId("ticket_close")
+      .setLabel(shortText(data.settings.ticketCloseButtonLabel, "Close", 80))
+      .setStyle(ButtonStyle.Danger)
+  );
+}
+
+function ticketOpenedEmbed(data, ticket, guild, description, ui) {
+  const claimedBy = ticket.claimedBy ? memberLabel(guild, ticket.claimedBy, "staff") : null;
+  return ui.brandEmbed(data.settings.ticketWelcomeTitle, shortText(description, "Tell us what you need and include screenshots, order IDs or context if it helps.", 800))
+    .setThumbnail(null)
+    .addFields(
+      { name: "Owner", value: memberLabel(guild, ticket.ownerId, "member"), inline: true },
+      { name: "Status", value: claimedBy ? "Claimed" : "Open", inline: true },
+      { name: "Team", value: claimedBy || supportTeamLabel(guild, data), inline: true },
+      { name: "Subject", value: shortText(ticket.subject, "No subject", 1024), inline: false },
+      { name: "Details", value: shortText(ticket.details, "No details added yet.", 1024), inline: false },
+      {
+        name: "Controls",
+        value: claimedBy
+          ? `Claimed by ${claimedBy}. Close creates the transcript and removes the ticket channel.`
+          : "Claim marks ownership for staff. Close creates the transcript and removes the ticket channel.",
+        inline: false,
+      }
+    );
+}
+
+async function buildTranscript(channel) {
+  const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+  if (!messages) return Buffer.from("Transcript unavailable.", "utf8");
+
+  const lines = [...messages.values()]
+    .reverse()
+    .map((msg) => {
+      const time = msg.createdAt.toISOString();
+      const content = msg.content || "[embed/attachment]";
+      return `[${time}] ${msg.author.tag}: ${content}`;
+    });
+
+  return Buffer.from(lines.join("\n"), "utf8");
+}
+
+async function ticketSetup(interaction, data, ui) {
+  const category = interaction.options.getChannel("category");
+  const supportRole = interaction.options.getRole("support_role");
+  const panelTitle = interaction.options.getString("panel_title");
+  const panelMessage = interaction.options.getString("panel_message");
+  const panelRules = interaction.options.getString("panel_rules");
+  const buttonLabel = interaction.options.getString("button_label");
+  const claimLabel = interaction.options.getString("claim_label");
+  const closeLabel = interaction.options.getString("close_label");
+  const welcomeTitle = interaction.options.getString("welcome_title");
+  const welcomeMessage = interaction.options.getString("welcome_message");
+  const nameFormat = interaction.options.getString("name_format");
+  const closeMessage = interaction.options.getString("close_message");
+  const subjectLabel = interaction.options.getString("subject_label");
+  const detailsLabel = interaction.options.getString("details_label");
+  const detailsPlaceholder = interaction.options.getString("details_placeholder");
+  const maxOpen = interaction.options.getInteger("max_open");
+  const dmTranscript = interaction.options.getBoolean("dm_transcript");
+
+  if (category) data.settings.ticketCategoryId = category.id;
+  if (supportRole) data.settings.ticketSupportRoleId = supportRole.id;
+  if (panelTitle) data.settings.ticketPanelTitle = panelTitle;
+  if (panelMessage) data.settings.ticketPanelMessage = panelMessage;
+  if (panelRules) data.settings.ticketPanelRules = panelRules;
+  if (buttonLabel) data.settings.ticketButtonLabel = buttonLabel;
+  if (claimLabel) data.settings.ticketClaimButtonLabel = claimLabel;
+  if (closeLabel) data.settings.ticketCloseButtonLabel = closeLabel;
+  if (welcomeTitle) data.settings.ticketWelcomeTitle = welcomeTitle;
+  if (welcomeMessage) data.settings.ticketWelcomeMessage = welcomeMessage;
+  if (nameFormat) data.settings.ticketNameFormat = nameFormat;
+  if (closeMessage) data.settings.ticketCloseMessage = closeMessage;
+  if (subjectLabel) data.settings.ticketSubjectLabel = subjectLabel.slice(0, 45);
+  if (detailsLabel) data.settings.ticketDetailsLabel = detailsLabel.slice(0, 45);
+  if (detailsPlaceholder) data.settings.ticketDetailsPlaceholder = detailsPlaceholder.slice(0, 100);
+  if (maxOpen) data.settings.ticketMaxOpenPerUser = maxOpen;
+  if (dmTranscript !== null) data.settings.ticketDmTranscript = dmTranscript;
+  ui.saveData();
+
+  const embed = ui.successEmbed("Ticket setup saved", "Beacon tickets are ready. No log channel needed.")
+    .addFields(
+      { name: "Category", value: data.settings.ticketCategoryId ? `<#${data.settings.ticketCategoryId}>` : "Not set", inline: true },
+      { name: "Support role", value: data.settings.ticketSupportRoleId ? `<@&${data.settings.ticketSupportRoleId}>` : "Not set", inline: true },
+      { name: "Max open", value: `${data.settings.ticketMaxOpenPerUser} per member`, inline: true },
+      { name: "Transcript DM", value: data.settings.ticketDmTranscript ? "Enabled" : "Disabled", inline: true },
+      { name: "Panel title", value: data.settings.ticketPanelTitle, inline: false },
+      { name: "Panel message", value: data.settings.ticketPanelMessage.slice(0, 1024), inline: false },
+      { name: "Panel rules", value: data.settings.ticketPanelRules.slice(0, 1024), inline: false },
+      { name: "Open button", value: data.settings.ticketButtonLabel, inline: true },
+      { name: "Claim button", value: data.settings.ticketClaimButtonLabel, inline: true },
+      { name: "Close button", value: data.settings.ticketCloseButtonLabel, inline: true },
+      { name: "Modal", value: `${data.settings.ticketSubjectLabel}\n${data.settings.ticketDetailsLabel}`, inline: true },
+      { name: "Name format", value: `\`${data.settings.ticketNameFormat}\``, inline: true }
+    );
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId("beacon_refresh_settings").setLabel("Settings").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("ticket_open").setLabel(data.settings.ticketButtonLabel.slice(0, 80)).setStyle(ButtonStyle.Secondary)
+  );
+
+  await interaction.reply(ui.withBrandFiles({ embeds: [embed], components: [row], ephemeral: true }));
+}
+
+async function ticketPanel(interaction, data, ui) {
+  const channel = interaction.options.getChannel("channel");
+  const embed = ui.brandEmbed(data.settings.ticketPanelTitle, data.settings.ticketPanelMessage)
+    .addFields(
+      { name: "Before you open one", value: data.settings.ticketPanelRules.slice(0, 1024), inline: false },
+      { name: "What happens next", value: "Beacon asks for a short subject and details, then creates a private channel for you and the team.", inline: false },
+      { name: "Current setup", value: `Support: ${data.settings.ticketSupportRoleId ? `<@&${data.settings.ticketSupportRoleId}>` : "staff only"}\nLimit: ${data.settings.ticketMaxOpenPerUser} open ticket(s) per member`, inline: false }
+    );
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("ticket_open")
+      .setLabel(data.settings.ticketButtonLabel.slice(0, 80))
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  const sent = await channel.send(ui.withBrandFiles({ embeds: [embed], components: [row] }));
+  await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket panel posted", `Panel is live in ${channel}.\n[Open message](${sent.url})`)], ephemeral: true }));
+}
+
+async function ticketClose(interaction, data, ui) {
+  const ticket = ticketForChannel(data, interaction.channel.id);
+  if (!ticket) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("This command only works inside an open ticket.")], ephemeral: true }));
+    return;
+  }
+  if (!isTicketStaff(interaction.member, data) && ticket.ownerId !== interaction.user.id) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Only the ticket owner or support team can close this ticket.")], ephemeral: true }));
+    return;
+  }
+
+  await closeTicket(interaction, data, interaction.options.getString("reason") || "No reason provided.", ui);
+}
+
+async function ticketAdd(interaction, data, ui) {
+  const ticket = ticketForChannel(data, interaction.channel.id);
+  const user = interaction.options.getUser("user");
+  if (!ticket) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("This command only works inside an open ticket.")], ephemeral: true }));
+    return;
+  }
+  if (!isTicketStaff(interaction.member, data)) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Only the support team can add members to tickets.")], ephemeral: true }));
+    return;
+  }
+
+  await interaction.channel.permissionOverwrites.edit(user.id, {
+    ViewChannel: true,
+    SendMessages: true,
+    ReadMessageHistory: true,
+  });
+  await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Member added", `${user} can now see this ticket.`)] }));
+}
+
+async function ticketRemove(interaction, data, ui) {
+  const ticket = ticketForChannel(data, interaction.channel.id);
+  const user = interaction.options.getUser("user");
+  if (!ticket) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("This command only works inside an open ticket.")], ephemeral: true }));
+    return;
+  }
+  if (!isTicketStaff(interaction.member, data)) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Only the support team can remove members from tickets.")], ephemeral: true }));
+    return;
+  }
+
+  await interaction.channel.permissionOverwrites.edit(user.id, {
+    ViewChannel: false,
+    SendMessages: false,
+  });
+  await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Member removed", `${user} can no longer see this ticket.`)] }));
+}
+
+async function ticketRename(interaction, data, ui) {
+  const ticket = ticketForChannel(data, interaction.channel.id);
+  const name = cleanChannelName(interaction.options.getString("name"));
+  if (!ticket) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("This command only works inside an open ticket.")], ephemeral: true }));
+    return;
+  }
+  if (!isTicketStaff(interaction.member, data)) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Only the support team can rename tickets.")], ephemeral: true }));
+    return;
+  }
+
+  await interaction.channel.setName(name);
+  ticket.name = name;
+  ui.saveData();
+  await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket renamed", `This ticket is now \`${name}\`.`)] }));
+}
+
+async function ticketInfo(interaction, data, ui) {
+  const ticket = ticketForChannel(data, interaction.channel.id);
+  if (!ticket) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("This command only works inside an open ticket.")], ephemeral: true }));
+    return;
+  }
+
+  const created = Math.floor(new Date(ticket.createdAt).getTime() / 1000);
+  const embed = ui.brandEmbed("Ticket Info", ticket.subject || "No subject saved.")
+    .addFields(
+      { name: "Owner", value: `<@${ticket.ownerId}>`, inline: true },
+      { name: "Status", value: ticket.status, inline: true },
+      { name: "Opened", value: `<t:${created}:R>`, inline: true },
+      { name: "Claimed by", value: ticket.claimedBy ? `<@${ticket.claimedBy}>` : "Unclaimed", inline: true },
+      { name: "Channel", value: `${interaction.channel}`, inline: true },
+      { name: "Details", value: (ticket.details || "No details saved.").slice(0, 1024), inline: false }
+    );
+
+  await interaction.reply(ui.withBrandFiles({ embeds: [embed], ephemeral: true }));
+}
+
+async function ticketStats(interaction, data, ui) {
+  const tickets = Object.values(data.tickets || {});
+  const open = tickets.filter((ticket) => ticket.status === "open");
+  const closed = tickets.filter((ticket) => ticket.status === "closed");
+  const claimed = open.filter((ticket) => ticket.claimedBy);
+  const unclaimed = open.filter((ticket) => !ticket.claimedBy);
+  const newest = open
+    .slice()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5);
+
+  const embed = ui.brandEmbed("Ticket Stats", "Current ticket workload without needing a log channel.")
+    .addFields(
+      { name: "Open", value: `${open.length}`, inline: true },
+      { name: "Closed", value: `${closed.length}`, inline: true },
+      { name: "Claimed / Unclaimed", value: `${claimed.length} / ${unclaimed.length}`, inline: true },
+      { name: "Support role", value: data.settings.ticketSupportRoleId ? `<@&${data.settings.ticketSupportRoleId}>` : "Not set", inline: true },
+      { name: "Max open", value: `${data.settings.ticketMaxOpenPerUser} per member`, inline: true },
+      { name: "Transcript DM", value: data.settings.ticketDmTranscript ? "Enabled" : "Disabled", inline: true },
+      {
+        name: "Newest open tickets",
+        value: newest.length
+          ? newest.map((ticket) => `<#${ticket.channelId}> - <@${ticket.ownerId}> - ${ticket.subject || "No subject"}`).join("\n").slice(0, 1024)
+          : "No open tickets.",
+        inline: false,
+      }
+    );
+
+  await interaction.reply(ui.withBrandFiles({ embeds: [embed], ephemeral: true }));
+}
+
+async function showTicketModal(interaction, data) {
+  const modal = new ModalBuilder()
+    .setCustomId("ticket_open_modal")
+    .setTitle(data.settings.ticketPanelTitle.slice(0, 45) || "Open Ticket");
+
+  const subject = new TextInputBuilder()
+    .setCustomId("ticket_subject")
+    .setLabel(data.settings.ticketSubjectLabel.slice(0, 45) || "What is this about?")
+    .setStyle(TextInputStyle.Short)
+    .setMaxLength(80)
+    .setRequired(true);
+
+  const details = new TextInputBuilder()
+    .setCustomId("ticket_details")
+    .setLabel(data.settings.ticketDetailsLabel.slice(0, 45) || "Explain what you need")
+    .setStyle(TextInputStyle.Paragraph)
+    .setMaxLength(1500)
+    .setPlaceholder(data.settings.ticketDetailsPlaceholder.slice(0, 100))
+    .setRequired(true);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(subject),
+    new ActionRowBuilder().addComponents(details)
+  );
+
+  await interaction.showModal(modal);
+}
+
+async function openTicket(interaction, data, subject, details, ui) {
+  const openTickets = Object.values(data.tickets || {}).filter((ticket) =>
+    ticket.ownerId === interaction.user.id &&
+    ticket.status === "open" &&
+    interaction.guild.channels.cache.has(ticket.channelId)
+  );
+
+  if (openTickets.length >= data.settings.ticketMaxOpenPerUser) {
+    const list = openTickets.map((ticket) => `<#${ticket.channelId}>`).join(", ");
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed(`You already have ${openTickets.length}/${data.settings.ticketMaxOpenPerUser} open ticket(s): ${list}`)], ephemeral: true }));
+    return;
+  }
+
+  const channelName = ticketChannelName(interaction.member, data);
+  const overwrites = [
+    {
+      id: interaction.guild.roles.everyone.id,
+      deny: [PermissionFlagsBits.ViewChannel],
+    },
+    {
+      id: interaction.user.id,
+      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AttachFiles],
+    },
+    {
+      id: interaction.client.user.id,
+      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageChannels],
+    },
+  ];
+
+  if (data.settings.ticketSupportRoleId) {
+    overwrites.push({
+      id: data.settings.ticketSupportRoleId,
+      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageMessages],
+    });
+  }
+
+  const channel = await interaction.guild.channels.create({
+    name: channelName,
+    type: ChannelType.GuildText,
+    parent: data.settings.ticketCategoryId || null,
+    topic: `Beacon ticket for ${interaction.user.tag} (${interaction.user.id})`,
+    permissionOverwrites: overwrites,
+  });
+
+  data.tickets[channel.id] = {
+    channelId: channel.id,
+    ownerId: interaction.user.id,
+    openedBy: interaction.user.id,
+    claimedBy: null,
+    status: "open",
+    name: channelName,
+    subject,
+    details,
+    createdAt: new Date().toISOString(),
+  };
+  ui.saveData();
+
+  const description = ticketRenderTemplate(data.settings.ticketWelcomeMessage, {
+    user: interaction.user,
+    guild: interaction.guild,
+  });
+
+  const ticket = data.tickets[channel.id];
+  const embed = ticketOpenedEmbed(data, ticket, interaction.guild, description, ui);
+  const row = ticketControlRow(data, ticket);
+
+  await channel.send(ui.withBrandFiles({
+    content: data.settings.ticketSupportRoleId ? `<@&${data.settings.ticketSupportRoleId}> ${interaction.user}` : `${interaction.user}`,
+    embeds: [embed],
+    components: [row],
+    allowedMentions: { users: [interaction.user.id], roles: data.settings.ticketSupportRoleId ? [data.settings.ticketSupportRoleId] : [] },
+  }));
+
+  await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket opened", `Your ticket is ready: ${channel}`)], ephemeral: true }));
+}
+
+async function claimTicket(interaction, data, ui) {
+  const ticket = ticketForChannel(data, interaction.channel.id);
+  if (!ticket) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("This button only works inside an open ticket.")], ephemeral: true }));
+    return;
+  }
+  if (!isTicketStaff(interaction.member, data)) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Only the support team can claim tickets.")], ephemeral: true }));
+    return;
+  }
+  if (ticket.claimedBy) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed(`This ticket is already claimed by ${memberLabel(interaction.guild, ticket.claimedBy, "staff")}.`)], ephemeral: true }));
+    return;
+  }
+
+  ticket.claimedBy = interaction.user.id;
+  ui.saveData();
+
+  const ownerUser = interaction.client.users.cache.get(ticket.ownerId) || {
+    id: ticket.ownerId,
+    username: memberLabel(interaction.guild, ticket.ownerId, "member"),
+  };
+  const description = ticketRenderTemplate(data.settings.ticketWelcomeMessage, {
+    user: ownerUser,
+    guild: interaction.guild,
+  });
+  const embed = ticketOpenedEmbed(data, ticket, interaction.guild, description, ui);
+  await interaction.update(ui.withBrandFiles({
+    embeds: [embed],
+    components: [ticketControlRow(data, ticket)],
+  }));
+}
+
+async function closeTicket(interaction, data, reason, ui) {
+  const ticket = ticketForChannel(data, interaction.channel.id);
+  if (!ticket) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("This only works inside an open ticket.")], ephemeral: true }));
+    return;
+  }
+  if (!isTicketStaff(interaction.member, data) && ticket.ownerId !== interaction.user.id) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Only the ticket owner or support team can close this ticket.")], ephemeral: true }));
+    return;
+  }
+
+  const closeText = ticketRenderTemplate(data.settings.ticketCloseMessage, {
+    user: interaction.user,
+    guild: interaction.guild,
+  });
+  const transcript = await buildTranscript(interaction.channel);
+  const transcriptFile = new AttachmentBuilder(transcript, { name: `${interaction.channel.name}-transcript.txt` });
+
+  ticket.status = "closed";
+  ticket.closedBy = interaction.user.id;
+  ticket.closedAt = new Date().toISOString();
+  ticket.closeReason = reason;
+  ui.saveData();
+
+  const logEmbed = ui.brandEmbed("Ticket closed", closeText)
+    .addFields(
+      { name: "Channel", value: interaction.channel.name, inline: true },
+      { name: "Owner", value: `<@${ticket.ownerId}>`, inline: true },
+      { name: "Closed by", value: `${interaction.user}`, inline: true },
+      { name: "Reason", value: reason.slice(0, 1024), inline: false },
+      { name: "Transcript", value: data.settings.ticketDmTranscript ? "Sent to the ticket owner by DM when possible." : "Transcript DMs are disabled.", inline: false }
+    );
+
+  if (data.settings.ticketDmTranscript) {
+    const owner = await interaction.client.users.fetch(ticket.ownerId).catch(() => null);
+    if (owner) {
+      await owner.send(ui.withBrandFiles({ embeds: [logEmbed], files: [transcriptFile] })).catch(() => null);
+    }
+  }
+
+  await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket closing", data.settings.ticketDmTranscript ? "Transcript DM attempted. This channel will be deleted in 5 seconds." : "This channel will be deleted in 5 seconds.")] }));
+  setTimeout(() => interaction.channel.delete(`Ticket closed by ${interaction.user.tag}`).catch(() => null), 5000);
+}
+
+const MAX_PURGE_COUNT = 99;
+const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+
+function countOption(required = true) {
+  return (opt) =>
+    opt
+      .setName("count")
+      .setDescription("Messages to scan or delete, max 99")
+      .setMinValue(1)
+      .setMaxValue(MAX_PURGE_COUNT)
+      .setRequired(required);
+}
+
+function textOption(name, description) {
+  return (opt) =>
+    opt
+      .setName(name)
+      .setDescription(description)
+      .setMaxLength(120)
+      .setRequired(true);
+}
+
+const purgeCommands = [
+  new SlashCommandBuilder()
+    .setName("purge")
+    .setDescription("Delete up to 99 recent messages.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addIntegerOption(countOption(true))
+    .addStringOption((opt) =>
+      opt
+        .setName("reason")
+        .setDescription("Optional cleanup reason")
+        .setMaxLength(140)
+        .setRequired(false)
+    ),
+
+  new SlashCommandBuilder()
+    .setName("purge-after")
+    .setDescription("Delete messages sent after a specific message ID or link.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addStringOption((opt) =>
+      opt
+        .setName("message")
+        .setDescription("Message ID or message link")
+        .setMaxLength(220)
+        .setRequired(true)
+    )
+    .addIntegerOption(countOption(false)),
+
+  new SlashCommandBuilder()
+    .setName("purge-user")
+    .setDescription("Delete recent messages sent by one user.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addUserOption((opt) => opt.setName("user").setDescription("User to clean").setRequired(true))
+    .addIntegerOption(countOption(true)),
+
+  new SlashCommandBuilder()
+    .setName("purge-bots")
+    .setDescription("Delete recent messages sent by bots.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addIntegerOption(countOption(true)),
+
+  new SlashCommandBuilder()
+    .setName("purge-humans")
+    .setDescription("Delete recent messages sent by humans.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addIntegerOption(countOption(true)),
+
+  new SlashCommandBuilder()
+    .setName("purge-links")
+    .setDescription("Delete recent messages that contain links.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addIntegerOption(countOption(true)),
+
+  new SlashCommandBuilder()
+    .setName("purge-invites")
+    .setDescription("Delete recent messages that contain Discord invites.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addIntegerOption(countOption(true)),
+
+  new SlashCommandBuilder()
+    .setName("purge-images")
+    .setDescription("Delete recent messages that contain images or files.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addIntegerOption(countOption(true)),
+
+  new SlashCommandBuilder()
+    .setName("purge-embeds")
+    .setDescription("Delete recent messages that contain embeds.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addIntegerOption(countOption(true)),
+
+  new SlashCommandBuilder()
+    .setName("purge-mentions")
+    .setDescription("Delete recent messages that mention users or roles.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addIntegerOption(countOption(true)),
+
+  new SlashCommandBuilder()
+    .setName("purge-match")
+    .setDescription("Delete recent messages that contain specific text.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addStringOption(textOption("text", "Text that must appear in the message"))
+    .addIntegerOption(countOption(true)),
+
+  new SlashCommandBuilder()
+    .setName("purge-startswith")
+    .setDescription("Delete recent messages that start with selected text.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addStringOption(textOption("text", "Text the message must start with"))
+    .addIntegerOption(countOption(true)),
+
+  new SlashCommandBuilder()
+    .setName("purge-endswith")
+    .setDescription("Delete recent messages that end with selected text.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addStringOption(textOption("text", "Text the message must end with"))
+    .addIntegerOption(countOption(true)),
+
+  new SlashCommandBuilder()
+    .setName("purge-not")
+    .setDescription("Delete recent messages that do not contain selected text.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addStringOption(textOption("text", "Text that must be missing"))
+    .addIntegerOption(countOption(true)),
+];
+
+function clampCount(value) {
+  const count = Number(value);
+  if (!Number.isFinite(count)) return MAX_PURGE_COUNT;
+  return Math.max(1, Math.min(MAX_PURGE_COUNT, Math.floor(count)));
+}
+
+function messageIdFromInput(input) {
+  const match = String(input || "").match(/\d{17,22}/g);
+  return match ? match.at(-1) : null;
+}
+
+function isBulkDeletable(message) {
+  return Date.now() - message.createdTimestamp < TWO_WEEKS_MS;
+}
+
+function hasLink(message) {
+  return /(https?:\/\/|www\.)\S+/i.test(message.content || "");
+}
+
+function hasInvite(message) {
+  return /(discord\.gg\/|discord\.com\/invite\/|discordapp\.com\/invite\/)\S+/i.test(message.content || "");
+}
+
+function hasImageOrFile(message) {
+  return message.attachments.size > 0 || message.embeds.some((embed) => embed.image || embed.thumbnail);
+}
+
+function hasMention(message) {
+  return message.mentions.users.size > 0 || message.mentions.roles.size > 0 || message.mentions.everyone;
+}
+
+function normalizedContent(message) {
+  return (message.content || "").toLowerCase().trim();
+}
+
+const resultTitles = {
+  purge: "Purge complete",
+  "purge-after": "Purge after complete",
+  "purge-user": "User purge complete",
+  "purge-bots": "Bot purge complete",
+  "purge-humans": "Human purge complete",
+  "purge-links": "Link purge complete",
+  "purge-invites": "Invite purge complete",
+  "purge-images": "Image purge complete",
+  "purge-embeds": "Embed purge complete",
+  "purge-mentions": "Mention purge complete",
+  "purge-match": "Text purge complete",
+  "purge-startswith": "Starts-with purge complete",
+  "purge-endswith": "Ends-with purge complete",
+  "purge-not": "Inverse text purge complete",
+};
+
+function purgeFilter(command, interaction) {
+  if (command === "purge-user") {
+    const user = interaction.options.getUser("user", true);
+    return (message) => message.author?.id === user.id;
+  }
+  if (command === "purge-bots") return (message) => Boolean(message.author?.bot);
+  if (command === "purge-humans") return (message) => !message.author?.bot;
+  if (command === "purge-links") return hasLink;
+  if (command === "purge-invites") return hasInvite;
+  if (command === "purge-images") return hasImageOrFile;
+  if (command === "purge-embeds") return (message) => message.embeds.length > 0;
+  if (command === "purge-mentions") return hasMention;
+  if (command === "purge-match") {
+    const text = interaction.options.getString("text", true).toLowerCase();
+    return (message) => normalizedContent(message).includes(text);
+  }
+  if (command === "purge-startswith") {
+    const text = interaction.options.getString("text", true).toLowerCase();
+    return (message) => normalizedContent(message).startsWith(text);
+  }
+  if (command === "purge-endswith") {
+    const text = interaction.options.getString("text", true).toLowerCase();
+    return (message) => normalizedContent(message).endsWith(text);
+  }
+  if (command === "purge-not") {
+    const text = interaction.options.getString("text", true).toLowerCase();
+    return (message) => !normalizedContent(message).includes(text);
+  }
+  return () => true;
+}
+
+async function ensureCanPurge(interaction, ui) {
+  if (!interaction.inGuild() || !interaction.channel?.isTextBased()) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Purge only works in a server text channel.")], ephemeral: true }));
+    return false;
+  }
+
+  if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("You need Manage Messages to use purge.")], ephemeral: true }));
+    return false;
+  }
+
+  const me = interaction.guild.members.me;
+  if (!me?.permissionsIn(interaction.channel).has(PermissionFlagsBits.ManageMessages)) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("I need Manage Messages in this channel.")], ephemeral: true }));
+    return false;
+  }
+
+  return true;
+}
+
+function buildResultEmbed(ui, label, scanned, matched, deleted, skipped) {
+  const description = deleted > 0
+    ? `Removed **${deleted}** message(s) from this channel.`
+    : "No matching messages could be deleted.";
+  return ui.successEmbed(label, description)
+    .addFields(
+      { name: "Scanned", value: `${scanned}`, inline: true },
+      { name: "Matched", value: `${matched}`, inline: true },
+      { name: "Deleted", value: `${deleted}`, inline: true },
+      { name: "Skipped", value: `${skipped}`, inline: true },
+      { name: "Note", value: "Discord bulk delete skips messages older than 14 days.", inline: false }
+    );
+}
+
+async function deleteMessages(interaction, messages, ui, label, scannedCount) {
+  const list = Array.isArray(messages) ? messages : [...messages.values()];
+  const deletable = list.filter(isBulkDeletable);
+  if (!deletable.length) {
+    await interaction.editReply(ui.withBrandFiles({
+      embeds: [buildResultEmbed(ui, label, scannedCount, list.length, 0, list.length)],
+    }));
+    return;
+  }
+
+  const deleted = await interaction.channel.bulkDelete(deletable, true);
+  const skipped = Math.max(0, list.length - deleted.size);
+
+  await interaction.editReply(ui.withBrandFiles({
+    embeds: [buildResultEmbed(ui, label, scannedCount, list.length, deleted.size, skipped)],
+  }));
+}
+
+async function handlePurgeCommand(interaction, ui) {
+  if (!await ensureCanPurge(interaction, ui)) return true;
+
+  const command = interaction.commandName;
+  await interaction.deferReply({ ephemeral: true });
+
+  if (command === "purge-after") {
+    const id = messageIdFromInput(interaction.options.getString("message", true));
+    if (!id) {
+      await interaction.editReply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Send a valid message ID or message link.")] }));
+      return true;
+    }
+
+    const limit = clampCount(interaction.options.getInteger("count") || MAX_PURGE_COUNT);
+    const fetched = await interaction.channel.messages.fetch({ after: id, limit: Math.min(100, limit) }).catch(() => null);
+    if (!fetched?.size) {
+      await interaction.editReply(ui.withBrandFiles({ embeds: [ui.errorEmbed("I could not find messages after that ID in this channel.")] }));
+      return true;
+    }
+    await deleteMessages(interaction, fetched.first(limit), ui, resultTitles[command], fetched.size);
+    return true;
+  }
+
+  const count = clampCount(interaction.options.getInteger("count", true));
+  const fetched = await interaction.channel.messages.fetch({ limit: Math.min(100, count) });
+  const filtered = fetched.filter(purgeFilter(command, interaction)).first(count);
+  await deleteMessages(interaction, filtered, ui, resultTitles[command] || "Purge complete", fetched.size);
+  return true;
+}
+
+const pendingEmojiSteals = new Map();
+const BEACON_YELLOW = 0xffb800;
+
+function emojiAssetUrl(emoji) {
+  return `https://cdn.discordapp.com/emojis/${emoji.id}.${emoji.animated ? "gif" : "png"}?quality=lossless`;
+}
+
+function cleanEmojiName(name, fallback = "stolen_emoji") {
+  const cleaned = String(name || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 32);
+  return cleaned.length >= 2 ? cleaned : fallback;
+}
+
+function uniqueEmojiName(guild, baseName) {
+  const base = cleanEmojiName(baseName);
+  if (!guild.emojis.cache.some((emoji) => emoji.name === base)) return base;
+
+  for (let index = 2; index <= 99; index += 1) {
+    const suffix = `_${index}`;
+    const candidate = `${base.slice(0, 32 - suffix.length)}${suffix}`;
+    if (!guild.emojis.cache.some((emoji) => emoji.name === candidate)) return candidate;
+  }
+
+  return `emoji_${Date.now().toString(36).slice(-8)}`;
+}
+
+function parseCustomEmojis(input, max = 25) {
+  const seen = new Set();
+  const emojis = [];
+  const regex = /<(a?):([a-zA-Z0-9_]{2,32}):(\d{17,22})>/g;
+  let match;
+
+  while ((match = regex.exec(String(input || ""))) && emojis.length < max) {
+    const [, animatedFlag, name, id] = match;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    emojis.push({
+      id,
+      name,
+      animated: animatedFlag === "a",
+      mention: `<${animatedFlag ? "a" : ""}:${name}:${id}>`,
+    });
+  }
+
+  return emojis;
+}
+
+function canManageGuildExpressions(member) {
+  return member.permissions.has(PermissionFlagsBits.ManageGuildExpressions) ||
+    member.permissions.has(PermissionFlagsBits.ManageGuild);
+}
+
+function botCanCreateGuildExpressions(guild) {
+  const me = guild.members.me;
+  return Boolean(me?.permissions.any(PermissionFlagsBits.CreateGuildExpressions | PermissionFlagsBits.ManageGuildExpressions));
+}
+
+function emojiPreviewList(emojis, keepName, showEmoji = false) {
+  return emojis
+    .map((emoji, index) => {
+      const name = keepName ? emoji.name : `stolen_${String(index + 1).padStart(2, "0")}`;
+      const preview = showEmoji ? emoji.mention : `[${emoji.name}](${emojiAssetUrl(emoji)})`;
+      return `${index + 1}. ${preview} **${emoji.name}**  ->  \`${cleanEmojiName(name)}\``;
+    })
+    .join("\n")
+    .slice(0, 3500);
+}
+
+function emojiConfirmRow(id) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`emoji_steal_confirm:${id}`).setLabel("Confirm").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId(`emoji_steal_cancel:${id}`).setLabel("Cancel").setStyle(ButtonStyle.Danger)
+  );
+}
+
+function emojiConfirmContainer(id, emojis, keepName) {
+  const heading = new TextDisplayBuilder().setContent(
+    "### Are you sure you want to steal these emojis?\n" +
+    "Review the source emojis and their new server names before continuing."
+  );
+  const preview = new SectionBuilder()
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(emojiPreviewList(emojis, keepName, true))
+    )
+    .setThumbnailAccessory(
+      new ThumbnailBuilder()
+        .setURL(emojiAssetUrl(emojis[0]))
+        .setDescription(`Preview of ${emojis[0].name}`)
+    );
+  const details = new TextDisplayBuilder().setContent(
+    `**Amount**\n${emojis.length}\n\n**Keep original names**\n${keepName ? "Yes" : "No"}`
+  );
+  const footer = new TextDisplayBuilder().setContent(
+    "-# This confirmation expires in 10 minutes. Nothing is added until you confirm."
+  );
+
+  return new ContainerBuilder()
+    .setAccentColor(BEACON_YELLOW)
+    .addTextDisplayComponents(heading)
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addSectionComponents(preview)
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addTextDisplayComponents(details)
+    .addActionRowComponents(emojiConfirmRow(id))
+    .addTextDisplayComponents(footer);
+}
+
+function emojiProgressContainer(count) {
+  return new ContainerBuilder()
+    .setAccentColor(BEACON_YELLOW)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `### Stealing ${count === 1 ? "emoji" : "emojis"}...\n` +
+        `Beacon is adding ${count} ${count === 1 ? "emoji" : "emojis"} to this server.`
+      )
+    );
+}
+
+function emojiResultContainer(title, description, success, failed = []) {
+  const container = new ContainerBuilder()
+    .setAccentColor(success ? 0x57f287 : 0xed4245)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`### ${title}\n${description}`)
+    );
+
+  if (failed.length) {
+    container
+      .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(`**Could not add**\n${failed.join("\n").slice(0, 3500)}`)
+      );
+  }
+
+  return container;
+}
+
+function emojiSuccessEmbed(created, deps) {
+  const description = created
+    .map((emoji) => `Successfully Stole Emoji: ${emoji} - name: \`${emoji.name}\``)
+    .join("\n")
+    .slice(0, 4000);
+  return deps.successEmbed(created.length === 1 ? "Emoji stolen" : "Emojis stolen", description).setThumbnail(created[0]?.imageURL?.() || null);
+}
+
+async function stealEmojiBatch(guild, emojis, keepName, moderatorTag) {
+  const created = [];
+  const failed = [];
+
+  for (const [index, emoji] of emojis.entries()) {
+    const baseName = keepName ? emoji.name : `stolen_${String(index + 1).padStart(2, "0")}`;
+    const name = uniqueEmojiName(guild, baseName);
+    try {
+      const createdEmoji = await guild.emojis.create({
+        attachment: emojiAssetUrl(emoji),
+        name,
+        reason: `Emoji steal confirmed by ${moderatorTag}`,
+      });
+      created.push(createdEmoji);
+    } catch (err) {
+      failed.push(`${emoji.mention} - ${err.message || "failed"}`);
+    }
+  }
+
+  return { created, failed };
+}
+
+async function prepareEmojiSteal(interaction, bulk, deps) {
+  if (!canManageGuildExpressions(interaction.member)) {
+    await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("You need Manage Expressions permission to steal emojis.")], ephemeral: true }));
+    return;
+  }
+  if (!botCanCreateGuildExpressions(interaction.guild)) {
+    await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("Beacon needs Create Expressions or Manage Expressions permission before it can add emojis.")], ephemeral: true }));
+    return;
+  }
+
+  const emojiText = interaction.options.getString(bulk ? "emojis" : "emoji", true);
+  const keepName = interaction.options.getBoolean("keep_name", true);
+
+  const emojis = parseCustomEmojis(emojiText, bulk ? 25 : 1);
+  if (!emojis.length) {
+    await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("Paste Discord custom emojis like `<:name:id>` or `<a:name:id>`. Normal Unicode emojis cannot be copied into the server.")], ephemeral: true }));
+    return;
+  }
+
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  pendingEmojiSteals.set(id, {
+    guildId: interaction.guild.id,
+    channelId: interaction.channelId,
+    userId: interaction.user.id,
+    keepName,
+    emojis,
+    createdAt: Date.now(),
+  });
+  setTimeout(() => pendingEmojiSteals.delete(id), 10 * 60_000).unref?.();
+
+  await interaction.reply({
+    components: [emojiConfirmContainer(id, emojis, keepName)],
+    flags: MessageFlags.IsComponentsV2,
+  });
+}
+
+async function confirmEmojiSteal(interaction, id, deps) {
+  const pending = pendingEmojiSteals.get(id);
+  if (!pending) {
+    await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("This emoji steal confirmation expired. Run the command again.")], ephemeral: true }));
+    return;
+  }
+  if (pending.userId !== interaction.user.id || pending.guildId !== interaction.guild.id) {
+    await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("Only the member who started this emoji steal can confirm it.")], ephemeral: true }));
+    return;
+  }
+  if (!canManageGuildExpressions(interaction.member)) {
+    await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("You need Manage Expressions permission to confirm this.")], ephemeral: true }));
+    return;
+  }
+  if (!botCanCreateGuildExpressions(interaction.guild)) {
+    await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("Beacon needs Create Expressions or Manage Expressions permission before it can add emojis.")], ephemeral: true }));
+    return;
+  }
+
+  pendingEmojiSteals.delete(id);
+  await interaction.deferUpdate();
+  await interaction.editReply({
+    components: [emojiProgressContainer(pending.emojis.length)],
+    flags: MessageFlags.IsComponentsV2,
+  });
+
+  const { created, failed } = await stealEmojiBatch(interaction.guild, pending.emojis, pending.keepName, interaction.user.tag);
+  const channel = interaction.guild.channels.cache.get(pending.channelId) || interaction.channel;
+
+  if (created.length) {
+    await channel.send(deps.withBrandFiles({ embeds: [emojiSuccessEmbed(created, deps)] })).catch(() => null);
+  }
+
+  const doneContainer = created.length
+    ? emojiResultContainer(
+      "Emoji steal complete",
+      `${created.length}/${pending.emojis.length} ${pending.emojis.length === 1 ? "emoji was" : "emojis were"} added to this server.`,
+      true,
+      failed
+    )
+    : emojiResultContainer(
+      "No emojis were added",
+      "Check the server emoji limit, source file size, and Beacon's permissions.",
+      false,
+      failed
+    );
+
+  await interaction.editReply({
+    components: [doneContainer],
+    flags: MessageFlags.IsComponentsV2,
+  }).catch(() => null);
+}
+
+async function cancelEmojiSteal(interaction, id, deps) {
+  const pending = pendingEmojiSteals.get(id);
+  if (!pending) {
+    await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("This emoji steal confirmation already expired.")], ephemeral: true }));
+    return;
+  }
+  if (pending.userId !== interaction.user.id) {
+    await interaction.reply(deps.withBrandFiles({ embeds: [deps.errorEmbed("Only the member who started this emoji steal can cancel it.")], ephemeral: true }));
+    return;
+  }
+  pendingEmojiSteals.delete(id);
+  await interaction.update({
+    components: [emojiResultContainer("Emoji steal canceled", "Nothing was added to the server.", false)],
+    flags: MessageFlags.IsComponentsV2,
+  });
+}
+
+const ticketHandlers = { ticketSetup, ticketPanel, ticketClose, ticketAdd, ticketRemove, ticketRename, ticketInfo, ticketStats, showTicketModal, openTicket, claimTicket, closeTicket };
 
 const commands = [
   ...purgeCommands,
@@ -1253,43 +2309,75 @@ async function handleCommand(interaction) {
   if (command === "status") return status(interaction);
 }
 
-async function sendHelp(interaction) {
-  const embed = brandEmbed(
-    "Beacon Control",
-    "Server tools, health checks, welcome flows and admin panels. Built to keep a community moving."
-  ).addFields(
-    { name: "/quickstart", value: "See the clean setup flow for a new Beacon server." },
-    { name: "/setup", value: "Set welcome, logs, onboarding and default member role." },
-    { name: "/health", value: "See the community health score and next best actions." },
-    { name: "/dashboard", value: "Open a live server snapshot with buttons." },
-    { name: "/emoji-steal", value: "Copy one custom emoji into this server with a confirm step." },
-    { name: "/emoji-steal-bulk", value: "Copy multiple custom emojis into this server at once." },
-    { name: "/announce", value: "Post a clean announcement embed." },
-    { name: "/onboarding", value: "Post a button-based onboarding panel." },
-    { name: "/dmwelcome", value: "Send a private welcome message when someone joins." },
-    { name: "/ticketsetup", value: "Customize support role, category, text, modal, limits and transcript DMs." },
-    { name: "/ticketpanel", value: "Post the public panel that opens private tickets." },
-    { name: "/ticketclose", value: "Close the ticket and DM the transcript if enabled." },
-    { name: "/ticketadd / /ticketremove", value: "Add or remove people from the current ticket." },
-    { name: "/ticketrename", value: "Rename the current ticket channel." },
-    { name: "/ticketinfo", value: "Show owner, subject, claim state and ticket age." },
-    { name: "/ticketstats", value: "Show open/closed tickets and support workload." },
-    { name: "/rolepanel", value: "Create a role menu with selectable roles." },
-    { name: "/event", value: "Create an event post with RSVP buttons." },
-    { name: "/member", value: "View a member's community profile." },
-    { name: "/rank", value: "View level, XP and prestige progress." },
-    { name: "/leaderboard", value: "Show the server prestige leaderboard." },
-    { name: "/prestige", value: `Prestige after reaching level ${PRESTIGE_LEVEL_REQUIREMENT}.` },
-    { name: "/status", value: "Check uptime, ping, server count and memory." }
-  );
+const helpPages = [
+  {
+    title: "Core tools",
+    description: "The essentials for running a healthy Beacon server.",
+    commands: [
+      ["/quickstart", "See the recommended setup flow."],
+      ["/setup", "Configure welcome, logs, onboarding and the member role."],
+      ["/health", "See the community health score and next actions."],
+      ["/dashboard", "Open a live server snapshot."],
+      ["/status", "Check uptime, ping, servers and memory."],
+      ["/settings", "View the current Beacon configuration."],
+    ],
+  },
+  {
+    title: "Community tools",
+    description: "Build engagement with onboarding, events and progression.",
+    commands: [
+      ["/onboarding", "Post a button-based onboarding panel."],
+      ["/dmwelcome", "Configure private welcome messages."],
+      ["/announce", "Post a clean announcement."],
+      ["/event", "Create an event post with RSVP buttons."],
+      ["/member", "View a member's community profile."],
+      ["/rank", "View level, XP and prestige progress."],
+      ["/leaderboard", "Show the server prestige leaderboard."],
+      ["/prestige", `Prestige after reaching level ${PRESTIGE_LEVEL_REQUIREMENT}.`],
+    ],
+  },
+  {
+    title: "Support and moderation",
+    description: "Keep support organized and moderation fast.",
+    commands: [
+      ["/ticketsetup", "Customize roles, text, limits and transcript DMs."],
+      ["/ticketpanel", "Post the public panel that opens private tickets."],
+      ["/ticketclose", "Close a ticket and create its transcript."],
+      ["/ticketadd / /ticketremove", "Manage people in the current ticket."],
+      ["/ticketrename", "Rename the current ticket channel."],
+      ["/ticketinfo / /ticketstats", "Inspect ticket ownership and workload."],
+      ["/rolepanel", "Create a selectable role menu."],
+      ["/purge", "Clean recent messages with filters."],
+      ["/emoji-steal / bulk", "Copy custom emojis with a confirmation step."],
+    ],
+  },
+];
 
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId("beacon_refresh_dashboard").setLabel("Open Dashboard").setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId("beacon_refresh_health").setLabel("Run Health Check").setStyle(ButtonStyle.Secondary),
+function helpPageContainer(pageIndex) {
+  const page = helpPages[pageIndex] || helpPages[0];
+  const lines = page.commands.map(([name, description]) => `**${name}**\n${description}`).join("\n\n");
+  const navigation = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`beacon_help_page:${pageIndex - 1}`).setLabel("Previous").setStyle(ButtonStyle.Secondary).setDisabled(pageIndex === 0),
+    new ButtonBuilder().setCustomId(`beacon_help_page:${pageIndex + 1}`).setLabel(`Page ${pageIndex + 1}/${helpPages.length}`).setStyle(ButtonStyle.Primary).setDisabled(pageIndex === helpPages.length - 1),
     new ButtonBuilder().setLabel("Web Dashboard").setStyle(ButtonStyle.Link).setURL(DASHBOARD_URL)
   );
 
-  await interaction.reply(withBrandFiles({ embeds: [embed], components: [row], ephemeral: true }));
+  return new ContainerBuilder()
+    .setAccentColor(BRAND_COLOR)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`## Beacon Help\n### ${page.title}\n${page.description}`),
+      new TextDisplayBuilder().setContent(lines),
+      new TextDisplayBuilder().setContent(`-# Page ${pageIndex + 1} of ${helpPages.length} · Everyone can use the buttons to browse.`)
+    )
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addActionRowComponents(navigation);
+}
+
+async function sendHelp(interaction) {
+  await interaction.reply({
+    components: [helpPageContainer(0)],
+    flags: MessageFlags.IsComponentsV2,
+  });
 }
 
 async function quickStart(interaction, data) {
@@ -1751,6 +2839,15 @@ async function handleButton(interaction) {
 
   if (interaction.customId.startsWith("emoji_steal_cancel:")) {
     await cancelEmojiSteal(interaction, interaction.customId.split(":")[1], beaconUi());
+    return;
+  }
+
+  if (interaction.customId.startsWith("beacon_help_page:")) {
+    const pageIndex = Number(interaction.customId.split(":")[1]);
+    await interaction.update({
+      components: [helpPageContainer(Number.isInteger(pageIndex) ? pageIndex : 0)],
+      flags: MessageFlags.IsComponentsV2,
+    });
     return;
   }
 
