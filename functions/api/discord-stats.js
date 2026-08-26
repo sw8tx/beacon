@@ -22,6 +22,10 @@ const KNOWN_GUILD_IDS = [
   "1532057761557254244",
 ];
 
+function getBotToken(env) {
+  return env.DISCORD_BOT_TOKEN || env.DISCORD_TOKEN || env.BOT_TOKEN || env.TOKEN || "";
+}
+
 let memoryStats = { ...FALLBACK_STATS };
 
 function json(data, init = {}) {
@@ -108,14 +112,15 @@ function normalizeStats(input) {
 }
 
 async function fetchDiscordServers(env) {
-  if (!env.DISCORD_BOT_TOKEN) return [];
+  const botToken = getBotToken(env);
+  if (!botToken) return [];
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 4500);
   try {
     const response = await fetch(`${DISCORD_API_BASE}/users/@me/guilds?with_counts=true`, {
       headers: {
-        authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+        authorization: `Bot ${botToken}`,
       },
       signal: controller.signal,
     });
@@ -130,7 +135,7 @@ async function fetchDiscordServers(env) {
       guilds = await Promise.all(KNOWN_GUILD_IDS.map(async (guildId) => {
         const guildResponse = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}?with_counts=true`, {
           headers: {
-            authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+            authorization: `Bot ${botToken}`,
           },
           signal: controller.signal,
         });
@@ -378,7 +383,7 @@ async function handlePost(request, env) {
   try {
     const auth = request.headers.get("authorization");
     const statsSecretHeader = request.headers.get("x-stats-secret");
-    const allowedTokens = [env.STATS_SECRET, env.DISCORD_BOT_TOKEN].filter(Boolean);
+    const allowedTokens = [env.STATS_SECRET, getBotToken(env)].filter(Boolean);
 
     if (!allowedTokens.length) {
       return new Response("Server missing stats authentication", { status: 503 });
