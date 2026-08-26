@@ -118,6 +118,13 @@ const pageTranslations = {
 };
 Object.keys(translations).forEach((language) => Object.assign(translations[language], pageTranslations[language] || pageTranslations.en));
 
+const showcaseTranslations = {
+  en: { mockCommandTitle: "New custom command", customOverline: "AUTOMATION", customTitle: "Advanced custom commands", customCopy: "Empower your server with custom commands designed to automate tasks, streamline role management and deliver personalized messages that fit your community.", socialOverline: "COMMUNITY ACTIVITY", socialTitle: "Stay connected with your community", socialCopy: "Send real-time notifications for streams, videos, events and server activity so your members never miss what is happening.", featureAction: "Add to Discord" },
+  fr: { mockCommandTitle: "Nouvelle commande personnalisée", customOverline: "AUTOMATISATION", customTitle: "Commandes personnalisées avancées", customCopy: "Donnez plus de puissance à votre serveur avec des commandes qui automatisent les tâches, simplifient les rôles et envoient des messages personnalisés.", socialOverline: "ACTIVITÉ DE LA COMMUNAUTÉ", socialTitle: "Restez connecté à votre communauté", socialCopy: "Envoyez des notifications en temps réel pour les streams, vidéos, événements et activités du serveur.", featureAction: "Ajouter à Discord" },
+  de: { mockCommandTitle: "Neuer benutzerdefinierter Command", customOverline: "AUTOMATISIERUNG", customTitle: "Erweiterte benutzerdefinierte Commands", customCopy: "Stärke deinen Server mit Commands, die Aufgaben automatisieren, Rollen verwalten und personalisierte Nachrichten senden.", socialOverline: "COMMUNITY-AKTIVITÄT", socialTitle: "Bleib mit deiner Community verbunden", socialCopy: "Sende Echtzeit-Benachrichtigungen für Streams, Videos, Events und Server-Aktivitäten.", featureAction: "Zu Discord hinzufügen" },
+};
+Object.keys(translations).forEach((language) => Object.assign(translations[language], showcaseTranslations[language] || showcaseTranslations.en));
+
 function setLanguage(language) {
   const dictionary = translations[language] || translations.de;
   document.documentElement.lang = language;

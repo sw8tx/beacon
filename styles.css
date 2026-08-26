@@ -281,6 +281,43 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .footer-legal { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 28px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.07); color: #c8d3ff; font-size: .9rem; font-weight: 700; }
 .footer-legal a:hover { color: #31b6e6; }
 .footer-rights { grid-column: 1 / -1; color: #707782; text-align: center; font-size: .72rem; }
+.feature-showcase { position: relative; overflow: hidden; padding: 20px 5.2vw 50px; background: #282b39; }
+.feature-showcase__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .86fr); gap: clamp(50px, 9vw, 150px); align-items: center; max-width: 1220px; min-height: 560px; margin: 0 auto; padding: 74px 0; }
+.feature-showcase__row--reverse { grid-template-columns: minmax(320px, .86fr) minmax(0, 1fr); }
+.feature-showcase__copy { max-width: 500px; }
+.feature-showcase__row--reverse .feature-showcase__copy { justify-self: start; }
+.feature-showcase__overline { display: block; margin-bottom: 18px; color: #7f8aa8; font-size: .7rem; font-weight: 900; letter-spacing: .3em; }
+.feature-showcase__copy h2 { max-width: 540px; color: #f5f5fb; font: 700 clamp(2rem, 3.4vw, 3.2rem)/1.08 "Space Grotesk", sans-serif; letter-spacing: -.04em; }
+.feature-showcase__copy p { margin-top: 25px; color: #9ba1b5; font-size: 1.02rem; line-height: 1.65; }
+.feature-showcase__button { display: inline-flex; min-height: 50px; align-items: center; justify-content: center; margin-top: 28px; padding: 0 24px; border-radius: 7px; color: #fff; font-weight: 900; background: #3d92f5; box-shadow: 0 12px 28px rgba(61,146,245,.24); transition: transform .18s ease, filter .18s ease; }
+.feature-showcase__button:hover { transform: translateY(-3px); filter: brightness(1.08); }
+.feature-showcase__visual { position: relative; min-height: 390px; }
+.mock-window { position: absolute; top: 20px; left: 2%; width: 72%; min-height: 315px; padding: 20px 16px; border-radius: 6px; color: #8e93a4; background: #191b24; box-shadow: 0 28px 55px rgba(0,0,0,.35); }
+.mock-window__top { display: flex; justify-content: space-between; padding-bottom: 17px; border-bottom: 1px solid rgba(255,255,255,.06); color: #eef0f7; font-size: .78rem; }
+.mock-window__top b { color: #7e8495; font-size: 1rem; }
+.mock-window small { display: block; margin-top: 14px; font-size: .58rem; }
+.mock-select, .mock-input, .mock-action { min-height: 29px; margin-top: 6px; padding: 8px 10px; border-radius: 4px; color: #a5aabb; font-size: .62rem; background: #11131a; }
+.mock-select { display: flex; justify-content: space-between; }
+.mock-action { margin-top: 7px; color: #8e93a5; background: #242733; }
+.mock-action--active { border: 1px solid #358df1; color: #e9f1ff; background: #1c2437; box-shadow: 0 0 0 1px rgba(53,141,241,.15); }
+.mock-command-card { position: absolute; right: 0; display: grid; grid-template-columns: 1fr auto; width: 65%; min-height: 64px; padding: 12px 15px; border-radius: 5px; color: #f2f3f8; background: #1a1c24; box-shadow: 0 18px 35px rgba(0,0,0,.38); }
+.mock-command-card--one { top: 110px; }
+.mock-command-card--two { top: 186px; right: -4%; }
+.mock-command-card b { font-size: .78rem; }
+.mock-command-card span { grid-column: 1; color: #8e94a6; font-size: .57rem; }
+.mock-command-card i { grid-column: 2; grid-row: 1 / 3; align-self: center; width: 30px; height: 17px; border-radius: 999px; background: #4be88b; box-shadow: inset -4px 0 rgba(255,255,255,.8); }
+.mock-mascot { position: absolute; right: 20%; bottom: 15px; display: grid; width: 82px; height: 82px; place-items: center; border-radius: 35% 35% 45% 45%; color: #ffd34e; font-size: 2.5rem; background: linear-gradient(135deg, #31d4ef, #a4eff5); box-shadow: 0 15px 30px rgba(0,0,0,.3); }
+.feature-showcase__visual--activity { min-height: 430px; }
+.activity-art__screen { position: absolute; inset: 44px 7% 18px 4%; overflow: hidden; border-radius: 6px; background: linear-gradient(135deg, #182341, #334d83 56%, #db7d83); box-shadow: 0 25px 60px rgba(0,0,0,.38); }
+.activity-art__person { position: absolute; right: 25%; bottom: -12%; width: 42%; height: 75%; border-radius: 48% 48% 10% 10%; background: linear-gradient(145deg, #f4b29c 0 28%, #ef8f7f 29% 56%, #232b47 57%); box-shadow: -28px 0 0 rgba(27,36,65,.7); }
+.activity-art__screen span { position: absolute; top: 15px; right: 18px; padding: 5px 8px; border-radius: 4px; color: #fff; font-size: .58rem; font-weight: 900; background: #f45c75; }
+.activity-art__bubble { position: absolute; z-index: 2; display: grid; place-items: center; border-radius: 20px; font-weight: 900; box-shadow: 0 15px 35px rgba(0,0,0,.32); }
+.activity-art__bubble--purple { top: 42px; left: 0; width: 80px; height: 80px; color: #fff; font-size: 1.3rem; background: #8b4eff; }
+.activity-art__bubble--blue { right: 4%; bottom: 2px; width: 52px; height: 52px; color: #fff; font-size: 1.35rem; background: #22a6ed; }
+.activity-art__toast { position: absolute; top: 100px; right: -2%; z-index: 3; display: grid; grid-template-columns: 1fr 28px; width: 65%; padding: 13px 15px; border-radius: 5px; color: #f2f3f8; background: #191c26; box-shadow: 0 17px 35px rgba(0,0,0,.35); }
+.activity-art__toast small { color: #8e94a6; font-size: .58rem; }
+.activity-art__toast i { grid-column: 2; grid-row: 1 / 3; width: 28px; height: 28px; border-radius: 4px; background: #f0bd8f; }
+.activity-art__play { position: absolute; right: 0; bottom: 18px; z-index: 4; display: grid; width: 62px; height: 42px; place-items: center; border-radius: 12px; color: #fff; font-size: 1rem; background: #ff1722; box-shadow: 0 10px 22px rgba(255,23,34,.3); }
 [data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity .8s ease, transform .8s ease; }
 [data-reveal].revealed { opacity: 1; transform: none; }
 
@@ -308,3 +345,13 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .upgrade-button--light { color: #121623; background: #fff; box-shadow: 0 12px 34px rgba(0,0,0,.12); }
 .upgrade-button--ghost { border: 1px solid rgba(255,255,255,.38); color: #fff; background: rgba(255,255,255,.14); }
 @media (max-width: 600px) { .upgrade-section { padding: 0 20px 58px; } .upgrade-actions { align-items: stretch; flex-direction: column; } .upgrade-button { width: 100%; } }
+@media (max-width: 900px) {
+  .feature-showcase { padding: 0 20px 30px; }
+  .feature-showcase__row, .feature-showcase__row--reverse { grid-template-columns: 1fr; gap: 26px; min-height: 0; padding: 72px 0; }
+  .feature-showcase__row--reverse .feature-showcase__copy { grid-row: 1; }
+  .feature-showcase__visual { grid-row: 2; min-height: 330px; }
+  .feature-showcase__copy h2 { font-size: clamp(2rem, 9vw, 2.7rem); }
+  .mock-window { width: 78%; }
+  .mock-command-card { width: 66%; }
+  .activity-art__toast { right: 0; width: 70%; }
+}
