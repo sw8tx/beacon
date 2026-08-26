@@ -227,16 +227,8 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .server-card strong::before { content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 8px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff 0 12%, #39dd78 13% 55%, #18864d 56%); vertical-align: -2px; }
 .server-card small { color: #858b93; font-size: .78rem; font-weight: 700; }
 .server-card i { display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); }
-.insights-section { position: relative; display: block; padding: 0 5.2vw 70px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,.06); background-color: #242424; background-image: radial-gradient(circle at 2% 12%, transparent 0 90px, rgba(255,255,255,.13) 91px 95px, transparent 96px), radial-gradient(circle at 99% 10%, transparent 0 60px, rgba(255,255,255,.12) 61px 65px, transparent 66px), radial-gradient(circle at 96% 91%, rgba(255,255,255,.12) 0 4px, transparent 5px), radial-gradient(circle at 7% 86%, transparent 0 27px, rgba(255,255,255,.1) 28px 31px, transparent 32px), radial-gradient(circle at 47% 3%, rgba(255,255,255,.12) 0 3px, transparent 4px), radial-gradient(circle at 58% 96%, transparent 0 18px, rgba(255,255,255,.1) 19px 22px, transparent 23px); }
-.insight-card { position: relative; display: grid; grid-template-columns: minmax(260px, .82fr) minmax(360px, 1fr); grid-template-rows: auto auto 1fr; column-gap: clamp(45px, 9vw, 150px); align-items: center; min-width: 0; min-height: 620px; padding: 90px 5vw; border: 0; border-bottom: 1px solid rgba(255,255,255,.08); border-radius: 0; background: transparent; box-shadow: none; }
-.insight-card:last-child { border-bottom: 0; }
-.insight-card > .insight-overline, .insight-card > h2, .insight-card > p { grid-column: 1; }
-.insight-card > .insight-overline { grid-row: 1; align-self: end; }
-.insight-card > h2 { grid-row: 2; }
-.insight-card > p { grid-row: 3; align-self: start; max-width: 550px; }
-.insight-card > .giveaway-panel, .insight-card > .activity-panel, .insight-card > .leaderboard-panel { grid-column: 2; grid-row: 1 / 5; width: 100%; align-self: center; }
-.insight-cta { grid-column: 1; grid-row: 4; display: inline-flex; width: max-content; min-height: 48px; align-items: center; justify-content: center; padding: 0 22px; border-radius: 7px; color: #071019; font-weight: 900; background: #31b6e6; box-shadow: 0 12px 30px rgba(49,182,230,.2); transition: transform .18s ease, filter .18s ease; }
-.insight-cta:hover { transform: translateY(-3px); filter: brightness(1.08); }
+.insights-section { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding: 36px 5.2vw 74px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,.06); background-color: #242424; background-image: radial-gradient(circle at 2% 12%, transparent 0 90px, rgba(255,255,255,.13) 91px 95px, transparent 96px), radial-gradient(circle at 99% 10%, transparent 0 60px, rgba(255,255,255,.12) 61px 65px, transparent 66px), radial-gradient(circle at 96% 91%, rgba(255,255,255,.12) 0 4px, transparent 5px), radial-gradient(circle at 7% 86%, transparent 0 27px, rgba(255,255,255,.1) 28px 31px, transparent 32px), radial-gradient(circle at 47% 3%, rgba(255,255,255,.12) 0 3px, transparent 4px), radial-gradient(circle at 58% 96%, transparent 0 18px, rgba(255,255,255,.1) 19px 22px, transparent 23px); }
+.insight-card { position: relative; min-width: 0; padding: 34px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: linear-gradient(180deg, rgba(12,13,15,.96), rgba(7,8,9,.96)); box-shadow: 0 24px 70px rgba(0,0,0,.34); }
 .insight-overline { display: block; margin-bottom: 26px; color: #7d83a0; font-size: .68rem; font-weight: 900; letter-spacing: .48em; text-transform: uppercase; }
 .insight-card h2 { color: #fff; font: 700 clamp(1.35rem, 2vw, 1.72rem)/1.12 "Space Grotesk", sans-serif; }
 .insight-card > p { margin-top: 14px; color: #a2a7b1; font-size: 1.02rem; line-height: 1.55; }
@@ -259,7 +251,7 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .giveaway-confetti.is-active i { animation: giveaway-confetti-pop .9s cubic-bezier(.18,.74,.35,1) var(--confetti-delay) both; }
 @keyframes giveaway-confetti-pop { 0% { opacity: 0; transform: translate(-50%, 0) rotate(0deg) scale(.5); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--confetti-x)), var(--confetti-y)) rotate(var(--confetti-rotate)) scale(1); } }
 .insight-card { transition: transform .18s ease, border-color .18s ease, background .18s ease; }
-.insight-card:hover { transform: none; }
+.insight-card:hover { border-color: rgba(255,195,28,.36); background: linear-gradient(180deg, rgba(16,17,20,.98), rgba(9,10,12,.98)); transform: translateY(-4px); }
 .activity-panel { padding: 20px; }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .panel-head strong { color: #fff; font-size: .95rem; }
@@ -316,8 +308,3 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .upgrade-button--light { color: #121623; background: #fff; box-shadow: 0 12px 34px rgba(0,0,0,.12); }
 .upgrade-button--ghost { border: 1px solid rgba(255,255,255,.38); color: #fff; background: rgba(255,255,255,.14); }
 @media (max-width: 600px) { .upgrade-section { padding: 0 20px 58px; } .upgrade-actions { align-items: stretch; flex-direction: column; } .upgrade-button { width: 100%; } }
-@media (max-width: 900px) {
-  .insight-card { grid-template-columns: 1fr; grid-template-rows: auto; min-height: auto; gap: 16px; padding: 72px 24px; }
-  .insight-card > .insight-overline, .insight-card > h2, .insight-card > p, .insight-card > .insight-cta, .insight-card > .giveaway-panel, .insight-card > .activity-panel, .insight-card > .leaderboard-panel { grid-column: 1; grid-row: auto; }
-  .insight-card > .giveaway-panel, .insight-card > .activity-panel, .insight-card > .leaderboard-panel { margin-top: 20px; }
-}
