@@ -30,7 +30,7 @@ async function getDashboardServers(env) {
       const guild = await response.json();
       return {
         name: guild.name || "Discord server",
-        owner: "Server with Beacon",
+        owner: "Server owner",
         iconUrl: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=256` : "",
       };
     } catch (_) {
@@ -113,6 +113,25 @@ export async function onRequestGet({ request, env }) {
   const dashboardSelectionServers = liveSelectionServers.length
     ? liveSelectionServers.map((server, index) => ({ ...server, tone: ["red", "gold", "green", "gray", "dark"][index % 5], icon: server.iconUrl }))
     : selectionServers;
+  selectionServers.forEach((server) => {
+    server.withBeacon = !["Sparkle Stock Reborn", "test"].includes(server.name);
+    server.owner = server.name === "smm2.org" ? "Bot master" : "Server owner";
+  });
+  const renderServerChoices = (servers, actionLabel) => servers.length
+    ? servers.map((server) => `
+              <article class="server-choice">
+                <div class="server-choice-card server-choice-card--${escapeHtml(server.tone)}">
+                  ${server.icon ? `<img src="${escapeHtml(server.icon)}" alt="" />` : `<span class="server-choice-initial">${escapeHtml(String(server.name || "S").slice(0, 1).toUpperCase())}</span>`}
+                </div>
+                <div class="server-choice-copy">
+                  <div><strong>${escapeHtml(server.name)}</strong><small>${escapeHtml(server.owner || "Server owner")}</small></div>
+                  <button type="button" class="server-choice-button">${actionLabel}</button>
+                </div>
+              </article>
+            `).join("")
+    : `<p class="server-choice-empty">No servers in this group yet.</p>`;
+  const serversWithBeacon = dashboardSelectionServers.filter((server) => server.withBeacon !== false);
+  const serversWithoutBeacon = dashboardSelectionServers.filter((server) => server.withBeacon === false);
   const unlockedIds = await getUnlockedBadgeIds(env, session.user.id);
   const unlockedBadges = BEACON_BADGES.filter((badge) => unlockedIds.has(badge.id));
   const lockedBadges = BEACON_BADGES.filter((badge) => !unlockedIds.has(badge.id));
@@ -160,7 +179,7 @@ export async function onRequestGet({ request, env }) {
     <style>
       *{box-sizing:border-box}
       html,body{min-height:100%;margin:0;background:#292b36;color:#f6f3ea;font-family:"DM Sans",system-ui,sans-serif}
-      body{min-height:100vh;background:#292b36}
+      body{min-height:100vh;background-color:#292b36;background-image:radial-gradient(circle at 3% 18%,transparent 0 56px,rgba(255,255,255,.12) 57px 60px,transparent 61px),radial-gradient(circle at 96% 14%,transparent 0 34px,rgba(255,255,255,.1) 35px 38px,transparent 39px),radial-gradient(circle at 92% 84%,transparent 0 72px,rgba(255,255,255,.08) 73px 76px,transparent 77px),radial-gradient(circle at 10% 88%,rgba(255,255,255,.1) 0 3px,transparent 4px),radial-gradient(circle at 64% 48%,transparent 0 18px,rgba(255,255,255,.09) 19px 22px,transparent 23px)}
       .dash-topbar{position:sticky;top:0;z-index:30;display:flex;min-height:74px;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,195,28,.26);padding:0 clamp(18px,5vw,70px);background:rgba(0,0,0,.88);backdrop-filter:blur(14px)}
       .dash-brand{display:inline-flex;align-items:center;gap:12px;color:#fff9e7;text-decoration:none;font-size:1.08rem;font-weight:900}
       .dash-brand img{width:34px;height:34px;object-fit:contain}
@@ -239,8 +258,14 @@ export async function onRequestGet({ request, env }) {
       .dash-main:not(.is-server-locked) .server-select-gate{display:none}
       .dash-layout:has(.dash-main.is-server-locked){display:block;padding:0 clamp(18px,5vw,70px) 70px}
       .dash-layout:has(.dash-main.is-server-locked) .dash-sidebar{display:none}
-      .server-select-gate{max-width:900px;margin:0 auto;padding:10px 0 40px;text-align:center}
+      .server-select-gate{max-width:1020px;margin:0 auto;padding:10px 0 40px;text-align:center}
       .server-select-gate h1{margin:0 0 54px;color:#fff;font-size:clamp(2rem,3vw,2.55rem);font-weight:900}
+      .server-select-gate>h1:not(.server-select-title),.server-select-gate>.server-choice-grid{display:none}
+      .server-choice-title{margin:0 0 22px;color:#fff;font-size:clamp(1.7rem,2.6vw,2.25rem);font-weight:900}
+      .server-choice-group{margin-top:30px;text-align:left}
+      .server-choice-group h2{margin:0 0 18px;color:#fff;font-size:1.08rem;font-weight:900;letter-spacing:.02em}
+      .server-choice-group--without{margin-top:52px;padding-top:34px;border-top:1px solid rgba(255,255,255,.1)}
+      .server-choice-empty{margin:0;color:#9ca4b5;font-size:.9rem;font-weight:700}
       .server-choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px 40px;text-align:left}
       .server-choice{min-width:0}
       .server-choice-card{display:grid;min-height:153px;place-items:center;border:0;border-radius:8px;background:var(--choice-bg,#20222b);overflow:hidden;box-shadow:inset 0 1px rgba(255,255,255,.04)}
@@ -249,7 +274,7 @@ export async function onRequestGet({ request, env }) {
       .server-choice-card--green{--choice-bg:linear-gradient(135deg,#66676b,#25272b 75%)}
       .server-choice-card--gray{--choice-bg:linear-gradient(135deg,#44464e,#20222a 75%)}
       .server-choice-card--dark{--choice-bg:#20222b}
-      .server-choice-card img,.server-choice-initial{display:grid;width:82px;height:82px;place-items:center;border:2px solid rgba(255,255,255,.92);border-radius:50%;object-fit:cover;background:#f8f8f8;color:#20222b;font-size:1.5rem;font-weight:900}
+      .server-choice-card img,.server-choice-initial{display:grid;width:96px;height:96px;place-items:center;border:0;border-radius:20px;object-fit:contain;background:transparent;color:#ffc31c;font-size:1.5rem;font-weight:900;filter:drop-shadow(0 8px 18px rgba(0,0,0,.28))}
       .server-choice-copy{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px}
       .server-choice-copy strong{display:block;color:#fff;font-size:.92rem;line-height:1.4}
       .server-choice-copy small{display:block;margin-top:3px;color:#9ca4b5;font-size:.78rem}
@@ -325,6 +350,15 @@ export async function onRequestGet({ request, env }) {
       </aside>
       <main class="dash-main is-server-locked">
         <div class="server-select-gate">
+          <h1 class="server-select-title">Choose a server</h1>
+          <section class="server-choice-group server-choice-group--with">
+            <h2>Servers with Beacon</h2>
+            <div class="server-choice-grid">${renderServerChoices(serversWithBeacon, "Manage")}</div>
+          </section>
+          <section class="server-choice-group server-choice-group--without">
+            <h2>Servers without Beacon</h2>
+            <div class="server-choice-grid">${renderServerChoices(serversWithoutBeacon, "Manage")}</div>
+          </section>
           <h1>Server auswählen</h1>
           <div class="server-choice-grid">
             ${dashboardSelectionServers.map((server) => `
