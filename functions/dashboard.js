@@ -18,7 +18,27 @@ const KNOWN_GUILD_IDS = [
   "1532057761557254244",
 ];
 
-async function getDashboardServers(env) {
+async function getDashboardServers(env, request) {
+  try {
+    const statsResponse = await fetch(new URL("/api/discord-stats", request.url), {
+      headers: { accept: "application/json" },
+      cf: { cacheTtl: 0, cacheEverything: false },
+    });
+    if (statsResponse.ok) {
+      const stats = await statsResponse.json();
+      if (Array.isArray(stats.servers) && stats.servers.length) {
+        return stats.servers.map((server) => ({
+          name: server.name || "Discord server",
+          owner: "Server owner",
+          members: Number(server.members) || 0,
+          iconUrl: server.iconUrl || "",
+          withBeacon: true,
+        }));
+      }
+    }
+  } catch (_) {
+    // Fall back to direct guild lookups below.
+  }
   const { botToken } = getConfig(env);
   if (!botToken) return [];
   const servers = await Promise.all(KNOWN_GUILD_IDS.map(async (guildId) => {
@@ -31,7 +51,9 @@ async function getDashboardServers(env) {
       return {
         name: guild.name || "Discord server",
         owner: "Server owner",
+        members: Number(guild.approximate_member_count) || 0,
         iconUrl: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=256` : "",
+        withBeacon: true,
       };
     } catch (_) {
       return null;
@@ -106,22 +128,29 @@ export async function onRequestGet({ request, env }) {
     { name: "Sparkle Stock Reborn", owner: "Eigentümer", tone: "gray", icon: "/assets/beacon-logo.png?v=92" },
     { name: "test", owner: "Eigentümer", tone: "dark", icon: "" },
   ];
-  const liveSelectionServers = await getDashboardServers(env);
+  const liveSelectionServers = await getDashboardServers(env, request);
   const resolvedServerName = liveSelectionServers[0]?.name || serverName;
   const resolvedServerIcon = liveSelectionServers[0]?.iconUrl || "";
   const dashboardAvatar = resolvedServerIcon ? escapeHtml(resolvedServerIcon) : avatar;
   const dashboardSelectionServers = liveSelectionServers.length
     ? liveSelectionServers.map((server, index) => ({ ...server, tone: ["red", "gold", "green", "gray", "dark"][index % 5], icon: server.iconUrl }))
     : selectionServers;
+  const fallbackIcons = {
+    "//": "https://cdn.discordapp.com/icons/1535312431063105788/95d38da044caa8c815306b0687d83e86.png?size=256",
+    Beacon: "https://cdn.discordapp.com/icons/1529195462735696053/e24f4b73cdbad190f13c92c976335985.png?size=256",
+    "smm2.org": "https://cdn.discordapp.com/icons/1496058157955289239/108980db943d4a74d8daae1987178d62.png?size=256",
+    "Sparkle Stock Reborn": "https://cdn.discordapp.com/icons/1515797025885524049/34d14712cd2381ab950be9d397e77a16.png?size=256",
+  };
   selectionServers.forEach((server) => {
-    server.withBeacon = !["Sparkle Stock Reborn", "test"].includes(server.name);
+    server.withBeacon = true;
     server.owner = server.name === "smm2.org" ? "Bot master" : "Server owner";
+    server.icon = fallbackIcons[server.name] || server.icon;
   });
   const renderServerChoices = (servers, actionLabel) => servers.length
     ? servers.map((server) => `
               <article class="server-choice">
                 <div class="server-choice-card server-choice-card--${escapeHtml(server.tone)}">
-                  ${server.icon ? `<img src="${escapeHtml(server.icon)}" alt="" />` : `<span class="server-choice-initial">${escapeHtml(String(server.name || "S").slice(0, 1).toUpperCase())}</span>`}
+                  ${server.icon ? `<img src="${escapeHtml(server.icon)}" alt="" onerror="this.onerror=null;this.src='/assets/beacon-mark-gold.png?v=1'" />` : `<span class="server-choice-initial">${escapeHtml(String(server.name || "S").slice(0, 1).toUpperCase())}</span>`}
                 </div>
                 <div class="server-choice-copy">
                   <div><strong>${escapeHtml(server.name)}</strong><small>${escapeHtml(server.owner || "Server owner")}</small></div>
