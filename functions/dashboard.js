@@ -12,54 +12,41 @@ function escapeHtml(value) {
   }[character]));
 }
 
-const KNOWN_GUILD_IDS = [
-  "1515797025885524049",
-  "1529195462735696053",
-  "1532057761557254244",
-];
-
-async function getDashboardServers(env, request) {
-  try {
-    const statsResponse = await fetch(new URL("/api/discord-stats", request.url), {
-      headers: { accept: "application/json" },
-      cf: { cacheTtl: 0, cacheEverything: false },
-    });
-    if (statsResponse.ok) {
-      const stats = await statsResponse.json();
-      if (Array.isArray(stats.servers) && stats.servers.length) {
-        return stats.servers.map((server) => ({
-          name: server.name || "Discord server",
-          owner: "Server owner",
-          members: Number(server.members) || 0,
-          iconUrl: server.iconUrl || "",
-          withBeacon: true,
-        }));
-      }
-    }
-  } catch (_) {
-    // Fall back to direct guild lookups below.
-  }
+async function getDashboardServers(env, discordAccessToken) {
   const { botToken } = getConfig(env);
-  if (!botToken) return [];
-  const servers = await Promise.all(KNOWN_GUILD_IDS.map(async (guildId) => {
-    try {
-      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}?with_counts=true`, {
-        headers: { authorization: `Bot ${botToken}` },
-      });
-      if (!response.ok) return null;
-      const guild = await response.json();
+  if (!discordAccessToken) return [];
+  try {
+    const response = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
+      headers: { authorization: `Bearer ${discordAccessToken}` },
+    });
+    if (!response.ok) return [];
+    const userGuilds = await response.json();
+    if (!Array.isArray(userGuilds)) return [];
+    const servers = await Promise.all(userGuilds.map(async (guild) => {
+      let withBeacon = false;
+      if (botToken) {
+        try {
+          const botGuildResponse = await fetch(`https://discord.com/api/v10/guilds/${guild.id}`, {
+            headers: { authorization: `Bot ${botToken}` },
+          });
+          withBeacon = botGuildResponse.ok;
+        } catch (_) {
+          withBeacon = false;
+        }
+      }
       return {
         name: guild.name || "Discord server",
-        owner: "Server owner",
+        owner: guild.owner ? "Server owner" : "Member",
+        isOwner: Boolean(guild.owner),
         members: Number(guild.approximate_member_count) || 0,
         iconUrl: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=256` : "",
-        withBeacon: true,
+        withBeacon,
       };
-    } catch (_) {
-      return null;
-    }
-  }));
-  return servers.filter(Boolean);
+    }));
+    return servers.sort((left, right) => Number(right.withBeacon && right.isOwner) - Number(left.withBeacon && left.isOwner));
+  } catch (_) {
+    return [];
+  }
 }
 
 async function getUnlockedBadgeIds(env, userId) {
@@ -115,6 +102,9 @@ export async function onRequestGet({ request, env }) {
   if (!session?.user) {
     return Response.redirect(new URL("/?login_required=1", request.url).toString(), 302);
   }
+  if (!session.discordAccessToken) {
+    return Response.redirect(new URL("/api/auth/discord/login?next=/dashboard", request.url).toString(), 302);
+  }
 
   const username = escapeHtml(session.user.username || "Discord user");
   const avatar = session.user.avatar
@@ -128,13 +118,11 @@ export async function onRequestGet({ request, env }) {
     { name: "Sparkle Stock Reborn", owner: "Eigentümer", tone: "gray", icon: "/assets/beacon-logo.png?v=92" },
     { name: "test", owner: "Eigentümer", tone: "dark", icon: "" },
   ];
-  const liveSelectionServers = await getDashboardServers(env, request);
+  const liveSelectionServers = await getDashboardServers(env, session.discordAccessToken);
   const resolvedServerName = liveSelectionServers[0]?.name || serverName;
   const resolvedServerIcon = liveSelectionServers[0]?.iconUrl || "";
   const dashboardAvatar = resolvedServerIcon ? escapeHtml(resolvedServerIcon) : avatar;
-  const dashboardSelectionServers = liveSelectionServers.length
-    ? liveSelectionServers.map((server, index) => ({ ...server, tone: ["red", "gold", "green", "gray", "dark"][index % 5], icon: server.iconUrl }))
-    : selectionServers;
+  const dashboardSelectionServers = liveSelectionServers.map((server, index) => ({ ...server, tone: ["red", "gold", "green", "gray", "dark"][index % 5], icon: server.iconUrl }));
   const fallbackIcons = {
     "//": "https://cdn.discordapp.com/icons/1535312431063105788/95d38da044caa8c815306b0687d83e86.png?size=256",
     Beacon: "https://cdn.discordapp.com/icons/1529195462735696053/e24f4b73cdbad190f13c92c976335985.png?size=256",
@@ -159,8 +147,8 @@ export async function onRequestGet({ request, env }) {
               </article>
             `).join("")
     : `<p class="server-choice-empty">No servers in this group yet.</p>`;
-  const serversWithBeacon = dashboardSelectionServers.filter((server) => server.withBeacon !== false);
-  const serversWithoutBeacon = dashboardSelectionServers.filter((server) => server.withBeacon === false);
+  const serversWithBeacon = dashboardSelectionServers.filter((server) => server.withBeacon && server.isOwner);
+  const serversWithoutBeacon = dashboardSelectionServers.filter((server) => !server.withBeacon || !server.isOwner);
   const unlockedIds = await getUnlockedBadgeIds(env, session.user.id);
   const unlockedBadges = BEACON_BADGES.filter((badge) => unlockedIds.has(badge.id));
   const lockedBadges = BEACON_BADGES.filter((badge) => !unlockedIds.has(badge.id));

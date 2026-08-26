@@ -88,7 +88,7 @@ export async function onRequestGet({ request, env }) {
       username: String(discordUser.global_name || discordUser.username || "Discord user").slice(0, 80),
       avatar: avatarUrl(discordUser),
     };
-    const session = await createSession(user, sessionSecret);
+    const session = await createSession(user, sessionSecret, { discordAccessToken: token.access_token });
     const next = getCookie(request, "beacon_login_next");
     const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
     const headers = new Headers({ Location: new URL(safeNext, request.url).toString() });

@@ -16,6 +16,30 @@ function base64UrlDecode(value) {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
+async function sessionCryptoKey(secret, usage) {
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(secret));
+  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, [usage]);
+}
+
+async function encryptSessionPayload(value, secret) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await sessionCryptoKey(secret, "encrypt");
+  const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoder.encode(value)));
+  const combined = new Uint8Array(iv.length + encrypted.length);
+  combined.set(iv);
+  combined.set(encrypted, iv.length);
+  return base64UrlEncode(combined);
+}
+
+async function decryptSessionPayload(value, secret) {
+  const combined = base64UrlDecode(value);
+  const iv = combined.slice(0, 12);
+  const encrypted = combined.slice(12);
+  const key = await sessionCryptoKey(secret, "decrypt");
+  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encrypted);
+  return decoder.decode(decrypted);
+}
+
 async function sign(value, secret) {
   const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   return base64UrlEncode(new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(value))));
@@ -81,11 +105,12 @@ export function getConfig(env) {
   };
 }
 
-export async function createSession(user, secret) {
-  const payload = base64UrlEncode(JSON.stringify({
+export async function createSession(user, secret, sessionData = {}) {
+  const payload = await encryptSessionPayload(JSON.stringify({
     user,
+    ...sessionData,
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
-  }));
+  }), secret);
   return `${payload}.${await sign(payload, secret)}`;
 }
 
@@ -94,7 +119,12 @@ export async function readSession(value, secret) {
   const [payload, signature] = value.split(".");
   if (!payload || !signature || signature !== await sign(payload, secret)) return null;
   try {
-    const session = JSON.parse(decoder.decode(base64UrlDecode(payload)));
+    let session;
+    try {
+      session = JSON.parse(decoder.decode(base64UrlDecode(payload)));
+    } catch {
+      session = JSON.parse(await decryptSessionPayload(payload, secret));
+    }
     return session.exp > Math.floor(Date.now() / 1000) ? session : null;
   } catch {
     return null;
