@@ -530,6 +530,14 @@ export async function onRequestGet({ request, env }) {
         if (serverInfoMembers) serverInfoMembers.textContent = button.dataset.serverMembers || "0";
         if (memberJoinDays) memberJoinDays.innerHTML = values.map((value, index) => "<span class=\"member-join-day\"><b>" + ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index] + "</b><strong>" + value + "</strong></span>").join("");
       }
+      function selectServer(button) {
+        updateServerInfo(button);
+        serverSelected = true;
+        dashMain?.classList.remove("is-server-locked");
+        document.querySelector(".server-select-gate")?.setAttribute("hidden", "");
+        activateDashboardTab("server-info");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
       if (serverSelected) activateDashboardTab(location.hash.slice(1) || "server-info");
       const customizeStorageKey = "beacon-customize-preview";
       const bioInput = document.querySelector(".bio-field textarea");
@@ -603,13 +611,11 @@ export async function onRequestGet({ request, env }) {
           activateDashboardTab("server-info");
         });
       });
-      document.querySelectorAll(".server-choice-button").forEach((button) => {
-        button.addEventListener("click", () => {
+      document.querySelectorAll("button.server-choice-button").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
           if (button.dataset.canManage !== "true") return denyServerAccess(button.dataset.denialReason);
-          updateServerInfo(button);
-          serverSelected = true;
-          dashMain?.classList.remove("is-server-locked");
-          activateDashboardTab("server-info");
+          selectServer(button);
         });
       });
       document.querySelectorAll(".dash-badge-img").forEach((image) => {
