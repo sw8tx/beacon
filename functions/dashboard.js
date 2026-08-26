@@ -12,9 +12,25 @@ function escapeHtml(value) {
   }[character]));
 }
 
-async function getDashboardServers(env, discordAccessToken) {
+async function getDashboardServers(env, discordAccessToken, request) {
   const { botToken } = getConfig(env);
   if (!discordAccessToken) return [];
+  let beaconServerIds = new Set();
+  let beaconServerNames = new Set();
+  let statsAvailable = false;
+  try {
+    const statsResponse = await fetch(new URL("/api/discord-stats", request.url), { headers: { accept: "application/json" } });
+    if (statsResponse.ok) {
+      const stats = await statsResponse.json();
+      if (Array.isArray(stats.servers)) {
+        statsAvailable = stats.servers.length > 0;
+        beaconServerIds = new Set(stats.servers.map((server) => String(server.id || "")).filter(Boolean));
+        beaconServerNames = new Set(stats.servers.map((server) => String(server.name || "").trim().toLowerCase()).filter(Boolean));
+      }
+    }
+  } catch (_) {
+    // Direct bot lookups below remain the fallback.
+  }
   try {
     const response = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
       headers: { authorization: `Bearer ${discordAccessToken}` },
@@ -23,8 +39,8 @@ async function getDashboardServers(env, discordAccessToken) {
     const userGuilds = await response.json();
     if (!Array.isArray(userGuilds)) return [];
     const servers = await Promise.all(userGuilds.map(async (guild) => {
-      let withBeacon = false;
-      if (botToken) {
+      let withBeacon = beaconServerIds.has(String(guild.id)) || beaconServerNames.has(String(guild.name || "").trim().toLowerCase());
+      if (!withBeacon && !statsAvailable && botToken) {
         try {
           const botGuildResponse = await fetch(`https://discord.com/api/v10/guilds/${guild.id}`, {
             headers: { authorization: `Bot ${botToken}` },
@@ -118,7 +134,7 @@ export async function onRequestGet({ request, env }) {
     { name: "Sparkle Stock Reborn", owner: "Eigentümer", tone: "gray", icon: "/assets/beacon-logo.png?v=92" },
     { name: "test", owner: "Eigentümer", tone: "dark", icon: "" },
   ];
-  const liveSelectionServers = await getDashboardServers(env, session.discordAccessToken);
+  const liveSelectionServers = await getDashboardServers(env, session.discordAccessToken, request);
   const resolvedServerName = liveSelectionServers[0]?.name || serverName;
   const resolvedServerIcon = liveSelectionServers[0]?.iconUrl || "";
   const dashboardAvatar = resolvedServerIcon ? escapeHtml(resolvedServerIcon) : avatar;

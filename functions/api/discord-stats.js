@@ -81,6 +81,7 @@ function normalizeServers(input) {
   if (!Array.isArray(input)) return [];
   return input
     .map((server) => ({
+      id: cleanText(server?.id, 30),
       name: cleanText(server?.name, 80),
       members: cleanNumber(server?.members),
       iconUrl: cleanUrl(server?.iconUrl),
@@ -141,6 +142,7 @@ async function fetchDiscordServers(env) {
     return guilds
       .filter(Boolean)
       .map((guild) => ({
+        id: cleanText(guild.id, 30),
         name: cleanText(guild.name, 80),
         members: cleanNumber(guild.approximate_member_count),
         iconUrl: guild.icon

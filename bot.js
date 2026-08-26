@@ -156,6 +156,7 @@ function buildStatsPayload() {
   }, 0);
   const servers = client.guilds.cache
     .map((guild) => ({
+      id: guild.id,
       name: guild.name,
       members: guild.memberCount || guild.members.cache.size || 0,
       iconUrl: guild.iconURL({ extension: "png", size: 64 }) || null,
