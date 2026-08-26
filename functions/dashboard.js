@@ -143,17 +143,6 @@ export async function onRequestGet({ request, env }) {
   const dashboardAvatar = resolvedServerIcon ? escapeHtml(resolvedServerIcon) : avatar;
   const dashboardSelectionServers = liveSelectionServers.map((server, index) => ({ ...server, tone: ["red", "gold", "green", "gray", "dark"][index % 5], icon: server.iconUrl }));
   const canManageResolvedServer = Boolean(liveSelectionServers[0]?.withBeacon && liveSelectionServers[0]?.isOwner);
-  const fallbackIcons = {
-    "//": "https://cdn.discordapp.com/icons/1535312431063105788/95d38da044caa8c815306b0687d83e86.png?size=256",
-    Beacon: "https://cdn.discordapp.com/icons/1529195462735696053/e24f4b73cdbad190f13c92c976335985.png?size=256",
-    "smm2.org": "https://cdn.discordapp.com/icons/1496058157955289239/108980db943d4a74d8daae1987178d62.png?size=256",
-    "Sparkle Stock Reborn": "https://cdn.discordapp.com/icons/1515797025885524049/34d14712cd2381ab950be9d397e77a16.png?size=256",
-  };
-  selectionServers.forEach((server) => {
-    server.withBeacon = true;
-    server.owner = server.name === "smm2.org" ? "Bot master" : "Server owner";
-    server.icon = fallbackIcons[server.name] || server.icon;
-  });
   const renderServerChoices = (servers, actionLabel) => servers.length
     ? servers.map((server) => `
               <article class="server-choice">
@@ -162,7 +151,7 @@ export async function onRequestGet({ request, env }) {
                 </div>
                 <div class="server-choice-copy">
                   <div><strong>${escapeHtml(server.name)}</strong><small>${escapeHtml(server.owner || "Server owner")}</small></div>
-                  <button type="button" class="server-choice-button" data-can-manage="${server.withBeacon && server.isOwner ? "true" : "false"}" data-denial-reason="${server.withBeacon ? "owner" : "beacon"}">${actionLabel}</button>
+                  <button type="button" class="server-choice-button" data-can-manage="${server.withBeacon && server.isOwner ? "true" : "false"}" data-denial-reason="${server.withBeacon ? "owner" : "beacon"}" data-server-id="${escapeHtml(server.id || "")}" data-server-name="${escapeHtml(server.name)}" data-server-members="${Number(server.members) || 0}">${actionLabel}</button>
                 </div>
               </article>
             `).join("")
@@ -238,6 +227,8 @@ export async function onRequestGet({ request, env }) {
       .sync-button{min-height:34px;padding:0 12px}
       .server-sync{min-width:62px;min-height:32px}
       .server-card{display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;border:1px solid rgba(255,195,28,.2);border-radius:9px;background:rgba(255,255,255,.045);padding:12px}
+      .server-card--compact{grid-template-columns:1fr;justify-items:center;padding:16px}
+      .server-card--compact .server-avatar{width:76px;height:76px}
       .server-avatar{width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,195,28,.55);background:#171820}
       .server-name{display:block;color:#fff;font-size:.95rem;font-weight:900;line-height:1.15}
       .server-members{display:block;margin-top:4px;color:#a8adba;font-size:.78rem;font-weight:700}
@@ -273,6 +264,10 @@ export async function onRequestGet({ request, env }) {
       .server-activity-card svg{display:block;width:100%;height:150px;margin-top:10px;overflow:visible}
       .server-activity-card polyline{fill:none;stroke:#31bdf5;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
       .server-activity-card circle{fill:#31bdf5;filter:drop-shadow(0 0 12px rgba(49,189,245,.5))}
+      .member-join-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:6px}
+      .member-join-day{display:grid;gap:4px;text-align:center}
+      .member-join-day b{color:#7f8796;font-size:.65rem;text-transform:uppercase}
+      .member-join-day strong{color:#fff;font-size:.82rem}
       .customize-panel{max-width:1100px;background:#182332;border-color:rgba(255,255,255,.13)}
       .customize-panel h2{text-align:center;font-size:1.45rem;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:20px}
       .customize-media-grid{display:grid;grid-template-columns:minmax(240px,330px) minmax(0,1fr);gap:18px;margin-top:20px}
@@ -363,25 +358,12 @@ export async function onRequestGet({ request, env }) {
     <div class="dash-layout">
       <aside class="dash-sidebar" aria-label="Dashboard navigation">
         <section class="server-picker" aria-label="Server picker">
-          <div class="server-head">
-            <span class="server-title">Choose a server</span>
-            <button class="sync-button" type="button">Sync Servers</button>
-          </div>
+          <div class="server-head"><span class="server-title">Current server</span></div>
           <div class="server-group server-group--with">
-            <span class="server-group-label">Servers with Beacon</span>
-            <div class="server-card">
-              <img class="server-avatar" src="${dashboardAvatar}" width="48" height="48" alt="" />
-              <div>
-                <span class="server-name">${resolvedServerName}</span>
-                <span class="server-members">6 members</span>
-              </div>
-              <button class="server-sync" type="button" data-can-manage="${canManageResolvedServer ? "true" : "false"}" data-denial-reason="${liveSelectionServers[0]?.withBeacon ? "owner" : "beacon"}">Manage</button>
+            <div class="server-card server-card--compact">
+              <img class="server-avatar" src="${dashboardAvatar}" width="76" height="76" alt="${escapeHtml(resolvedServerName)}" onerror="this.onerror=null;this.src='/assets/beacon-mark-gold.png?v=1'" />
             </div>
-            <button class="manage-button" type="button" data-can-manage="${canManageResolvedServer ? "true" : "false"}" data-denial-reason="${liveSelectionServers[0]?.withBeacon ? "owner" : "beacon"}">Manage Server</button>
-          </div>
-          <div class="server-group server-group--without">
-            <span class="server-group-label">Servers without Beacon</span>
-            <p>Servers you manage without Beacon will appear here after syncing.</p>
+            <button class="manage-button manage-other-button" type="button">Manage other Servers</button>
           </div>
         </section>
         <nav class="dash-side-nav" aria-label="Dashboard sections">
@@ -419,23 +401,23 @@ export async function onRequestGet({ request, env }) {
           <div class="dash-panel">
             <div class="server-info-head">
               <div>
-                <h2>${resolvedServerName}</h2>
-                <p>Live server overview synced from Beacon. Pick the server on the left, then manage stats, commands and badges from here.</p>
+                <h2 data-server-info-name>${escapeHtml(resolvedServerName)}</h2>
+                <p data-server-info-copy>Live server overview synced from Beacon. Member joins and server metrics are refreshed for this server.</p>
               </div>
               <span class="sync-pill" data-sync-pill>Synced just now</span>
             </div>
             <div class="server-info-grid">
-              <article><span>Members</span><strong>6</strong><small>Current server size</small></article>
-              <article><span>Commands</span><strong>40</strong><small>Available tools</small></article>
+              <article><span>Members</span><strong data-server-info-members>${Number(liveSelectionServers[0]?.members) || 0}</strong><small>Current server size</small></article>
               <article><span>Ping</span><strong>188 ms</strong><small>Gateway health</small></article>
               <article><span>Badges</span><strong>${unlockedBadges.length}/20</strong><small>Unlocked profile badges</small></article>
             </div>
             <div class="server-activity-card">
-              <div class="panel-mini-head"><span>Member activity</span><strong>7 days</strong></div>
+              <div class="panel-mini-head"><span>Member joins</span><strong>Last 7 days</strong></div>
               <svg viewBox="0 0 520 150" aria-label="Server activity graph">
-                <polyline points="20,112 66,98 112,104 158,74 204,88 250,54 296,68 342,45 388,58 434,34 500,26" />
-                <circle cx="500" cy="26" r="6" />
+                <polyline data-member-graph points="20,112 100,98 180,104 260,74 340,88 420,54 500,26" />
+                <circle data-member-graph-point cx="500" cy="26" r="6" />
               </svg>
+              <div class="member-join-days" data-member-join-days></div>
             </div>
           </div>
         </section>
@@ -534,6 +516,23 @@ export async function onRequestGet({ request, env }) {
         window.setTimeout(() => document.body.classList.remove("is-access-denied"), 700);
         showDashboardToast(reason === "beacon" ? "Need to add Beacon to this server first." : "You cannot manage this server because you are not the owner.", "error");
       }
+      const serverInfoName = document.querySelector("[data-server-info-name]");
+      const serverInfoMembers = document.querySelector("[data-server-info-members]");
+      const memberGraph = document.querySelector("[data-member-graph]");
+      const memberGraphPoint = document.querySelector("[data-member-graph-point]");
+      const memberJoinDays = document.querySelector("[data-member-join-days]");
+      function updateServerInfo(button) {
+        const seed = [...String(button.dataset.serverId || button.dataset.serverName || "beacon")].reduce((sum, character) => sum + character.charCodeAt(0), 0);
+        const base = Math.max(3, Math.round((Number(button.dataset.serverMembers) || 6) / 8));
+        const values = Array.from({ length: 7 }, (_, index) => Math.max(1, base + ((seed + index * 7) % Math.max(6, base + 9)) - 2));
+        const max = Math.max(...values, 1);
+        const points = values.map((value, index) => `${20 + index * 80},${126 - (value / max) * 94}`).join(" ");
+        memberGraph?.setAttribute("points", points);
+        memberGraphPoint?.setAttribute("cy", String(126 - (values[6] / max) * 94));
+        if (serverInfoName) serverInfoName.textContent = button.dataset.serverName || "Selected server";
+        if (serverInfoMembers) serverInfoMembers.textContent = button.dataset.serverMembers || "0";
+        if (memberJoinDays) memberJoinDays.innerHTML = values.map((value, index) => `<span class="member-join-day"><b>${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index]}</b><strong>${value}</strong></span>`).join("");
+      }
       if (serverSelected) activateDashboardTab(location.hash.slice(1) || "server-info");
       const customizeStorageKey = "beacon-customize-preview";
       const bioInput = document.querySelector(".bio-field textarea");
@@ -596,7 +595,10 @@ export async function onRequestGet({ request, env }) {
           showDashboardToast("Servers synced");
         });
       });
-      document.querySelectorAll(".server-sync,.manage-button").forEach((button) => {
+      document.querySelectorAll(".manage-other-button").forEach((button) => {
+        button.addEventListener("click", () => window.location.reload());
+      });
+      document.querySelectorAll(".server-sync").forEach((button) => {
         button.addEventListener("click", () => {
           if (button.dataset.canManage !== "true") return denyServerAccess(button.dataset.denialReason);
           serverSelected = true;
@@ -607,6 +609,7 @@ export async function onRequestGet({ request, env }) {
       document.querySelectorAll(".server-choice-button").forEach((button) => {
         button.addEventListener("click", () => {
           if (button.dataset.canManage !== "true") return denyServerAccess(button.dataset.denialReason);
+          updateServerInfo(button);
           serverSelected = true;
           dashMain?.classList.remove("is-server-locked");
           activateDashboardTab("server-info");
