@@ -51,6 +51,7 @@ async function getDashboardServers(env, discordAccessToken, request) {
         }
       }
       return {
+        id: String(guild.id),
         name: guild.name || "Discord server",
         owner: guild.owner ? "Server owner" : "Member",
         isOwner: Boolean(guild.owner),
@@ -59,7 +60,9 @@ async function getDashboardServers(env, discordAccessToken, request) {
         withBeacon,
       };
     }));
-    return servers.sort((left, right) => Number(right.withBeacon && right.isOwner) - Number(left.withBeacon && left.isOwner));
+    return [...new Map(servers.map((server) => [server.id, server])).values()]
+      .filter((server) => server.isOwner)
+      .sort((left, right) => Number(right.withBeacon) - Number(left.withBeacon));
   } catch (_) {
     return [];
   }
@@ -159,13 +162,13 @@ export async function onRequestGet({ request, env }) {
                 </div>
                 <div class="server-choice-copy">
                   <div><strong>${escapeHtml(server.name)}</strong><small>${escapeHtml(server.owner || "Server owner")}</small></div>
-                  <button type="button" class="server-choice-button" data-can-manage="${server.isOwner ? "true" : "false"}">${actionLabel}</button>
+                  <button type="button" class="server-choice-button" data-can-manage="${server.withBeacon && server.isOwner ? "true" : "false"}" data-denial-reason="${server.withBeacon ? "owner" : "beacon"}">${actionLabel}</button>
                 </div>
               </article>
             `).join("")
     : `<p class="server-choice-empty">No servers in this group yet.</p>`;
   const serversWithBeacon = dashboardSelectionServers.filter((server) => server.withBeacon && server.isOwner);
-  const serversWithoutBeacon = dashboardSelectionServers.filter((server) => !server.withBeacon || !server.isOwner);
+  const serversWithoutBeacon = dashboardSelectionServers.filter((server) => !server.withBeacon && server.isOwner);
   const unlockedIds = await getUnlockedBadgeIds(env, session.user.id);
   const unlockedBadges = BEACON_BADGES.filter((badge) => unlockedIds.has(badge.id));
   const lockedBadges = BEACON_BADGES.filter((badge) => !unlockedIds.has(badge.id));
@@ -372,9 +375,9 @@ export async function onRequestGet({ request, env }) {
                 <span class="server-name">${resolvedServerName}</span>
                 <span class="server-members">6 members</span>
               </div>
-              <button class="server-sync" type="button" data-can-manage="${canManageResolvedServer ? "true" : "false"}">Manage</button>
+              <button class="server-sync" type="button" data-can-manage="${canManageResolvedServer ? "true" : "false"}" data-denial-reason="${liveSelectionServers[0]?.withBeacon ? "owner" : "beacon"}">Manage</button>
             </div>
-            <button class="manage-button" type="button" data-can-manage="${canManageResolvedServer ? "true" : "false"}">Manage Server</button>
+            <button class="manage-button" type="button" data-can-manage="${canManageResolvedServer ? "true" : "false"}" data-denial-reason="${liveSelectionServers[0]?.withBeacon ? "owner" : "beacon"}">Manage Server</button>
           </div>
           <div class="server-group server-group--without">
             <span class="server-group-label">Servers without Beacon</span>
@@ -524,12 +527,12 @@ export async function onRequestGet({ request, env }) {
         window.clearTimeout(toastTimer);
         toastTimer = window.setTimeout(() => toast.classList.remove("is-visible", "is-error"), 2600);
       }
-      function denyServerAccess() {
+      function denyServerAccess(reason = "owner") {
         document.body.classList.remove("is-access-denied");
         void document.body.offsetWidth;
         document.body.classList.add("is-access-denied");
         window.setTimeout(() => document.body.classList.remove("is-access-denied"), 700);
-        showDashboardToast("You cannot manage this server because you are not the owner.", "error");
+        showDashboardToast(reason === "beacon" ? "Need to add Beacon to this server first." : "You cannot manage this server because you are not the owner.", "error");
       }
       if (serverSelected) activateDashboardTab(location.hash.slice(1) || "server-info");
       const customizeStorageKey = "beacon-customize-preview";
@@ -595,7 +598,7 @@ export async function onRequestGet({ request, env }) {
       });
       document.querySelectorAll(".server-sync,.manage-button").forEach((button) => {
         button.addEventListener("click", () => {
-          if (button.dataset.canManage !== "true") return denyServerAccess();
+          if (button.dataset.canManage !== "true") return denyServerAccess(button.dataset.denialReason);
           serverSelected = true;
           dashMain?.classList.remove("is-server-locked");
           activateDashboardTab("server-info");
@@ -603,7 +606,7 @@ export async function onRequestGet({ request, env }) {
       });
       document.querySelectorAll(".server-choice-button").forEach((button) => {
         button.addEventListener("click", () => {
-          if (button.dataset.canManage !== "true") return denyServerAccess();
+          if (button.dataset.canManage !== "true") return denyServerAccess(button.dataset.denialReason);
           serverSelected = true;
           dashMain?.classList.remove("is-server-locked");
           activateDashboardTab("server-info");
