@@ -16,6 +16,7 @@ async function getDashboardServers(env, discordAccessToken, request) {
   const { botToken } = getConfig(env);
   if (!discordAccessToken) return [];
   let beaconServerIds = new Set();
+  let botGuildIds = null;
   try {
     const statsResponse = await fetch(new URL("/api/discord-stats", request.url), { headers: { accept: "application/json" } });
     if (statsResponse.ok) {
@@ -27,6 +28,19 @@ async function getDashboardServers(env, discordAccessToken, request) {
   } catch (_) {
     // Direct bot lookups below remain the fallback.
   }
+  if (botToken) {
+    try {
+      const botGuildsResponse = await fetch("https://discord.com/api/v10/users/@me/guilds", {
+        headers: { authorization: `Bot ${botToken}` },
+      });
+      if (botGuildsResponse.ok) {
+        const botGuilds = await botGuildsResponse.json();
+        if (Array.isArray(botGuilds)) botGuildIds = new Set(botGuilds.map((guild) => String(guild.id || "")).filter(Boolean));
+      }
+    } catch (_) {
+      // Use the last synced ID list when Discord's bot endpoint is unavailable.
+    }
+  }
   try {
     const response = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
       headers: { authorization: `Bearer ${discordAccessToken}` },
@@ -35,17 +49,7 @@ async function getDashboardServers(env, discordAccessToken, request) {
     const userGuilds = await response.json();
     if (!Array.isArray(userGuilds)) return [];
     const servers = await Promise.all(userGuilds.map(async (guild) => {
-      let withBeacon = beaconServerIds.has(String(guild.id));
-      if (botToken) {
-        try {
-          const botGuildResponse = await fetch(`https://discord.com/api/v10/guilds/${guild.id}`, {
-            headers: { authorization: `Bot ${botToken}` },
-          });
-          if (botGuildResponse.ok || botGuildResponse.status === 404) withBeacon = botGuildResponse.ok;
-        } catch (_) {
-          // Keep the ID-based stats result if Discord is temporarily unavailable.
-        }
-      }
+      const withBeacon = botGuildIds ? botGuildIds.has(String(guild.id)) : beaconServerIds.has(String(guild.id));
       return {
         id: String(guild.id),
         name: guild.name || "Discord server",
