@@ -139,6 +139,7 @@ export async function onRequestGet({ request, env }) {
   const resolvedServerIcon = liveSelectionServers[0]?.iconUrl || "";
   const dashboardAvatar = resolvedServerIcon ? escapeHtml(resolvedServerIcon) : avatar;
   const dashboardSelectionServers = liveSelectionServers.map((server, index) => ({ ...server, tone: ["red", "gold", "green", "gray", "dark"][index % 5], icon: server.iconUrl }));
+  const canManageResolvedServer = Boolean(liveSelectionServers[0]?.withBeacon && liveSelectionServers[0]?.isOwner);
   const fallbackIcons = {
     "//": "https://cdn.discordapp.com/icons/1535312431063105788/95d38da044caa8c815306b0687d83e86.png?size=256",
     Beacon: "https://cdn.discordapp.com/icons/1529195462735696053/e24f4b73cdbad190f13c92c976335985.png?size=256",
@@ -158,7 +159,7 @@ export async function onRequestGet({ request, env }) {
                 </div>
                 <div class="server-choice-copy">
                   <div><strong>${escapeHtml(server.name)}</strong><small>${escapeHtml(server.owner || "Server owner")}</small></div>
-                  <button type="button" class="server-choice-button">${actionLabel}</button>
+                  <button type="button" class="server-choice-button" data-can-manage="${server.isOwner ? "true" : "false"}">${actionLabel}</button>
                 </div>
               </article>
             `).join("")
@@ -253,6 +254,9 @@ export async function onRequestGet({ request, env }) {
       .dash-panel p{margin:0;color:#9ea6b5;font-size:.98rem;line-height:1.6}
       .dash-toast{position:fixed;top:88px;left:50%;z-index:80;display:flex;min-height:42px;align-items:center;justify-content:center;border:1px solid rgba(255,195,28,.42);border-radius:8px;background:rgba(12,13,15,.96);color:#ffc31c;padding:0 18px;font-size:.86rem;font-weight:900;box-shadow:0 20px 50px rgba(255,195,28,.16);opacity:0;pointer-events:none;transform:translate(-50%,-12px);transition:opacity .2s ease,transform .2s ease}
       .dash-toast.is-visible{opacity:1;transform:translate(-50%,0)}
+      .dash-toast.is-error{border-color:rgba(255,77,77,.85);background:#3a1016;color:#fff;box-shadow:0 20px 60px rgba(255,35,55,.32)}
+      body.is-access-denied::after{content:"";position:fixed;inset:0;z-index:70;pointer-events:none;background:rgba(255,30,45,.2);animation:access-denied-flash .65s ease-out forwards}
+      @keyframes access-denied-flash{0%{opacity:0}22%{opacity:1}100%{opacity:0}}
       .server-info-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
       .sync-pill{display:inline-flex;min-height:30px;align-items:center;border:1px solid rgba(103,232,77,.28);border-radius:999px;background:rgba(103,232,77,.1);color:#67e84d;padding:0 12px;font-size:.72rem;font-weight:900;white-space:nowrap}
       .server-info-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:22px}
@@ -368,9 +372,9 @@ export async function onRequestGet({ request, env }) {
                 <span class="server-name">${resolvedServerName}</span>
                 <span class="server-members">6 members</span>
               </div>
-              <button class="server-sync" type="button">Manage</button>
+              <button class="server-sync" type="button" data-can-manage="${canManageResolvedServer ? "true" : "false"}">Manage</button>
             </div>
-            <button class="manage-button" type="button">Manage Server</button>
+            <button class="manage-button" type="button" data-can-manage="${canManageResolvedServer ? "true" : "false"}">Manage Server</button>
           </div>
           <div class="server-group server-group--without">
             <span class="server-group-label">Servers without Beacon</span>
@@ -512,12 +516,20 @@ export async function onRequestGet({ request, env }) {
       });
       const toast = document.querySelector("#dash-toast");
       let toastTimer = null;
-      function showDashboardToast(message) {
+      function showDashboardToast(message, type = "default") {
         if (!toast) return;
         toast.textContent = message;
+        toast.classList.toggle("is-error", type === "error");
         toast.classList.add("is-visible");
         window.clearTimeout(toastTimer);
-        toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2200);
+        toastTimer = window.setTimeout(() => toast.classList.remove("is-visible", "is-error"), 2600);
+      }
+      function denyServerAccess() {
+        document.body.classList.remove("is-access-denied");
+        void document.body.offsetWidth;
+        document.body.classList.add("is-access-denied");
+        window.setTimeout(() => document.body.classList.remove("is-access-denied"), 700);
+        showDashboardToast("You cannot manage this server because you are not the owner.", "error");
       }
       if (serverSelected) activateDashboardTab(location.hash.slice(1) || "server-info");
       const customizeStorageKey = "beacon-customize-preview";
@@ -583,6 +595,7 @@ export async function onRequestGet({ request, env }) {
       });
       document.querySelectorAll(".server-sync,.manage-button").forEach((button) => {
         button.addEventListener("click", () => {
+          if (button.dataset.canManage !== "true") return denyServerAccess();
           serverSelected = true;
           dashMain?.classList.remove("is-server-locked");
           activateDashboardTab("server-info");
@@ -590,6 +603,7 @@ export async function onRequestGet({ request, env }) {
       });
       document.querySelectorAll(".server-choice-button").forEach((button) => {
         button.addEventListener("click", () => {
+          if (button.dataset.canManage !== "true") return denyServerAccess();
           serverSelected = true;
           dashMain?.classList.remove("is-server-locked");
           activateDashboardTab("server-info");
