@@ -592,8 +592,10 @@ export async function onRequestGet({ request, env }) {
         saveButton.textContent = "Saving...";
         try {
           const response = await fetch("/api/dashboard/customize?server=" + encodeURIComponent(dashboardServerId), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-          const result = await response.json().catch(() => ({}));
-          if (!response.ok) throw new Error(result.error || "Discord rejected the profile update.");
+          const responseText = await response.text();
+          let result = {};
+          try { result = JSON.parse(responseText); } catch (_) {}
+          if (!response.ok) throw new Error(result.error || `Discord rejected the profile update (HTTP ${response.status}). ${responseText.slice(0, 240)}`);
           if (Array.isArray(result.skippedRateLimitedFields)) {
             if (result.skippedRateLimitedFields.includes("avatar")) { avatarChanged = true; avatarApplied = false; }
             if (result.skippedRateLimitedFields.includes("banner")) { bannerChanged = true; bannerApplied = false; }

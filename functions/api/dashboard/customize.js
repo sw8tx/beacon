@@ -61,7 +61,7 @@ function profileAssetUrl(serverId, userId, asset, type) {
   return `https://cdn.discordapp.com/guilds/${serverId}/users/${userId}/banners/${asset}.png?size=1024`;
 }
 
-export async function onRequestPost({ request, env }) {
+async function updateServerProfile({ request, env }) {
   const { sessionSecret, botToken } = getConfig(env);
   const session = await readSession(getCookie(request, "beacon_session"), sessionSecret);
   if (!session?.user) return json({ error: "Please log in with Discord again." }, 401);
@@ -170,4 +170,13 @@ export async function onRequestPost({ request, env }) {
     avatarUrl: profileAssetUrl(serverId, botUserId, profile.avatar, "avatar"),
     bannerUrl: profileAssetUrl(serverId, botUserId, profile.banner, "banner"),
   } });
+}
+
+export async function onRequestPost(context) {
+  try {
+    return await updateServerProfile(context);
+  } catch (error) {
+    console.error("[profile-update] unexpected error", error);
+    return json({ error: `Profile update failed: ${error?.message || "Cloudflare function error"}` }, 500);
+  }
 }
