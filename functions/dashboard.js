@@ -629,11 +629,21 @@ export async function onRequestGet({ request, env }) {
           if (!preview) return;
           const reader = new FileReader();
           reader.addEventListener("load", () => {
-            preview.src = reader.result;
-            updateImageState(preview, reader.result);
-            if (input.id === "avatar-upload") { avatarValue = reader.result; avatarChanged = true; }
-            if (input.id === "banner-upload") { bannerValue = reader.result; bannerChanged = true; }
-            showDashboardToast("Image preview updated");
+            const image = new Image();
+            image.addEventListener("load", () => {
+              const canvas = document.createElement("canvas");
+              const scale = Math.min(1, 2048 / Math.max(image.naturalWidth, image.naturalHeight));
+              canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+              canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+              canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+              const imageData = canvas.toDataURL("image/png");
+              preview.src = imageData;
+              updateImageState(preview, imageData);
+              if (input.id === "avatar-upload") { avatarValue = imageData; avatarChanged = true; }
+              if (input.id === "banner-upload") { bannerValue = imageData; bannerChanged = true; }
+              showDashboardToast("Image preview updated");
+            });
+            image.src = reader.result;
           });
           reader.readAsDataURL(file);
         });

@@ -25,13 +25,13 @@ function imageBytes(data) {
 
 function validImageData(data) {
   return typeof data === "string" &&
-    /^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=\s]+$/i.test(data) &&
+    /^data:image\/(png|jpe?g|gif);base64,[a-z0-9+/=\s]+$/i.test(data) &&
     imageBytes(data) <= MAX_IMAGE_BYTES;
 }
 
 function normalizeImageData(data) {
   if (data === null) return null;
-  const match = String(data).match(/^data:(image\/(?:png|jpe?g|gif|webp));base64,(.*)$/is);
+  const match = String(data).match(/^data:(image\/(?:png|jpe?g|gif));base64,(.*)$/is);
   return match ? `data:${match[1].toLowerCase()};base64,${match[2].replace(/\s/g, "")}` : data;
 }
 
@@ -87,7 +87,7 @@ export async function onRequestPost({ request, env }) {
   for (const field of ["avatar", "banner"]) {
     if (!Object.prototype.hasOwnProperty.call(body, field)) continue;
     if (body[field] !== null && !validImageData(body[field])) {
-      return json({ error: `${field === "avatar" ? "Avatar" : "Banner"} must be a PNG, JPG, GIF or WebP image up to 10 MB.` }, 400);
+      return json({ error: `${field === "avatar" ? "Avatar" : "Banner"} must be a PNG, JPG or GIF image up to 8 MB.` }, 400);
     }
     payload[field] = normalizeImageData(body[field]);
   }
