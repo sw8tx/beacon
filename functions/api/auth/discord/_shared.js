@@ -95,10 +95,13 @@ export async function verifyOauthState(value, secret, maxAgeSeconds = 600) {
 }
 
 export function getConfig(env) {
+  const configuredBotToken = cleanEnv(env.DISCORD_BOT_TOKEN || env.DISCORD_TOKEN || env.BOT_TOKEN || env.TOKEN)
+    .replace(/^Bot\s+/i, "")
+    .trim();
   return {
     clientId: cleanEnv(env.DISCORD_CLIENT_ID || CLIENT_ID),
     clientSecret: cleanEnv(env.DISCORD_CLIENT_SECRET || env.CLIENT_SECRET),
-    botToken: cleanEnv(env.DISCORD_BOT_TOKEN || env.DISCORD_TOKEN || env.BOT_TOKEN || env.TOKEN),
+    botToken: configuredBotToken,
     supportGuildId: cleanEnv(env.DISCORD_SUPPORT_GUILD_ID || env.SUPPORT_GUILD_ID || env.DEV_GUILD_ID),
     sessionSecret: cleanEnv(env.AUTH_SESSION_SECRET),
     redirectUri: cleanEnv(env.DISCORD_REDIRECT_URI || env.REDIRECT_URI || DEFAULT_REDIRECT_URI),
