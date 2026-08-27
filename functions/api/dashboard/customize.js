@@ -35,8 +35,11 @@ function normalizeImageData(data) {
   return match ? `data:${match[1].toLowerCase()};base64,${match[2].replace(/\s/g, "")}` : data;
 }
 
-function avatarRateLimited(body) {
-  return JSON.stringify(body || {}).includes("AVATAR_RATE_LIMIT");
+function rateLimitedField(body) {
+  const text = JSON.stringify(body || {});
+  if (text.includes("AVATAR_RATE_LIMIT")) return "avatar";
+  if (text.includes("BANNER_RATE_LIMIT")) return "banner";
+  return null;
 }
 
 async function discordJson(path, token, options = {}) {
@@ -102,14 +105,20 @@ export async function onRequestPost({ request, env }) {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
-  if (!result.response.ok && avatarRateLimited(result.body) && Object.keys(payload).some((field) => field !== "avatar")) {
-    const fallbackPayload = { ...payload };
-    delete fallbackPayload.avatar;
+  const skippedRateLimitedFields = [];
+  while (!result.response.ok) {
+    const limitedField = rateLimitedField(result.body);
+    if (!limitedField || !Object.keys(payload).some((field) => field !== limitedField)) break;
+    skippedRateLimitedFields.push(limitedField);
+    delete payload[limitedField];
     result = await discordJson(`/guilds/${serverId}/members/@me`, `Bot ${botToken}`, {
       method: "PATCH",
-      body: JSON.stringify(fallbackPayload),
+      body: JSON.stringify(payload),
     });
-    if (result.response.ok) return json({ ok: true, avatarRateLimited: true, message: "Bio and banner were updated. Discord temporarily rate-limited the avatar; select it again later." });
+  }
+  if (result.response.ok && skippedRateLimitedFields.length) {
+    const skipped = skippedRateLimitedFields.join(" and ");
+    return json({ ok: true, skippedRateLimitedFields, message: `Other changes were saved. Discord temporarily rate-limited the ${skipped}; try that image again later.` });
   }
   if (!result.response.ok) {
     const fieldErrors = result.body?.errors ? ` ${JSON.stringify(result.body.errors).slice(0, 900)}` : "";

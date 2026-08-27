@@ -35,7 +35,14 @@ if (typeof dns.setDefaultResultOrder === "function") {
   dns.setDefaultResultOrder("ipv4first");
 }
 
-const TOKEN = process.env.DISCORD_TOKEN || process.env.DISCORD_BOT_TOKEN || process.env.TOKEN || "PASTE_NEW_DISCORD_BOT_TOKEN_HERE";
+function normalizeBotToken(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^Bot\s+/i, "")
+    .replace(/^['"]|['"]$/g, "");
+}
+
+const TOKEN = normalizeBotToken(process.env.DISCORD_TOKEN || process.env.DISCORD_BOT_TOKEN || process.env.TOKEN || "PASTE_NEW_DISCORD_BOT_TOKEN_HERE");
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID || "1529195963787251784";
 const DEV_GUILD_ID = process.env.DEV_GUILD_ID || "";
 const STATS_SECRET = process.env.STATS_SECRET || "";

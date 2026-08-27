@@ -593,7 +593,10 @@ export async function onRequestGet({ request, env }) {
           const result = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(result.error || "Discord rejected the profile update.");
           try { localStorage.setItem(customizeStorageKey, JSON.stringify({ bio: payload.bio, avatar: avatarValue, banner: bannerValue })); } catch (_) {}
-          if (result.avatarRateLimited) avatarChanged = false;
+          if (Array.isArray(result.skippedRateLimitedFields)) {
+            if (result.skippedRateLimitedFields.includes("avatar")) avatarChanged = false;
+            if (result.skippedRateLimitedFields.includes("banner")) bannerChanged = false;
+          }
           saveButton.textContent = "Saved";
           showDashboardToast(result.message || "Bot profile updated on Discord");
         } catch (error) {
