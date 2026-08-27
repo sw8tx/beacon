@@ -55,6 +55,12 @@ async function discordJson(path, token, options = {}) {
   return { response, body };
 }
 
+function profileAssetUrl(serverId, userId, asset, type) {
+  if (!asset || !userId) return null;
+  if (type === "avatar") return `https://cdn.discordapp.com/guilds/${serverId}/users/${userId}/avatars/${asset}.png?size=1024`;
+  return `https://cdn.discordapp.com/guilds/${serverId}/users/${userId}/banners/${asset}.png?size=1024`;
+}
+
 export async function onRequestPost({ request, env }) {
   const { sessionSecret, botToken } = getConfig(env);
   const session = await readSession(getCookie(request, "beacon_session"), sessionSecret);
@@ -101,6 +107,11 @@ export async function onRequestPost({ request, env }) {
 
   if (!Object.keys(payload).length) return json({ error: "No changes were submitted." }, 400);
 
+  const before = await discordJson(`/guilds/${serverId}/members/@me`, `Bot ${botToken}`);
+  if (!before.response.ok) {
+    return json({ error: "The selected server profile could not be loaded from Discord." }, 502);
+  }
+
   let result = await discordJson(`/guilds/${serverId}/members/@me`, `Bot ${botToken}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
@@ -127,5 +138,31 @@ export async function onRequestPost({ request, env }) {
     return json({ error: detail }, result.response.status >= 500 ? 502 : result.response.status);
   }
 
-  return json({ ok: true, message: "Beacon's server profile was updated." });
+  const verified = await discordJson(`/guilds/${serverId}/members/@me`, `Bot ${botToken}`);
+  if (!verified.response.ok) {
+    return json({ error: "Discord accepted the update but the server profile could not be verified yet. Please reload and try again." }, 502);
+  }
+
+  const profile = verified.body || {};
+  const verificationErrors = [];
+  if (Object.prototype.hasOwnProperty.call(payload, "bio") && String(profile.bio || "") !== payload.bio) verificationErrors.push("bio");
+  if (Object.prototype.hasOwnProperty.call(payload, "avatar") && payload.avatar !== null && String(profile.avatar || "") === String(before.body?.avatar || "")) verificationErrors.push("avatar");
+  if (Object.prototype.hasOwnProperty.call(payload, "banner") && payload.banner !== null && String(profile.banner || "") === String(before.body?.banner || "")) verificationErrors.push("banner");
+  if (verificationErrors.length) {
+    return json({ error: `Discord did not confirm the server profile fields: ${verificationErrors.join(", ")}.`, profile: {
+      bio: profile.bio || "",
+      avatar: profile.avatar || null,
+      banner: profile.banner || null,
+      avatarUrl: profileAssetUrl(serverId, profile.user?.id, profile.avatar, "avatar"),
+      bannerUrl: profileAssetUrl(serverId, profile.user?.id, profile.banner, "banner"),
+    } }, 502);
+  }
+
+  return json({ ok: true, message: "Beacon's server profile was updated and verified in this server.", profile: {
+    bio: profile.bio || "",
+    avatar: profile.avatar || null,
+    banner: profile.banner || null,
+    avatarUrl: profileAssetUrl(serverId, profile.user?.id, profile.avatar, "avatar"),
+    bannerUrl: profileAssetUrl(serverId, profile.user?.id, profile.banner, "banner"),
+  } });
 }

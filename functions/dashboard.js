@@ -572,14 +572,16 @@ export async function onRequestGet({ request, env }) {
       let bannerValue = null;
       let avatarChanged = false;
       let bannerChanged = false;
+      let avatarApplied = false;
+      let bannerApplied = false;
       function updateImageState(preview, value) {
         preview?.parentElement?.classList.toggle("has-custom-image", Boolean(value));
       }
       try {
         const saved = JSON.parse(localStorage.getItem(customizeStorageKey) || "null");
         if (saved?.bio && bioInput) bioInput.value = saved.bio;
-        if (saved?.avatar && avatarPreview) { avatarValue = saved.avatar; avatarPreview.src = saved.avatar; updateImageState(avatarPreview, avatarValue); }
-        if (saved?.banner && bannerPreview) { bannerValue = saved.banner; bannerPreview.src = saved.banner; updateImageState(bannerPreview, bannerValue); }
+        if (saved?.avatar && avatarPreview) { avatarValue = saved.avatar; avatarApplied = saved.appliedAvatar === true; avatarChanged = !avatarApplied; avatarPreview.src = saved.avatar; updateImageState(avatarPreview, avatarValue); }
+        if (saved?.banner && bannerPreview) { bannerValue = saved.banner; bannerApplied = saved.appliedBanner === true; bannerChanged = !bannerApplied; bannerPreview.src = saved.banner; updateImageState(bannerPreview, bannerValue); }
       } catch (_) {}
       saveButton?.addEventListener("click", async () => {
         if (!dashboardServerId) return showDashboardToast("Select a server first", "error");
@@ -592,11 +594,15 @@ export async function onRequestGet({ request, env }) {
           const response = await fetch("/api/dashboard/customize?server=" + encodeURIComponent(dashboardServerId), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
           const result = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(result.error || "Discord rejected the profile update.");
-          try { localStorage.setItem(customizeStorageKey, JSON.stringify({ bio: payload.bio, avatar: avatarValue, banner: bannerValue })); } catch (_) {}
           if (Array.isArray(result.skippedRateLimitedFields)) {
-            if (result.skippedRateLimitedFields.includes("avatar")) avatarChanged = false;
-            if (result.skippedRateLimitedFields.includes("banner")) bannerChanged = false;
+            if (result.skippedRateLimitedFields.includes("avatar")) { avatarChanged = true; avatarApplied = false; }
+            if (result.skippedRateLimitedFields.includes("banner")) { bannerChanged = true; bannerApplied = false; }
           }
+          if (payload.avatar && !result.skippedRateLimitedFields?.includes("avatar")) { avatarApplied = true; avatarChanged = false; }
+          if (payload.banner && !result.skippedRateLimitedFields?.includes("banner")) { bannerApplied = true; bannerChanged = false; }
+          if (result.profile?.avatarUrl && avatarPreview && !result.skippedRateLimitedFields?.includes("avatar")) { avatarPreview.src = result.profile.avatarUrl; avatarValue = result.profile.avatarUrl; updateImageState(avatarPreview, avatarValue); }
+          if (result.profile?.bannerUrl && bannerPreview && !result.skippedRateLimitedFields?.includes("banner")) { bannerPreview.src = result.profile.bannerUrl; bannerValue = result.profile.bannerUrl; updateImageState(bannerPreview, bannerValue); }
+          try { localStorage.setItem(customizeStorageKey, JSON.stringify({ bio: payload.bio, avatar: avatarValue, banner: bannerValue, appliedAvatar: avatarApplied, appliedBanner: bannerApplied })); } catch (_) {}
           saveButton.textContent = "Saved";
           showDashboardToast(result.message || "Bot profile updated on Discord");
         } catch (error) {
@@ -618,6 +624,8 @@ export async function onRequestGet({ request, env }) {
         if (bannerPreview) { bannerPreview.src = defaultImage; updateImageState(bannerPreview, null); }
         avatarValue = null;
         bannerValue = null;
+        avatarApplied = false;
+        bannerApplied = false;
         avatarChanged = true;
         bannerChanged = true;
         showDashboardToast("All changes reset");
@@ -643,8 +651,8 @@ export async function onRequestGet({ request, env }) {
               const imageData = canvas.toDataURL("image/png");
               preview.src = imageData;
               updateImageState(preview, imageData);
-              if (input.id === "avatar-upload") { avatarValue = imageData; avatarChanged = true; }
-              if (input.id === "banner-upload") { bannerValue = imageData; bannerChanged = true; }
+              if (input.id === "avatar-upload") { avatarValue = imageData; avatarChanged = true; avatarApplied = false; }
+              if (input.id === "banner-upload") { bannerValue = imageData; bannerChanged = true; bannerApplied = false; }
               showDashboardToast("Image preview updated");
             });
             image.src = reader.result;
@@ -656,8 +664,8 @@ export async function onRequestGet({ request, env }) {
         button.addEventListener("click", () => {
           const preview = button.closest(".asset-editor")?.querySelector("img");
           if (preview) { preview.src = defaultImage; updateImageState(preview, null); }
-          if (button.dataset.resetImage === "avatar") { avatarValue = null; avatarChanged = true; }
-          if (button.dataset.resetImage === "banner") { bannerValue = null; bannerChanged = true; }
+          if (button.dataset.resetImage === "avatar") { avatarValue = null; avatarChanged = true; avatarApplied = false; }
+          if (button.dataset.resetImage === "banner") { bannerValue = null; bannerChanged = true; bannerApplied = false; }
           showDashboardToast("Image removed");
         });
       });
