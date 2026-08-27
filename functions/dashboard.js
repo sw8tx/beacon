@@ -284,10 +284,12 @@ export async function onRequestGet({ request, env }) {
       .asset-editor{display:grid;gap:14px;border-radius:11px;background:#121b28;padding:18px}
       .asset-editor strong,.bio-field span{color:#fff;font-size:.95rem}
       .asset-editor small,.bio-field small{color:#c9d4e8;font-size:.72rem}
-      .bot-avatar-preview{display:grid;place-items:center;min-height:138px}
+      .bot-avatar-preview{display:grid;place-items:center;min-height:138px;overflow:hidden;border-radius:50%}
       .bot-avatar-preview img{width:128px;height:128px;border:3px solid rgba(58,221,126,.66);border-radius:50%;object-fit:contain;background:#35c86c;padding:24px}
+      .bot-avatar-preview.has-custom-image img{width:100%;height:100%;object-fit:cover;background:transparent;padding:0}
       .bot-banner-preview{position:relative;display:grid;min-height:320px;place-items:center;border:2px solid rgba(72,130,207,.7);border-radius:4px;background:#35c86c;overflow:hidden}
       .bot-banner-preview img{width:190px;height:190px;object-fit:contain;filter:brightness(0) invert(1)}
+      .bot-banner-preview.has-custom-image img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:none}
       .bot-banner-preview span{position:absolute;right:18px;bottom:16px;width:18px;height:18px;background:#caffd6;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%)}
       .asset-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
       .asset-actions button,.reset-bio,.save-bot,.reset-changes{min-width:0;min-height:38px;border:0;border-radius:7px;color:#fff;font:800 .84rem "DM Sans",system-ui,sans-serif;cursor:pointer;white-space:nowrap}
@@ -556,7 +558,8 @@ export async function onRequestGet({ request, env }) {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
       if (serverSelected) activateDashboardTab(location.hash.slice(1) || "${initialDashboardSection}");
-      const customizeStorageKey = "beacon-customize-preview";
+      const customizeStorageKey = "beacon-customize-preview-${escapeHtml(selectedServer?.id || "default")}";
+      const dashboardServerId = "${escapeHtml(selectedServer?.id || "")}";
       const bioInput = document.querySelector(".bio-field textarea");
       const avatarPreview = document.querySelector(".asset-editor--avatar img");
       const bannerPreview = document.querySelector(".asset-editor--banner img");
@@ -565,11 +568,18 @@ export async function onRequestGet({ request, env }) {
       const resetChangesButton = document.querySelector(".reset-changes");
       const defaultBio = bioInput?.value || "";
       const defaultImage = "/assets/beacon-logo.png?v=92";
+      let avatarValue = null;
+      let bannerValue = null;
+      let avatarChanged = false;
+      let bannerChanged = false;
+      function updateImageState(preview, value) {
+        preview?.parentElement?.classList.toggle("has-custom-image", Boolean(value));
+      }
       try {
         const saved = JSON.parse(localStorage.getItem(customizeStorageKey) || "null");
         if (saved?.bio && bioInput) bioInput.value = saved.bio;
-        if (saved?.avatar && avatarPreview) avatarPreview.src = saved.avatar;
-        if (saved?.banner && bannerPreview) bannerPreview.src = saved.banner;
+        if (saved?.avatar && avatarPreview) { avatarValue = saved.avatar; avatarChanged = true; avatarPreview.src = saved.avatar; updateImageState(avatarPreview, avatarValue); }
+        if (saved?.banner && bannerPreview) { bannerValue = saved.banner; bannerChanged = true; bannerPreview.src = saved.banner; updateImageState(bannerPreview, bannerValue); }
       } catch (_) {}
       saveButton?.addEventListener("click", () => {
         const payload = { bio: bioInput?.value || "", avatar: avatarPreview?.src || defaultImage, banner: bannerPreview?.src || defaultImage };
@@ -578,6 +588,28 @@ export async function onRequestGet({ request, env }) {
         showDashboardToast("Bot changes saved");
         window.setTimeout(() => { saveButton.textContent = "Save Bot Changes"; }, 1800);
       });
+      saveButton?.addEventListener("click", async () => {
+        if (!dashboardServerId) return showDashboardToast("Select a server first", "error");
+        const payload = { bio: bioInput?.value || "" };
+        if (avatarChanged) payload.avatar = avatarValue;
+        if (bannerChanged) payload.banner = bannerValue;
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
+        try {
+          const response = await fetch("/api/dashboard/customize?server=" + encodeURIComponent(dashboardServerId), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(result.error || "Discord rejected the profile update.");
+          try { localStorage.setItem(customizeStorageKey, JSON.stringify({ bio: payload.bio, avatar: avatarValue, banner: bannerValue })); } catch (_) {}
+          saveButton.textContent = "Saved";
+          showDashboardToast(result.message || "Bot profile updated on Discord");
+        } catch (error) {
+          saveButton.textContent = "Save Bot Changes";
+          showDashboardToast(error.message || "Could not update the bot profile", "error");
+        } finally {
+          saveButton.disabled = false;
+          window.setTimeout(() => { saveButton.textContent = "Save Bot Changes"; }, 1800);
+        }
+      });
       resetButton?.addEventListener("click", () => {
         if (bioInput) bioInput.value = defaultBio;
         showDashboardToast("Bio reset");
@@ -585,8 +617,12 @@ export async function onRequestGet({ request, env }) {
       resetChangesButton?.addEventListener("click", () => {
         try { localStorage.removeItem(customizeStorageKey); } catch (_) {}
         if (bioInput) bioInput.value = defaultBio;
-        if (avatarPreview) avatarPreview.src = defaultImage;
-        if (bannerPreview) bannerPreview.src = defaultImage;
+        if (avatarPreview) { avatarPreview.src = defaultImage; updateImageState(avatarPreview, null); }
+        if (bannerPreview) { bannerPreview.src = defaultImage; updateImageState(bannerPreview, null); }
+        avatarValue = null;
+        bannerValue = null;
+        avatarChanged = true;
+        bannerChanged = true;
         showDashboardToast("All changes reset");
       });
       document.querySelectorAll("[data-upload-target]").forEach((button) => {
@@ -599,14 +635,22 @@ export async function onRequestGet({ request, env }) {
           const preview = input.closest(".asset-editor")?.querySelector("img");
           if (!preview) return;
           const reader = new FileReader();
-          reader.addEventListener("load", () => { preview.src = reader.result; showDashboardToast("Image preview updated"); });
+          reader.addEventListener("load", () => {
+            preview.src = reader.result;
+            updateImageState(preview, reader.result);
+            if (input.id === "avatar-upload") { avatarValue = reader.result; avatarChanged = true; }
+            if (input.id === "banner-upload") { bannerValue = reader.result; bannerChanged = true; }
+            showDashboardToast("Image preview updated");
+          });
           reader.readAsDataURL(file);
         });
       });
       document.querySelectorAll("[data-reset-image]").forEach((button) => {
         button.addEventListener("click", () => {
           const preview = button.closest(".asset-editor")?.querySelector("img");
-          if (preview) preview.src = defaultImage;
+          if (preview) { preview.src = defaultImage; updateImageState(preview, null); }
+          if (button.dataset.resetImage === "avatar") { avatarValue = null; avatarChanged = true; }
+          if (button.dataset.resetImage === "banner") { bannerValue = null; bannerChanged = true; }
           showDashboardToast("Image removed");
         });
       });
