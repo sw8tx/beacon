@@ -593,7 +593,6 @@ async function sendJoinDm(member, data) {
   }
 }
 
-+
 /* Inlined command modules: kept in one deployable bot file. */
 
 function cleanChannelName(value) {
