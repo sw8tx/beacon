@@ -567,7 +567,7 @@ export async function onRequestGet({ request, env }) {
         if (serverInfoName) serverInfoName.textContent = button.dataset.serverName || "Selected server";
         if (serverInfoMembers) serverInfoMembers.textContent = button.dataset.serverMembers || "0";
         Object.entries(serverInfoFields).forEach(([key, element]) => {
-          if (element) element.textContent = button.dataset[`server${key[0].toUpperCase()}${key.slice(1)}`] || "0";
+          if (element) element.textContent = button.dataset["server" + key[0].toUpperCase() + key.slice(1)] || "0";
         });
         if (memberJoinDays) memberJoinDays.innerHTML = values.map((value, index) => "<span class=\"member-join-day\"><b>" + ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index] + "</b><strong>" + value + "</strong></span>").join("");
       }
