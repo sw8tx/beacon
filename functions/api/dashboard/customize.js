@@ -51,9 +51,20 @@ export async function onRequestPost({ request, env }) {
   const serverId = new URL(request.url).searchParams.get("server") || "";
   if (!isSnowflake(serverId)) return json({ error: "A valid server is required." }, 400);
 
-  const guildResult = await discordJson(`/guilds/${serverId}`, `Bot ${botToken}`);
-  if (!guildResult.response.ok) return json({ error: "Beacon is not available in this server." }, guildResult.response.status === 404 ? 404 : 403);
-  if (String(guildResult.body?.owner_id || "") !== String(session.user.id)) {
+  let ownerVerified = false;
+  if (session.discordAccessToken) {
+    const userGuilds = await discordJson("/users/@me/guilds", `Bearer ${session.discordAccessToken}`);
+    if (userGuilds.response.ok) {
+      const guild = Array.isArray(userGuilds.body) ? userGuilds.body.find((item) => item.id === serverId) : null;
+      ownerVerified = Boolean(guild?.owner);
+    }
+  }
+  if (!ownerVerified) {
+    const guildResult = await discordJson(`/guilds/${serverId}`, `Bot ${botToken}`);
+    if (guildResult.response.ok) ownerVerified = String(guildResult.body?.owner_id || "") === String(session.user.id);
+    if (!ownerVerified && guildResult.response.status === 401) return json({ error: "The Cloudflare Discord bot token is invalid or outdated. Update DISCORD_BOT_TOKEN in Pages Production secrets." }, 503);
+  }
+  if (!ownerVerified) {
     return json({ error: "Only the server owner can customize Beacon here." }, 403);
   }
 
@@ -83,6 +94,7 @@ export async function onRequestPost({ request, env }) {
   });
   if (!result.response.ok) {
     const detail = result.body?.message || "Discord rejected the profile update.";
+    if (result.response.status === 401) return json({ error: "Discord rejected the Cloudflare bot token. Update DISCORD_BOT_TOKEN in Pages Production secrets." }, 503);
     return json({ error: detail }, result.response.status >= 500 ? 502 : result.response.status);
   }
 
