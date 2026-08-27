@@ -595,7 +595,7 @@ export async function onRequestGet({ request, env }) {
           const responseText = await response.text();
           let result = {};
           try { result = JSON.parse(responseText); } catch (_) {}
-          if (!response.ok) throw new Error(result.error || `Discord rejected the profile update (HTTP ${response.status}). ${responseText.slice(0, 240)}`);
+          if (!response.ok) throw new Error(result.error || ("Discord rejected the profile update (HTTP " + response.status + "). " + responseText.slice(0, 240)));
           if (Array.isArray(result.skippedRateLimitedFields)) {
             if (result.skippedRateLimitedFields.includes("avatar")) { avatarChanged = true; avatarApplied = false; }
             if (result.skippedRateLimitedFields.includes("banner")) { bannerChanged = true; bannerApplied = false; }
