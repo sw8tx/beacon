@@ -1,7 +1,7 @@
 import { getConfig, getCookie, readSession } from "../auth/discord/_shared.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_BIO_LENGTH = 190;
 
 function json(data, status = 200) {
@@ -27,6 +27,12 @@ function validImageData(data) {
   return typeof data === "string" &&
     /^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=\s]+$/i.test(data) &&
     imageBytes(data) <= MAX_IMAGE_BYTES;
+}
+
+function normalizeImageData(data) {
+  if (data === null) return null;
+  const match = String(data).match(/^data:(image\/(?:png|jpe?g|gif|webp));base64,(.*)$/is);
+  return match ? `data:${match[1].toLowerCase()};base64,${match[2].replace(/\s/g, "")}` : data;
 }
 
 async function discordJson(path, token, options = {}) {
@@ -83,7 +89,7 @@ export async function onRequestPost({ request, env }) {
     if (body[field] !== null && !validImageData(body[field])) {
       return json({ error: `${field === "avatar" ? "Avatar" : "Banner"} must be a PNG, JPG, GIF or WebP image up to 10 MB.` }, 400);
     }
-    payload[field] = body[field];
+    payload[field] = normalizeImageData(body[field]);
   }
 
   if (!Object.keys(payload).length) return json({ error: "No changes were submitted." }, 400);
@@ -93,7 +99,8 @@ export async function onRequestPost({ request, env }) {
     body: JSON.stringify(payload),
   });
   if (!result.response.ok) {
-    const detail = result.body?.message || "Discord rejected the profile update.";
+    const fieldErrors = result.body?.errors ? ` ${JSON.stringify(result.body.errors).slice(0, 900)}` : "";
+    const detail = `${result.body?.message || "Discord rejected the profile update."}${fieldErrors}`;
     if (result.response.status === 401) return json({ error: "Discord rejected the Cloudflare bot token. Update DISCORD_BOT_TOKEN in Pages Production secrets." }, 503);
     return json({ error: detail }, result.response.status >= 500 ? 502 : result.response.status);
   }
