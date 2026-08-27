@@ -45,16 +45,17 @@ async function discordJson(path, token, options = {}) {
 export async function onRequestPost({ request, env }) {
   const { sessionSecret, botToken } = getConfig(env);
   const session = await readSession(getCookie(request, "beacon_session"), sessionSecret);
-  if (!session?.user || !session.discordAccessToken) return json({ error: "Please log in with Discord again." }, 401);
+  if (!session?.user) return json({ error: "Please log in with Discord again." }, 401);
   if (!botToken) return json({ error: "The Beacon bot token is not configured." }, 503);
 
   const serverId = new URL(request.url).searchParams.get("server") || "";
   if (!isSnowflake(serverId)) return json({ error: "A valid server is required." }, 400);
 
-  const guilds = await discordJson("/users/@me/guilds", `Bearer ${session.discordAccessToken}`);
-  if (!guilds.response.ok) return json({ error: "Discord login expired. Please log in again." }, 401);
-  const guild = Array.isArray(guilds.body) ? guilds.body.find((item) => item.id === serverId) : null;
-  if (!guild?.owner) return json({ error: "Only the server owner can customize Beacon here." }, 403);
+  const guildResult = await discordJson(`/guilds/${serverId}`, `Bot ${botToken}`);
+  if (!guildResult.response.ok) return json({ error: "Beacon is not available in this server." }, guildResult.response.status === 404 ? 404 : 403);
+  if (String(guildResult.body?.owner_id || "") !== String(session.user.id)) {
+    return json({ error: "Only the server owner can customize Beacon here." }, 403);
+  }
 
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") return json({ error: "Invalid customization data." }, 400);

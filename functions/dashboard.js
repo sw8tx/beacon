@@ -581,13 +581,6 @@ export async function onRequestGet({ request, env }) {
         if (saved?.avatar && avatarPreview) { avatarValue = saved.avatar; avatarChanged = true; avatarPreview.src = saved.avatar; updateImageState(avatarPreview, avatarValue); }
         if (saved?.banner && bannerPreview) { bannerValue = saved.banner; bannerChanged = true; bannerPreview.src = saved.banner; updateImageState(bannerPreview, bannerValue); }
       } catch (_) {}
-      saveButton?.addEventListener("click", () => {
-        const payload = { bio: bioInput?.value || "", avatar: avatarPreview?.src || defaultImage, banner: bannerPreview?.src || defaultImage };
-        try { localStorage.setItem(customizeStorageKey, JSON.stringify(payload)); } catch (_) {}
-        saveButton.textContent = "Saved ✓";
-        showDashboardToast("Bot changes saved");
-        window.setTimeout(() => { saveButton.textContent = "Save Bot Changes"; }, 1800);
-      });
       saveButton?.addEventListener("click", async () => {
         if (!dashboardServerId) return showDashboardToast("Select a server first", "error");
         const payload = { bio: bioInput?.value || "" };
