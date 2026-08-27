@@ -107,9 +107,14 @@ export async function onRequestPost({ request, env }) {
 
   if (!Object.keys(payload).length) return json({ error: "No changes were submitted." }, 400);
 
-  const before = await discordJson(`/guilds/${serverId}/members/@me`, `Bot ${botToken}`);
+  const botUser = await discordJson("/users/@me", `Bot ${botToken}`);
+  if (!botUser.response.ok || !isSnowflake(botUser.body?.id)) {
+    return json({ error: "The Beacon bot identity could not be loaded from Discord." }, 502);
+  }
+  const botUserId = botUser.body.id;
+  const before = await discordJson(`/guilds/${serverId}/members/${botUserId}`, `Bot ${botToken}`);
   if (!before.response.ok) {
-    return json({ error: "The selected server profile could not be loaded from Discord." }, 502);
+    return json({ error: "Beacon is not a member of the selected server, or its server profile cannot be loaded." }, 502);
   }
 
   let result = await discordJson(`/guilds/${serverId}/members/@me`, `Bot ${botToken}`, {
@@ -138,7 +143,7 @@ export async function onRequestPost({ request, env }) {
     return json({ error: detail }, result.response.status >= 500 ? 502 : result.response.status);
   }
 
-  const verified = await discordJson(`/guilds/${serverId}/members/@me`, `Bot ${botToken}`);
+  const verified = await discordJson(`/guilds/${serverId}/members/${botUserId}`, `Bot ${botToken}`);
   if (!verified.response.ok) {
     return json({ error: "Discord accepted the update but the server profile could not be verified yet. Please reload and try again." }, 502);
   }
@@ -153,8 +158,8 @@ export async function onRequestPost({ request, env }) {
       bio: profile.bio || "",
       avatar: profile.avatar || null,
       banner: profile.banner || null,
-      avatarUrl: profileAssetUrl(serverId, profile.user?.id, profile.avatar, "avatar"),
-      bannerUrl: profileAssetUrl(serverId, profile.user?.id, profile.banner, "banner"),
+      avatarUrl: profileAssetUrl(serverId, botUserId, profile.avatar, "avatar"),
+      bannerUrl: profileAssetUrl(serverId, botUserId, profile.banner, "banner"),
     } }, 502);
   }
 
@@ -162,7 +167,7 @@ export async function onRequestPost({ request, env }) {
     bio: profile.bio || "",
     avatar: profile.avatar || null,
     banner: profile.banner || null,
-    avatarUrl: profileAssetUrl(serverId, profile.user?.id, profile.avatar, "avatar"),
-    bannerUrl: profileAssetUrl(serverId, profile.user?.id, profile.banner, "banner"),
+    avatarUrl: profileAssetUrl(serverId, botUserId, profile.avatar, "avatar"),
+    bannerUrl: profileAssetUrl(serverId, botUserId, profile.banner, "banner"),
   } });
 }
