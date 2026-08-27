@@ -35,6 +35,10 @@ function normalizeImageData(data) {
   return match ? `data:${match[1].toLowerCase()};base64,${match[2].replace(/\s/g, "")}` : data;
 }
 
+function avatarRateLimited(body) {
+  return JSON.stringify(body || {}).includes("AVATAR_RATE_LIMIT");
+}
+
 async function discordJson(path, token, options = {}) {
   const response = await fetch(`${DISCORD_API}${path}`, {
     ...options,
@@ -94,10 +98,19 @@ export async function onRequestPost({ request, env }) {
 
   if (!Object.keys(payload).length) return json({ error: "No changes were submitted." }, 400);
 
-  const result = await discordJson(`/guilds/${serverId}/members/@me`, `Bot ${botToken}`, {
+  let result = await discordJson(`/guilds/${serverId}/members/@me`, `Bot ${botToken}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+  if (!result.response.ok && avatarRateLimited(result.body) && Object.keys(payload).some((field) => field !== "avatar")) {
+    const fallbackPayload = { ...payload };
+    delete fallbackPayload.avatar;
+    result = await discordJson(`/guilds/${serverId}/members/@me`, `Bot ${botToken}`, {
+      method: "PATCH",
+      body: JSON.stringify(fallbackPayload),
+    });
+    if (result.response.ok) return json({ ok: true, avatarRateLimited: true, message: "Bio and banner were updated. Discord temporarily rate-limited the avatar; select it again later." });
+  }
   if (!result.response.ok) {
     const fieldErrors = result.body?.errors ? ` ${JSON.stringify(result.body.errors).slice(0, 900)}` : "";
     const detail = `${result.body?.message || "Discord rejected the profile update."}${fieldErrors}`;

@@ -578,8 +578,8 @@ export async function onRequestGet({ request, env }) {
       try {
         const saved = JSON.parse(localStorage.getItem(customizeStorageKey) || "null");
         if (saved?.bio && bioInput) bioInput.value = saved.bio;
-        if (saved?.avatar && avatarPreview) { avatarValue = saved.avatar; avatarChanged = true; avatarPreview.src = saved.avatar; updateImageState(avatarPreview, avatarValue); }
-        if (saved?.banner && bannerPreview) { bannerValue = saved.banner; bannerChanged = true; bannerPreview.src = saved.banner; updateImageState(bannerPreview, bannerValue); }
+        if (saved?.avatar && avatarPreview) { avatarValue = saved.avatar; avatarPreview.src = saved.avatar; updateImageState(avatarPreview, avatarValue); }
+        if (saved?.banner && bannerPreview) { bannerValue = saved.banner; bannerPreview.src = saved.banner; updateImageState(bannerPreview, bannerValue); }
       } catch (_) {}
       saveButton?.addEventListener("click", async () => {
         if (!dashboardServerId) return showDashboardToast("Select a server first", "error");
@@ -593,6 +593,7 @@ export async function onRequestGet({ request, env }) {
           const result = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(result.error || "Discord rejected the profile update.");
           try { localStorage.setItem(customizeStorageKey, JSON.stringify({ bio: payload.bio, avatar: avatarValue, banner: bannerValue })); } catch (_) {}
+          if (result.avatarRateLimited) avatarChanged = false;
           saveButton.textContent = "Saved";
           showDashboardToast(result.message || "Bot profile updated on Discord");
         } catch (error) {
