@@ -141,7 +141,9 @@ export async function onRequestGet({ request, env }) {
     { name: "test", owner: "Eigentümer", tone: "dark", icon: "" },
   ];
   const liveSelectionServers = await getDashboardServers(env, session.discordAccessToken, request);
-  const requestedServerId = new URL(request.url).searchParams.get("server");
+  const requestedServerParam = new URL(request.url).searchParams.get("server") || "";
+  const requestedServerId = requestedServerParam.split("/")[0];
+  const requestedSection = requestedServerParam.split("/")[1] || "";
   const requestedServer = liveSelectionServers.find((server) => server.id === requestedServerId && server.withBeacon && server.isOwner);
   const selectedServer = requestedServer || liveSelectionServers[0];
   const resolvedServerName = selectedServer?.name || serverName;
@@ -149,6 +151,9 @@ export async function onRequestGet({ request, env }) {
   const dashboardAvatar = resolvedServerIcon ? escapeHtml(resolvedServerIcon) : avatar;
   const dashboardSelectionServers = liveSelectionServers.map((server, index) => ({ ...server, tone: ["red", "gold", "green", "gray", "dark"][index % 5], icon: server.iconUrl }));
   const hasRequestedServer = Boolean(requestedServer);
+  const initialDashboardSection = ["server-info", "customize-bot", "command-configs", "server-configs", "dashboard-history", "statistics", "badges"].includes(requestedSection)
+    ? requestedSection
+    : "server-info";
   const canManageResolvedServer = Boolean(liveSelectionServers[0]?.withBeacon && liveSelectionServers[0]?.isOwner);
   const renderServerChoices = (servers, actionLabel) => servers.length
     ? servers.map((server) => `
@@ -273,16 +278,6 @@ export async function onRequestGet({ request, env }) {
       .server-info-grid span,.panel-mini-head span{display:block;color:#8790a1;font-size:.68rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
       .server-info-grid strong{display:block;margin-top:10px;color:#fff;font-size:1.65rem;line-height:1}
       .server-info-grid small{display:block;margin-top:8px;color:#7f8796;font-size:.75rem;font-weight:800}
-      .server-activity-card{margin-top:14px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#101219;padding:18px}
-      .panel-mini-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
-      .panel-mini-head strong{color:#ffc31c;font-size:.78rem;text-transform:uppercase}
-      .server-activity-card svg{display:block;width:100%;height:150px;margin-top:10px;overflow:visible}
-      .server-activity-card polyline{fill:none;stroke:#31bdf5;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
-      .server-activity-card circle{fill:#31bdf5;filter:drop-shadow(0 0 12px rgba(49,189,245,.5))}
-      .member-join-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:6px}
-      .member-join-day{display:grid;gap:4px;text-align:center}
-      .member-join-day b{color:#7f8796;font-size:.65rem;text-transform:uppercase}
-      .member-join-day strong{color:#fff;font-size:.82rem}
       .customize-panel{max-width:1100px;background:#182332;border-color:rgba(255,255,255,.13)}
       .customize-panel h2{text-align:center;font-size:1.45rem;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:20px}
       .customize-media-grid{display:grid;grid-template-columns:minmax(240px,330px) minmax(0,1fr);gap:18px;margin-top:20px}
@@ -439,14 +434,6 @@ export async function onRequestGet({ request, env }) {
                 </div>
               </article>
             </div>
-            <div class="server-activity-card">
-              <div class="panel-mini-head"><span>Member joins</span><strong>Last 7 days</strong></div>
-              <svg viewBox="0 0 520 150" aria-label="Server activity graph">
-                <polyline data-member-graph points="20,112 100,98 180,104 260,74 340,88 420,54 500,26" />
-                <circle data-member-graph-point cx="500" cy="26" r="6" />
-              </svg>
-              <div class="member-join-days" data-member-join-days></div>
-            </div>
           </div>
         </section>
         <section class="dash-content-section" id="customize-bot" data-dashboard-section="customize-bot">
@@ -553,23 +540,12 @@ export async function onRequestGet({ request, env }) {
         categories: document.querySelector("[data-server-info-categories]"),
         shard: document.querySelector("[data-server-info-shard]"),
       };
-      const memberGraph = document.querySelector("[data-member-graph]");
-      const memberGraphPoint = document.querySelector("[data-member-graph-point]");
-      const memberJoinDays = document.querySelector("[data-member-join-days]");
       function updateServerInfo(button) {
-        const seed = [...String(button.dataset.serverId || button.dataset.serverName || "beacon")].reduce((sum, character) => sum + character.charCodeAt(0), 0);
-        const base = Math.max(3, Math.round((Number(button.dataset.serverMembers) || 6) / 8));
-        const values = Array.from({ length: 7 }, (_, index) => Math.max(1, base + ((seed + index * 7) % Math.max(6, base + 9)) - 2));
-        const max = Math.max(...values, 1);
-        const points = values.map((value, index) => (20 + index * 80) + "," + (126 - (value / max) * 94)).join(" ");
-        memberGraph?.setAttribute("points", points);
-        memberGraphPoint?.setAttribute("cy", String(126 - (values[6] / max) * 94));
         if (serverInfoName) serverInfoName.textContent = button.dataset.serverName || "Selected server";
         if (serverInfoMembers) serverInfoMembers.textContent = button.dataset.serverMembers || "0";
         Object.entries(serverInfoFields).forEach(([key, element]) => {
           if (element) element.textContent = button.dataset["server" + key[0].toUpperCase() + key.slice(1)] || "0";
         });
-        if (memberJoinDays) memberJoinDays.innerHTML = values.map((value, index) => "<span class=\"member-join-day\"><b>" + ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index] + "</b><strong>" + value + "</strong></span>").join("");
       }
       function selectServer(button) {
         updateServerInfo(button);
@@ -579,7 +555,7 @@ export async function onRequestGet({ request, env }) {
         activateDashboardTab("server-info");
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
-      if (serverSelected) activateDashboardTab(location.hash.slice(1) || "server-info");
+      if (serverSelected) activateDashboardTab(location.hash.slice(1) || "${initialDashboardSection}");
       const customizeStorageKey = "beacon-customize-preview";
       const bioInput = document.querySelector(".bio-field textarea");
       const avatarPreview = document.querySelector(".asset-editor--avatar img");
