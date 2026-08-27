@@ -159,6 +159,11 @@ function buildStatsPayload() {
       id: guild.id,
       name: guild.name,
       members: guild.memberCount || guild.members.cache.size || 0,
+      bots: guild.members.cache.filter((member) => member.user.bot).size,
+      channels: guild.channels.cache.size,
+      roles: guild.roles.cache.size,
+      categories: guild.channels.cache.filter((channel) => channel.type === ChannelType.GuildCategory).size,
+      shardId: guild.shardId ?? 0,
       iconUrl: guild.iconURL({ extension: "png", size: 64 }) || null,
     }))
     .sort((left, right) => right.members - left.members);

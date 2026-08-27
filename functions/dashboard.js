@@ -16,12 +16,14 @@ async function getDashboardServers(env, discordAccessToken, request) {
   const { botToken } = getConfig(env);
   if (!discordAccessToken) return [];
   let beaconServerIds = new Set();
+  let syncedServers = new Map();
   try {
     const statsResponse = await fetch(new URL("/api/discord-stats", request.url), { headers: { accept: "application/json" } });
     if (statsResponse.ok) {
       const stats = await statsResponse.json();
       if (Array.isArray(stats.servers)) {
-        beaconServerIds = new Set(stats.servers.map((server) => String(server.id || "")).filter(Boolean));
+        syncedServers = new Map(stats.servers.filter((server) => server?.id).map((server) => [String(server.id), server]));
+        beaconServerIds = new Set(syncedServers.keys());
       }
     }
   } catch (_) {
@@ -52,6 +54,11 @@ async function getDashboardServers(env, discordAccessToken, request) {
         owner: guild.owner ? "Server owner" : "Member",
         isOwner: Boolean(guild.owner),
         members: Number(guild.approximate_member_count) || 0,
+        bots: Number(syncedServers.get(String(guild.id))?.bots) || 0,
+        channels: Number(syncedServers.get(String(guild.id))?.channels) || 0,
+        roles: Number(syncedServers.get(String(guild.id))?.roles) || 0,
+        categories: Number(syncedServers.get(String(guild.id))?.categories) || 0,
+        shardId: Number(syncedServers.get(String(guild.id))?.shardId) || 0,
         iconUrl: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=256` : "",
         withBeacon,
       };
@@ -152,7 +159,7 @@ export async function onRequestGet({ request, env }) {
                 <div class="server-choice-copy">
                   <div><strong>${escapeHtml(server.name)}</strong><small>${server.withBeacon ? "Beacon is active" : "Server owner"}</small></div>
                   ${server.withBeacon
-                    ? `<a class="server-choice-button" href="/dashboard?server=${encodeURIComponent(server.id || "")}#server-info" data-can-manage="true" data-server-id="${escapeHtml(server.id || "")}" data-server-name="${escapeHtml(server.name)}" data-server-members="${Number(server.members) || 0}">${actionLabel}</a>`
+                    ? `<a class="server-choice-button" href="/dashboard?server=${encodeURIComponent(server.id || "")}#server-info" data-can-manage="true" data-server-id="${escapeHtml(server.id || "")}" data-server-name="${escapeHtml(server.name)}" data-server-members="${Number(server.members) || 0}" data-server-bots="${Number(server.bots) || 0}" data-server-channels="${Number(server.channels) || 0}" data-server-roles="${Number(server.roles) || 0}" data-server-categories="${Number(server.categories) || 0}" data-server-shard="${Number(server.shardId) || 0}">${actionLabel}</a>`
                     : `<a class="server-choice-button server-choice-button--invite" href="https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&amp;scope=bot%20applications.commands&amp;guild_id=${encodeURIComponent(server.id || "")}&amp;disable_guild_select=true">Add Beacon</a>`}
                 </div>
               </article>
@@ -257,6 +264,12 @@ export async function onRequestGet({ request, env }) {
       .sync-pill{display:inline-flex;min-height:30px;align-items:center;border:1px solid rgba(103,232,77,.28);border-radius:999px;background:rgba(103,232,77,.1);color:#67e84d;padding:0 12px;font-size:.72rem;font-weight:900;white-space:nowrap}
       .server-info-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:22px}
       .server-info-grid article{border:1px solid rgba(255,255,255,.08);border-radius:9px;background:#101219;padding:16px}
+      .server-info-panels{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:22px}
+      .server-info-panel{min-height:180px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:#182238;overflow:hidden}
+      .server-info-panel h3{margin:0;padding:18px 24px;background:#3a465a;color:#fff;font-size:.92rem;font-weight:800}
+      .server-info-lines{display:grid;gap:5px;padding:24px;color:#fff;font-size:.9rem;line-height:1.35}
+      .server-info-lines strong{font-weight:900}
+      .server-info-lines small{color:#fff;font-size:.82rem}
       .server-info-grid span,.panel-mini-head span{display:block;color:#8790a1;font-size:.68rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
       .server-info-grid strong{display:block;margin-top:10px;color:#fff;font-size:1.65rem;line-height:1}
       .server-info-grid small{display:block;margin-top:8px;color:#7f8796;font-size:.75rem;font-weight:800}
@@ -356,7 +369,7 @@ export async function onRequestGet({ request, env }) {
       .dash-badge--violet .dash-badge-icon,.dash-badge--violet .dash-badge-top span{color:#b261ff}
       .dash-badge--orange .dash-badge-icon,.dash-badge--orange .dash-badge-top span{color:#ff8a00}
       @keyframes dash-sheen{from{transform:translateX(-100%)}to{transform:translateX(120%)}}
-      @media (max-width:1100px){.dash-badge-grid{grid-template-columns:1fr}.server-info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.customize-media-grid{grid-template-columns:1fr}.bot-banner-preview{min-height:260px}}
+      @media (max-width:1100px){.dash-badge-grid{grid-template-columns:1fr}.server-info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.server-info-panels{grid-template-columns:1fr}.customize-media-grid{grid-template-columns:1fr}.bot-banner-preview{min-height:260px}}
       @media (max-width:900px){.dash-layout{grid-template-columns:1fr}.dash-sidebar{position:relative;top:auto;max-height:none}.dash-main{padding-top:18px}.dash-name{text-align:left}.dash-topbar{padding-inline:16px}.dash-back{min-height:38px;padding-inline:13px}}
       @media (max-width:620px){.dash-badge{grid-template-columns:48px 1fr}.dash-badge-state{grid-column:1/-1;width:max-content}.server-card{grid-template-columns:42px 1fr}.server-sync{grid-column:1/-1;width:100%}.server-avatar{width:42px;height:42px}.dash-side-link{min-height:44px}.dash-name{font-size:2.35rem}.server-info-head{display:block}.sync-pill{margin-top:14px}.server-info-grid{grid-template-columns:1fr}.customize-panel{padding:18px}.bot-banner-preview{min-height:210px}.bot-banner-preview img{width:140px;height:140px}.customize-actions span{width:100%;margin-left:0}}
     </style>
@@ -407,10 +420,24 @@ export async function onRequestGet({ request, env }) {
               </div>
               <span class="sync-pill" data-sync-pill>Synced just now</span>
             </div>
-            <div class="server-info-grid">
-              <article><span>Members</span><strong data-server-info-members>${Number(selectedServer?.members) || 0}</strong><small>Current server size</small></article>
-              <article><span>Ping</span><strong>188 ms</strong><small>Gateway health</small></article>
-              <article><span>Badges</span><strong>${unlockedBadges.length}/20</strong><small>Unlocked profile badges</small></article>
+            <div class="server-info-panels">
+              <article class="server-info-panel">
+                <h3>Server Info</h3>
+                <div class="server-info-lines">
+                  <span>Members: <strong data-server-info-members>${Number(selectedServer?.members) || 0}</strong></span>
+                  <span>Bots: <strong data-server-info-bots>${Number(selectedServer?.bots) || 0}</strong></span>
+                  <span>Channels: <strong data-server-info-channels>${Number(selectedServer?.channels) || 0}</strong></span>
+                  <span>Roles: <strong data-server-info-roles>${Number(selectedServer?.roles) || 0}</strong></span>
+                  <span>Categories: <strong data-server-info-categories>${Number(selectedServer?.categories) || 0}</strong></span>
+                </div>
+              </article>
+              <article class="server-info-panel">
+                <h3>Shard Info</h3>
+                <div class="server-info-lines">
+                  <span>Primary Shard: <strong data-server-info-shard>${Number(selectedServer?.shardId) || 0}</strong> <small>(synced from Beacon)</small></span>
+                  <span>Premium Shard: <strong>Not configured</strong></span>
+                </div>
+              </article>
             </div>
             <div class="server-activity-card">
               <div class="panel-mini-head"><span>Member joins</span><strong>Last 7 days</strong></div>
@@ -519,6 +546,13 @@ export async function onRequestGet({ request, env }) {
       }
       const serverInfoName = document.querySelector("[data-server-info-name]");
       const serverInfoMembers = document.querySelector("[data-server-info-members]");
+      const serverInfoFields = {
+        bots: document.querySelector("[data-server-info-bots]"),
+        channels: document.querySelector("[data-server-info-channels]"),
+        roles: document.querySelector("[data-server-info-roles]"),
+        categories: document.querySelector("[data-server-info-categories]"),
+        shard: document.querySelector("[data-server-info-shard]"),
+      };
       const memberGraph = document.querySelector("[data-member-graph]");
       const memberGraphPoint = document.querySelector("[data-member-graph-point]");
       const memberJoinDays = document.querySelector("[data-member-join-days]");
@@ -532,6 +566,9 @@ export async function onRequestGet({ request, env }) {
         memberGraphPoint?.setAttribute("cy", String(126 - (values[6] / max) * 94));
         if (serverInfoName) serverInfoName.textContent = button.dataset.serverName || "Selected server";
         if (serverInfoMembers) serverInfoMembers.textContent = button.dataset.serverMembers || "0";
+        Object.entries(serverInfoFields).forEach(([key, element]) => {
+          if (element) element.textContent = button.dataset[`server${key[0].toUpperCase()}${key.slice(1)}`] || "0";
+        });
         if (memberJoinDays) memberJoinDays.innerHTML = values.map((value, index) => "<span class=\"member-join-day\"><b>" + ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index] + "</b><strong>" + value + "</strong></span>").join("");
       }
       function selectServer(button) {

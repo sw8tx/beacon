@@ -88,6 +88,11 @@ function normalizeServers(input) {
       id: cleanText(server?.id, 30) || extractGuildId(server?.iconUrl),
       name: cleanText(server?.name, 80),
       members: cleanNumber(server?.members),
+      bots: cleanNumber(server?.bots),
+      channels: cleanNumber(server?.channels),
+      roles: cleanNumber(server?.roles),
+      categories: cleanNumber(server?.categories),
+      shardId: cleanNumber(server?.shardId),
       iconUrl: cleanUrl(server?.iconUrl),
     }))
     .filter((server) => server.name)
