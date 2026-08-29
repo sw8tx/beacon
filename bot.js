@@ -1385,12 +1385,16 @@ async function handlePurgeCommand(interaction, ui) {
   return true;
 }
 
-function honeypotEmbed(data) {
-  return brandEmbed("DO NOT SEND MESSAGES IN THIS CHANNEL", data.settings.honeypotMessage)
-    .addFields(
-      { name: "Purpose", value: "This channel is monitored for spam bots and raid activity.", inline: false },
-      { name: "Enforcement", value: data.settings.honeypotBanEnabled ? "Messages are deleted and the sender is banned when possible." : "Messages are deleted and reported to the server logs.", inline: false },
-      { name: "Legal notice", value: "Use this protection only for your own server and content. Beacon does not submit DMCA claims automatically.", inline: false }
+function honeypotContainer(data) {
+  return new ContainerBuilder()
+    .setAccentColor(BRAND_COLOR)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`## DO NOT SEND MESSAGES IN THIS CHANNEL\n${data.settings.honeypotMessage}`),
+      new TextDisplayBuilder().setContent(
+        `**Purpose**\nThis channel is monitored for spam bots and raid activity.\n\n` +
+        `**Enforcement**\n${data.settings.honeypotBanEnabled ? "Messages are deleted and the sender is banned when possible." : "Messages are deleted and reported to the server logs."}\n\n` +
+        "**Legal notice**\nUse this protection only for your own server and content. Beacon does not submit DMCA claims automatically."
+      )
     );
 }
 
@@ -1408,31 +1412,39 @@ async function honeypotSetup(interaction, data) {
   if (message) data.settings.honeypotMessage = message.slice(0, 1800);
   saveData();
 
-  await channel.send(withBrandFiles({ embeds: [honeypotEmbed(data)] })).catch(() => null);
+  await channel.send({ components: [honeypotContainer(data)], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
   const action = enabled ? "enabled" : "saved but disabled";
-  await interaction.reply(withBrandFiles({
-    embeds: [successEmbed("Honeypot configured", `${channel} is ${action}.\n${data.settings.honeypotBanEnabled ? "Bans are enabled." : "Bans are disabled."} ${data.settings.honeypotDeleteMessage ? "Messages will be deleted." : "Messages will be kept."}`)],
-    ephemeral: true,
-  }));
+  await interaction.reply({
+    components: [new ContainerBuilder().setAccentColor(BRAND_COLOR).addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`## Honeypot configured\n${channel} is ${action}.\n${data.settings.honeypotBanEnabled ? "Bans are enabled." : "Bans are disabled."} ${data.settings.honeypotDeleteMessage ? "Messages will be deleted." : "Messages will be kept."}`)
+    )],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  });
 }
 
 async function honeypotDisable(interaction, data) {
   data.settings.honeypotEnabled = false;
   saveData();
-  await interaction.reply(withBrandFiles({
-    embeds: [successEmbed("Honeypot disabled", data.settings.honeypotChannelId ? `<#${data.settings.honeypotChannelId}> remains configured, but no users will be punished.` : "No honeypot channel is configured.")],
-    ephemeral: true,
-  }));
+  await interaction.reply({
+    components: [new ContainerBuilder().setAccentColor(BRAND_COLOR).addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`## Honeypot disabled\n${data.settings.honeypotChannelId ? `<#${data.settings.honeypotChannelId}> remains configured, but no users will be punished.` : "No honeypot channel is configured."}`)
+    )],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  });
 }
 
 async function dmcaInfo(interaction) {
-  const embed = brandEmbed("DMCA and domain verification", "The DMCA page shown in your screenshot verifies that you control beacon-bot.site.")
-    .addFields(
-      { name: "What to do", value: "Use one of DMCA's verification methods: upload their validation file to the website root, add their meta tag to the homepage, create the requested DNS record, or verify by email.", inline: false },
-      { name: "Beacon", value: "Beacon does not submit DMCA takedowns automatically. This command only explains the official verification step and does not replace DMCA registration.", inline: false },
-      { name: "Website", value: DASHBOARD_URL, inline: false }
-    );
-  await interaction.reply(withBrandFiles({ embeds: [embed], ephemeral: true }));
+  await interaction.reply({
+    components: [new ContainerBuilder().setAccentColor(BRAND_COLOR).addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        "## DMCA and domain verification\nThe DMCA page shown in your screenshot verifies that you control beacon-bot.site.\n\n" +
+        "**What to do**\nUse one of DMCA's verification methods: upload their validation file to the website root, add their meta tag to the homepage, create the requested DNS record, or verify by email.\n\n" +
+        "**Beacon**\nBeacon does not submit DMCA takedowns automatically. This only explains the official verification step.\n\n" +
+        `**Website**\n${DASHBOARD_URL}`
+      )
+    )],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  });
 }
 
 async function handleHoneypotMessage(message, data) {
@@ -3156,26 +3168,34 @@ async function settings(interaction, data) {
   await interaction.reply(withBrandFiles({ embeds: [embed], ephemeral: true }));
 }
 
-async function status(interaction) {
+function statusContainer() {
   const uptime = formatUptime(process.uptime());
   const memory = process.memoryUsage();
   const memoryMb = Math.round(memory.rss / 1024 / 1024);
   const guildCount = client.guilds.cache.size;
   const memberCount = client.guilds.cache.reduce((sum, guild) => sum + (guild.memberCount || 0), 0);
 
-  const embed = brandEmbed("Beacon Status", "Online and tracking community signals.")
-    .addFields(
-      { name: "Status", value: "Online", inline: true },
-      { name: "Uptime", value: uptime, inline: true },
-      { name: "Ping", value: `${client.ws.ping}ms`, inline: true },
-      { name: "Servers", value: `${guildCount}`, inline: true },
-      { name: "Visible members", value: `${memberCount}`, inline: true },
-      { name: "RAM", value: `${memoryMb} MB`, inline: true },
-      { name: "Node.js", value: process.version, inline: true },
-      { name: "Presence", value: BOT_STATUS, inline: true }
-    );
+  const header = new SectionBuilder()
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("## Beacon Status\nOnline and tracking community signals."))
+    .setButtonAccessory(new ButtonBuilder().setCustomId("beacon_refresh_status").setLabel("Reload").setStyle(ButtonStyle.Secondary));
 
-  await interaction.reply(withBrandFiles({ embeds: [embed], ephemeral: true }));
+  return new ContainerBuilder()
+    .setAccentColor(BRAND_COLOR)
+    .addSectionComponents(header)
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      `**Status**\nOnline\n\n**Uptime**\n${uptime}\n\n**Ping**\n${client.ws.ping}ms\n\n` +
+      `**Servers**\n${guildCount}\n\n**Visible members**\n${memberCount}\n\n**RAM**\n${memoryMb} MB\n\n` +
+      `**Node.js**\n${process.version}\n\n**Presence**\n${BOT_STATUS}`
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Press Reload to fetch the latest status."));
+}
+
+async function status(interaction) {
+  await interaction.reply({
+    components: [statusContainer()],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  });
 }
 
 function formatUptime(seconds) {
@@ -3238,6 +3258,14 @@ async function handleButton(interaction) {
 
   if (interaction.customId === "beacon_refresh_settings") {
     return settings(interaction, data);
+  }
+
+  if (interaction.customId === "beacon_refresh_status") {
+    await interaction.update({
+      components: [statusContainer()],
+      flags: MessageFlags.IsComponentsV2,
+    });
+    return;
   }
 
   if (interaction.customId === "beacon_test_dm") {
