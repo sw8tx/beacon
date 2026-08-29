@@ -1425,6 +1425,16 @@ async function honeypotDisable(interaction, data) {
   }));
 }
 
+async function dmcaInfo(interaction) {
+  const embed = brandEmbed("DMCA and domain verification", "The DMCA page shown in your screenshot verifies that you control beacon-bot.site.")
+    .addFields(
+      { name: "What to do", value: "Use one of DMCA's verification methods: upload their validation file to the website root, add their meta tag to the homepage, create the requested DNS record, or verify by email.", inline: false },
+      { name: "Beacon", value: "Beacon does not submit DMCA takedowns automatically. This command only explains the official verification step and does not replace DMCA registration.", inline: false },
+      { name: "Website", value: DASHBOARD_URL, inline: false }
+    );
+  await interaction.reply(withBrandFiles({ embeds: [embed], ephemeral: true }));
+}
+
 async function handleHoneypotMessage(message, data) {
   if (!data.settings.honeypotEnabled || !data.settings.honeypotChannelId || message.channel.id !== data.settings.honeypotChannelId) return false;
 
@@ -1970,6 +1980,20 @@ const commands = [
     .setName("honeypot-disable")
     .setDescription("Disable the configured honeypot without deleting its channel.")
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  new SlashCommandBuilder()
+    .setName("honeypot-configure")
+    .setDescription("Configure the honeypot using the full configuration command.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addChannelOption((opt) => opt.setName("channel").setDescription("Channel to protect").addChannelTypes(ChannelType.GuildText).setRequired(true))
+    .addBooleanOption((opt) => opt.setName("enabled").setDescription("Enable protection now").setRequired(true))
+    .addBooleanOption((opt) => opt.setName("ban").setDescription("Ban members who post there").setRequired(false))
+    .addBooleanOption((opt) => opt.setName("delete").setDescription("Delete triggering messages").setRequired(false))
+    .addStringOption((opt) => opt.setName("message").setDescription("Panel message shown in the channel").setMaxLength(1800).setRequired(false)),
+
+  new SlashCommandBuilder()
+    .setName("dmca-info")
+    .setDescription("Show the DMCA domain verification guidance for Beacon."),
 
   new SlashCommandBuilder()
     .setName("health")
@@ -2624,6 +2648,8 @@ async function handleCommand(interaction) {
   if (command === "setup") return setup(interaction, data);
   if (command === "honeypot-setup") return honeypotSetup(interaction, data);
   if (command === "honeypot-disable") return honeypotDisable(interaction, data);
+  if (command === "honeypot-configure") return honeypotSetup(interaction, data);
+  if (command === "dmca-info") return dmcaInfo(interaction);
   if (command === "health") return health(interaction, data);
   if (command === "dashboard") return dashboard(interaction, data);
   if (command === "emoji-steal") return prepareEmojiSteal(interaction, false, beaconUi());
@@ -2691,7 +2717,8 @@ const helpPages = [
       ["/rolepanel", "Create a selectable role menu."],
       ["/purge", "Clean recent messages with filters."],
       ["/emoji-steal / bulk", "Copy custom emojis with a confirmation step."],
-      ["/honeypot-setup / /honeypot-disable", "Protect a channel from spam and raid bots with configurable moderation."],
+      ["/honeypot-setup / /honeypot-configure / /honeypot-disable", "Protect a channel from spam and raid bots with configurable moderation."],
+      ["/dmca-info", "Show the official domain-verification guidance; no automatic takedown claims are made."],
     ],
   },
 ];
