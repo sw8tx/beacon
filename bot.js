@@ -2388,17 +2388,17 @@ const commands = [
     .setDescription("Show bot status, uptime and system info."),
 ].map((cmd) => cmd.toJSON());
 
-async function clearGuildCommands(rest, guildId) {
-  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, guildId), { body: [] });
-  console.log(`[commands] Cleared guild slash commands for ${guildId}`);
+async function syncGuildCommands(rest, guildId) {
+  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, guildId), { body: commands });
+  console.log(`[commands] Synced ${commands.length} guild slash commands for ${guildId}`);
 }
 
-async function clearCachedGuildCommands(rest) {
+async function syncCachedGuildCommands(rest) {
   for (const guildId of client.guilds.cache.keys()) {
     try {
-      await clearGuildCommands(rest, guildId);
+      await syncGuildCommands(rest, guildId);
     } catch (err) {
-      console.error(`[commands] Failed to clear guild commands for ${guildId}: ${err.message}`);
+      console.error(`[commands] Failed to sync guild commands for ${guildId}: ${err.message}`);
     }
   }
 }
@@ -2407,7 +2407,7 @@ async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
   await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
   console.log(`[commands] Synced ${commands.length} global slash commands`);
-  await clearCachedGuildCommands(rest);
+  await syncCachedGuildCommands(rest);
 }
 
 client.once("clientReady", async () => {
@@ -2476,9 +2476,9 @@ client.on("guildCreate", async (guild) => {
   saveData();
   try {
     const rest = new REST({ version: "10" }).setToken(TOKEN);
-    await clearGuildCommands(rest, guild.id);
+    await syncGuildCommands(rest, guild.id);
   } catch (err) {
-    console.error(`[commands] Failed to clear guild commands for ${guild.id}: ${err.message}`);
+    console.error(`[commands] Failed to sync guild commands for ${guild.id}: ${err.message}`);
   }
   await syncDiscordStats(); // Immediately sync stats
 });
