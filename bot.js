@@ -66,6 +66,7 @@ const XP_COOLDOWN_MS = 60_000;
 const XP_MIN_PER_MESSAGE = 15;
 const XP_MAX_PER_MESSAGE = 25;
 const PRESTIGE_LEVEL_REQUIREMENT = 25;
+const HONEYPOT_DESCRIPTION = "This is a Honeypot Channel, Text here and you get banned";
 const xpCooldowns = new Map();
 
 if (!TOKEN || TOKEN.startsWith("PASTE_")) {
@@ -110,9 +111,11 @@ const defaultGuildData = () => ({
     ticketDmTranscript: true,
     honeypotChannelId: null,
     honeypotEnabled: false,
+    honeypotAction: "ban",
     honeypotBanEnabled: true,
     honeypotDeleteMessage: true,
-    honeypotMessage: "DO NOT SEND MESSAGES IN THIS CHANNEL\n\nThis channel is reserved for anti-spam protection. Any message sent here may result in an immediate ban.",
+    honeypotBanCount: 0,
+    honeypotMessageId: null,
     accentColor: "#32d6a0",
   },
   stats: {
@@ -1386,37 +1389,48 @@ async function handlePurgeCommand(interaction, ui) {
 }
 
 function honeypotContainer(data) {
+  const action = data.settings.honeypotAction || (data.settings.honeypotBanEnabled ? "ban" : "none");
+  const actionLabel = {
+    ban: "🔨 Banned",
+    kick: "👢 Kicked",
+    timeout: "⏱️ Timed out (10 min)",
+    none: "Nur protokolliert",
+  }[action] || "🔨 Banned";
+
   return new ContainerBuilder()
     .setAccentColor(BRAND_COLOR)
     .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`## DO NOT SEND MESSAGES IN THIS CHANNEL\n${data.settings.honeypotMessage}`),
+      new TextDisplayBuilder().setContent(`## DO NOT SEND MESSAGES IN THIS CHANNEL\n${HONEYPOT_DESCRIPTION}`),
       new TextDisplayBuilder().setContent(
-        `**Purpose**\nThis channel is monitored for spam bots and raid activity.\n\n` +
-        `**Enforcement**\n${data.settings.honeypotBanEnabled ? "Messages are deleted and the sender is banned when possible." : "Messages are deleted and reported to the server logs."}\n\n` +
-        "**Legal notice**\nUse this protection only for your own server and content. Beacon does not submit DMCA claims automatically."
-      )
+        `| Bereich | Aktion |\n| :-- | :-- |\n| Channel | <#${data.settings.honeypotChannelId}> |\n| Nachricht | Wird gelöscht |\n| User | ${actionLabel} |\n| Bans | ${data.settings.honeypotBanCount || 0} |`
+      ),
+      new TextDisplayBuilder().setContent("-# Powered by Beacon")
     );
 }
 
 async function honeypotSetup(interaction, data) {
   const channel = interaction.options.getChannel("channel", true);
   const enabled = interaction.options.getBoolean("enabled", true);
-  const ban = interaction.options.getBoolean("ban");
+  const action = interaction.options.getString("action");
   const deleteMessage = interaction.options.getBoolean("delete");
-  const message = interaction.options.getString("message");
 
   data.settings.honeypotChannelId = channel.id;
   data.settings.honeypotEnabled = enabled;
-  if (ban !== null) data.settings.honeypotBanEnabled = ban;
+  if (action) {
+    data.settings.honeypotAction = action;
+    data.settings.honeypotBanEnabled = action === "ban";
+  }
   if (deleteMessage !== null) data.settings.honeypotDeleteMessage = deleteMessage;
-  if (message) data.settings.honeypotMessage = message.slice(0, 1800);
   saveData();
 
-  await channel.send({ components: [honeypotContainer(data)], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
-  const action = enabled ? "enabled" : "saved but disabled";
+  const panel = await channel.send({ components: [honeypotContainer(data)], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
+  if (panel) {
+    data.settings.honeypotMessageId = panel.id;
+    saveData();
+  }
   await interaction.reply({
     components: [new ContainerBuilder().setAccentColor(BRAND_COLOR).addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`## Honeypot configured\n${channel} is ${action}.\n${data.settings.honeypotBanEnabled ? "Bans are enabled." : "Bans are disabled."} ${data.settings.honeypotDeleteMessage ? "Messages will be deleted." : "Messages will be kept."}`)
+      new TextDisplayBuilder().setContent(`## Honeypot configured\n${channel} is ${enabled ? "enabled" : "saved but disabled"}.\nAction: **${data.settings.honeypotAction || "ban"}** · ${data.settings.honeypotDeleteMessage ? "messages deleted" : "messages kept"}.`)
     )],
     flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
   });
@@ -1453,13 +1467,30 @@ async function handleHoneypotMessage(message, data) {
   const member = message.member || await message.guild.members.fetch(message.author.id).catch(() => null);
   if (data.settings.honeypotDeleteMessage) await message.delete().catch(() => null);
 
-  let banned = false;
+  const action = data.settings.honeypotAction || (data.settings.honeypotBanEnabled ? "ban" : "none");
+  let actionDone = false;
   const me = message.guild.members.me;
-  if (data.settings.honeypotBanEnabled && member?.bannable && me?.permissionsIn(message.channel).has(PermissionFlagsBits.BanMembers)) {
-    banned = Boolean(await member.ban({ reason: "Beacon honeypot anti-spam protection" }).then(() => true).catch(() => false));
+  const permissions = me?.permissionsIn(message.channel);
+  if (action === "ban" && member?.bannable && permissions?.has(PermissionFlagsBits.BanMembers)) {
+    actionDone = Boolean(await member.ban({ reason: "Beacon honeypot anti-spam protection" }).then(() => true).catch(() => false));
+  } else if (action === "kick" && member?.kickable && permissions?.has(PermissionFlagsBits.KickMembers)) {
+    actionDone = Boolean(await member.kick("Beacon honeypot anti-spam protection").then(() => true).catch(() => false));
+  } else if (action === "timeout" && member?.moderatable && permissions?.has(PermissionFlagsBits.ModerateMembers)) {
+    actionDone = Boolean(await member.timeout(10 * 60 * 1000, "Beacon honeypot anti-spam protection").then(() => true).catch(() => false));
   }
 
-  await log(message.guild, "Honeypot triggered", `${message.author.tag} sent a message in <#${message.channel.id}>. ${banned ? "Member banned." : "Member was not bannable; check permissions."}`);
+  if (action === "ban" && actionDone) {
+    data.settings.honeypotBanCount = (data.settings.honeypotBanCount || 0) + 1;
+    saveData();
+  }
+
+  if (actionDone) saveData();
+  if (data.settings.honeypotMessageId) {
+    const panel = await message.channel.messages.fetch(data.settings.honeypotMessageId).catch(() => null);
+    if (panel) await panel.edit({ components: [honeypotContainer(data)] }).catch(() => null);
+  }
+
+  await log(message.guild, "Honeypot triggered", `${message.author.tag} sent a message in <#${message.channel.id}>. Action: ${action}; ${actionDone ? "completed." : "could not be completed."}`);
   return true;
 }
 
@@ -1984,9 +2015,17 @@ const commands = [
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addChannelOption((opt) => opt.setName("channel").setDescription("Channel to protect").addChannelTypes(ChannelType.GuildText).setRequired(true))
     .addBooleanOption((opt) => opt.setName("enabled").setDescription("Enable protection now").setRequired(true))
-    .addBooleanOption((opt) => opt.setName("ban").setDescription("Ban members who post there").setRequired(false))
-    .addBooleanOption((opt) => opt.setName("delete").setDescription("Delete triggering messages").setRequired(false))
-    .addStringOption((opt) => opt.setName("message").setDescription("Panel message shown in the channel").setMaxLength(1800).setRequired(false)),
+    .addStringOption((opt) => opt
+      .setName("action")
+      .setDescription("What happens to a user who posts there")
+      .addChoices(
+        { name: "Ban", value: "ban" },
+        { name: "Kick", value: "kick" },
+        { name: "Timeout (10 minutes)", value: "timeout" },
+        { name: "Log only", value: "none" },
+      )
+      .setRequired(false))
+    .addBooleanOption((opt) => opt.setName("delete").setDescription("Delete triggering messages").setRequired(false)),
 
   new SlashCommandBuilder()
     .setName("honeypot-disable")
@@ -1999,9 +2038,17 @@ const commands = [
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addChannelOption((opt) => opt.setName("channel").setDescription("Channel to protect").addChannelTypes(ChannelType.GuildText).setRequired(true))
     .addBooleanOption((opt) => opt.setName("enabled").setDescription("Enable protection now").setRequired(true))
-    .addBooleanOption((opt) => opt.setName("ban").setDescription("Ban members who post there").setRequired(false))
-    .addBooleanOption((opt) => opt.setName("delete").setDescription("Delete triggering messages").setRequired(false))
-    .addStringOption((opt) => opt.setName("message").setDescription("Panel message shown in the channel").setMaxLength(1800).setRequired(false)),
+    .addStringOption((opt) => opt
+      .setName("action")
+      .setDescription("What happens to a user who posts there")
+      .addChoices(
+        { name: "Ban", value: "ban" },
+        { name: "Kick", value: "kick" },
+        { name: "Timeout (10 minutes)", value: "timeout" },
+        { name: "Log only", value: "none" },
+      )
+      .setRequired(false))
+    .addBooleanOption((opt) => opt.setName("delete").setDescription("Delete triggering messages").setRequired(false)),
 
   new SlashCommandBuilder()
     .setName("dmca-info")
