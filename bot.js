@@ -43,6 +43,7 @@ function normalizeBotToken(value) {
 }
 
 const TOKEN = normalizeBotToken(process.env.DISCORD_TOKEN || process.env.DISCORD_BOT_TOKEN || process.env.TOKEN || "PASTE_NEW_DISCORD_BOT_TOKEN_HERE");
+const PROFILE_SYNC_AUTH = String(process.env.PROFILE_SYNC_SECRET || TOKEN).trim();
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID || "1529195963787251784";
 const DEV_GUILD_ID = process.env.DEV_GUILD_ID || "";
 const STATS_SECRET = process.env.STATS_SECRET || "";
@@ -51,6 +52,8 @@ const STATS_SYNC_ENDPOINT = process.env.STATS_SYNC_ENDPOINT || process.env.SYNC_
 const STATS_SYNC_INTERVAL_MS = Number(process.env.STATS_SYNC_INTERVAL_MS || process.env.SYNC_INTERVAL_MS || 5_000);
 const BOT_STATUS = process.env.BOT_STATUS || "Community health";
 const BOT_STATUS_TYPE = Number(process.env.BOT_STATUS_TYPE || 3); // 0 = Playing, 2 = Listening, 3 = Watching, 5 = Competing
+const PROFILE_SYNC_SECRET = String(process.env.PROFILE_SYNC_SECRET || "").trim();
+const PROFILE_SYNC_PORT = Number(process.env.PORT || 3000);
 const STATS_AUTH_TOKEN = STATS_SECRET || process.env.DISCORD_BOT_TOKEN || TOKEN;
 const BOT_STARTED_AT = new Date().toISOString();
 const BOT_SESSION_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -105,6 +108,11 @@ const defaultGuildData = () => ({
     ticketDetailsPlaceholder: "Describe the issue, request, order ID, screenshots, links, or anything the team should know.",
     ticketMaxOpenPerUser: 1,
     ticketDmTranscript: true,
+    honeypotChannelId: null,
+    honeypotEnabled: false,
+    honeypotBanEnabled: true,
+    honeypotDeleteMessage: true,
+    honeypotMessage: "DO NOT SEND MESSAGES IN THIS CHANNEL\n\nThis channel is reserved for anti-spam protection. Any message sent here may result in an immediate ban.",
     accentColor: "#32d6a0",
   },
   stats: {
@@ -120,6 +128,8 @@ const defaultGuildData = () => ({
   events: [],
   rolePanels: {},
   tickets: {},
+  botLogs: [],
+  polls: {},
 });
 
 let db = loadData();
@@ -172,6 +182,7 @@ function buildStatsPayload() {
       categories: guild.channels.cache.filter((channel) => channel.type === ChannelType.GuildCategory).size,
       shardId: guild.shardId ?? 0,
       iconUrl: guild.iconURL({ extension: "png", size: 64 }) || null,
+      botLogs: guildData(guild.id).botLogs || [],
     }))
     .sort((left, right) => right.members - left.members);
     // Keep every guild in the sync payload so the dashboard can determine
@@ -325,6 +336,8 @@ function guildData(guildId) {
   db.guilds[guildId].events = db.guilds[guildId].events || [];
   db.guilds[guildId].rolePanels = db.guilds[guildId].rolePanels || {};
   db.guilds[guildId].tickets = db.guilds[guildId].tickets || {};
+  db.guilds[guildId].botLogs = Array.isArray(db.guilds[guildId].botLogs) ? db.guilds[guildId].botLogs : [];
+  db.guilds[guildId].polls = db.guilds[guildId].polls || {};
   return db.guilds[guildId];
 }
 
@@ -1372,6 +1385,62 @@ async function handlePurgeCommand(interaction, ui) {
   return true;
 }
 
+function honeypotEmbed(data) {
+  return brandEmbed("DO NOT SEND MESSAGES IN THIS CHANNEL", data.settings.honeypotMessage)
+    .addFields(
+      { name: "Purpose", value: "This channel is monitored for spam bots and raid activity.", inline: false },
+      { name: "Enforcement", value: data.settings.honeypotBanEnabled ? "Messages are deleted and the sender is banned when possible." : "Messages are deleted and reported to the server logs.", inline: false },
+      { name: "Legal notice", value: "Use this protection only for your own server and content. Beacon does not submit DMCA claims automatically.", inline: false }
+    );
+}
+
+async function honeypotSetup(interaction, data) {
+  const channel = interaction.options.getChannel("channel", true);
+  const enabled = interaction.options.getBoolean("enabled", true);
+  const ban = interaction.options.getBoolean("ban");
+  const deleteMessage = interaction.options.getBoolean("delete");
+  const message = interaction.options.getString("message");
+
+  data.settings.honeypotChannelId = channel.id;
+  data.settings.honeypotEnabled = enabled;
+  if (ban !== null) data.settings.honeypotBanEnabled = ban;
+  if (deleteMessage !== null) data.settings.honeypotDeleteMessage = deleteMessage;
+  if (message) data.settings.honeypotMessage = message.slice(0, 1800);
+  saveData();
+
+  await channel.send(withBrandFiles({ embeds: [honeypotEmbed(data)] })).catch(() => null);
+  const action = enabled ? "enabled" : "saved but disabled";
+  await interaction.reply(withBrandFiles({
+    embeds: [successEmbed("Honeypot configured", `${channel} is ${action}.\n${data.settings.honeypotBanEnabled ? "Bans are enabled." : "Bans are disabled."} ${data.settings.honeypotDeleteMessage ? "Messages will be deleted." : "Messages will be kept."}`)],
+    ephemeral: true,
+  }));
+}
+
+async function honeypotDisable(interaction, data) {
+  data.settings.honeypotEnabled = false;
+  saveData();
+  await interaction.reply(withBrandFiles({
+    embeds: [successEmbed("Honeypot disabled", data.settings.honeypotChannelId ? `<#${data.settings.honeypotChannelId}> remains configured, but no users will be punished.` : "No honeypot channel is configured.")],
+    ephemeral: true,
+  }));
+}
+
+async function handleHoneypotMessage(message, data) {
+  if (!data.settings.honeypotEnabled || !data.settings.honeypotChannelId || message.channel.id !== data.settings.honeypotChannelId) return false;
+
+  const member = message.member || await message.guild.members.fetch(message.author.id).catch(() => null);
+  if (data.settings.honeypotDeleteMessage) await message.delete().catch(() => null);
+
+  let banned = false;
+  const me = message.guild.members.me;
+  if (data.settings.honeypotBanEnabled && member?.bannable && me?.permissionsIn(message.channel).has(PermissionFlagsBits.BanMembers)) {
+    banned = Boolean(await member.ban({ reason: "Beacon honeypot anti-spam protection" }).then(() => true).catch(() => false));
+  }
+
+  await log(message.guild, "Honeypot triggered", `${message.author.tag} sent a message in <#${message.channel.id}>. ${banned ? "Member banned." : "Member was not bannable; check permissions."}`);
+  return true;
+}
+
 const pendingEmojiSteals = new Map();
 const BEACON_YELLOW = 0xffb800;
 
@@ -1648,10 +1717,204 @@ async function cancelEmojiSteal(interaction, id, deps) {
   });
 }
 
+const pollTimers = new Map();
+
+function pollButtonLabel(value, fallback) {
+  return String(value || fallback).trim().slice(0, 80) || fallback;
+}
+
+function pollTotalVotes(poll) {
+  return poll.options.reduce((total, option) => total + option.votes.length, 0);
+}
+
+function pollContainer(poll) {
+  const total = pollTotalVotes(poll);
+  const endText = poll.status === "open"
+    ? `Ends <t:${Math.floor(new Date(poll.endsAt).getTime() / 1000)}:R>`
+    : `Poll ${poll.status}`;
+  const optionText = poll.options.map((option, index) =>
+    `**${index + 1}. ${option.label}** — ${option.votes.length} participant${option.votes.length === 1 ? "" : "s"}`
+  ).join("\n");
+  const intro = new TextDisplayBuilder().setContent(
+    `## ${poll.title}\n${poll.description || "Vote below to participate."}\n\n${optionText}\n\n**Participants:** ${total}\n**${endText}**`
+  );
+  const container = new ContainerBuilder().setAccentColor(0xffb800);
+  if (poll.thumbnail) {
+    container.addSectionComponents(new SectionBuilder()
+      .addTextDisplayComponents(intro)
+      .setThumbnailAccessory(new ThumbnailBuilder().setURL(poll.thumbnail).setDescription(poll.title.slice(0, 100))));
+  } else {
+    container.addTextDisplayComponents(intro);
+  }
+  container
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      ...poll.options.map((option, index) => new ButtonBuilder()
+        .setCustomId(`poll_vote:${poll.id}:${index}`)
+        .setLabel(pollButtonLabel(option.label, `Option ${index + 1}`))
+        .setStyle(index === 0 ? ButtonStyle.Primary : ButtonStyle.Secondary)
+        .setDisabled(poll.status !== "open"))
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# Poll ID: ${poll.id} · One vote per participant · Vote again to change your choice.`));
+  return container;
+}
+
+async function refreshPollMessage(guild, poll) {
+  const channel = guild.channels.cache.get(poll.channelId);
+  if (!channel) return false;
+  const message = await channel.messages.fetch(poll.messageId).catch(() => null);
+  if (!message) return false;
+  await message.edit({ components: [pollContainer(poll)] }).catch(() => null);
+  return true;
+}
+
+function schedulePollExpiry(guild, poll) {
+  if (pollTimers.has(poll.id)) clearTimeout(pollTimers.get(poll.id));
+  const delay = Math.max(0, new Date(poll.endsAt).getTime() - Date.now());
+  const timer = setTimeout(async () => {
+    if (poll.status !== "open") return;
+    poll.status = "closed";
+    saveData();
+    await refreshPollMessage(guild, poll);
+    pollTimers.delete(poll.id);
+  }, delay);
+  timer.unref?.();
+  pollTimers.set(poll.id, timer);
+}
+
+async function pollCreate(interaction, data) {
+  const title = interaction.options.getString("title", true);
+  const description = interaction.options.getString("description") || "Vote below to participate.";
+  const thumbnail = interaction.options.getString("thumbnail") || "";
+  const duration = interaction.options.getInteger("duration", true);
+  const options = [1, 2, 3, 4, 5].map((index) => interaction.options.getString(`option_${index}`)).filter(Boolean)
+    .map((label) => ({ label: label.trim().slice(0, 80), votes: [] }));
+  if (options.length < 2) {
+    await interaction.reply(withBrandFiles({ embeds: [errorEmbed("A poll needs at least two options.")], ephemeral: true }));
+    return;
+  }
+  if (thumbnail && !/^https:\/\//i.test(thumbnail)) {
+    await interaction.reply(withBrandFiles({ embeds: [errorEmbed("The thumbnail must be an HTTPS image URL.")], ephemeral: true }));
+    return;
+  }
+  const id = `poll_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const poll = { id, title: title.slice(0, 100), description: description.slice(0, 900), thumbnail, options, duration, status: "open", createdBy: interaction.user.id, channelId: interaction.channelId, messageId: null, createdAt: new Date().toISOString(), endsAt: new Date(Date.now() + duration * 60_000).toISOString() };
+  const message = await interaction.channel.send({ components: [pollContainer(poll)], flags: MessageFlags.IsComponentsV2 });
+  poll.messageId = message.id;
+  data.polls[id] = poll;
+  saveData();
+  schedulePollExpiry(interaction.guild, poll);
+  addBotLog(interaction.guild, "Poll created", `${interaction.user.tag} created poll ${id}.`);
+  await interaction.reply(withBrandFiles({ embeds: [successEmbed("Poll created", `Poll **${title}** was posted. ID: \`${id}\``)], ephemeral: true }));
+}
+
+async function pollEdit(interaction, data) {
+  const id = interaction.options.getString("poll_id", true);
+  const poll = data.polls[id];
+  if (!poll || poll.status === "deleted") {
+    await interaction.reply(withBrandFiles({ embeds: [errorEmbed("That poll does not exist.")], ephemeral: true }));
+    return;
+  }
+  const title = interaction.options.getString("title");
+  const description = interaction.options.getString("description");
+  const thumbnail = interaction.options.getString("thumbnail");
+  const duration = interaction.options.getInteger("duration");
+  if (title) poll.title = title.slice(0, 100);
+  if (description) poll.description = description.slice(0, 900);
+  if (thumbnail !== null) {
+    if (thumbnail && !/^https:\/\//i.test(thumbnail)) {
+      await interaction.reply(withBrandFiles({ embeds: [errorEmbed("The thumbnail must be an HTTPS image URL.")], ephemeral: true }));
+      return;
+    }
+    poll.thumbnail = thumbnail;
+  }
+  const editedOptions = [1, 2, 3, 4, 5].map((index) => interaction.options.getString(`option_${index}`)).filter(Boolean);
+  if (editedOptions.length >= 2) poll.options = editedOptions.map((label) => ({ label: label.trim().slice(0, 80), votes: [] }));
+  if (duration) poll.endsAt = new Date(Date.now() + duration * 60_000).toISOString();
+  saveData();
+  await refreshPollMessage(interaction.guild, poll);
+  if (poll.status === "open") schedulePollExpiry(interaction.guild, poll);
+  addBotLog(interaction.guild, "Poll edited", `${interaction.user.tag} edited poll ${id}.`);
+  await interaction.reply(withBrandFiles({ embeds: [successEmbed("Poll updated", `Poll \`${id}\` was updated.`)], ephemeral: true }));
+}
+
+async function pollDelete(interaction, data) {
+  const id = interaction.options.getString("poll_id", true);
+  const poll = data.polls[id];
+  if (!poll || poll.status === "deleted") {
+    await interaction.reply(withBrandFiles({ embeds: [errorEmbed("That poll does not exist.")], ephemeral: true }));
+    return;
+  }
+  const channel = interaction.guild.channels.cache.get(poll.channelId);
+  await channel?.messages.fetch(poll.messageId).then((message) => message.delete()).catch(() => null);
+  poll.status = "deleted";
+  clearTimeout(pollTimers.get(id));
+  pollTimers.delete(id);
+  saveData();
+  addBotLog(interaction.guild, "Poll deleted", `${interaction.user.tag} deleted poll ${id}.`);
+  await interaction.reply(withBrandFiles({ embeds: [successEmbed("Poll deleted", `Poll \`${id}\` was deleted.`)], ephemeral: true }));
+}
+
+async function handlePollVote(interaction, data) {
+  const [, id, indexText] = interaction.customId.split(":");
+  const poll = data.polls[id];
+  const index = Number(indexText);
+  if (!poll || poll.status !== "open" || !poll.options[index]) {
+    await interaction.reply(withBrandFiles({ embeds: [errorEmbed("This poll is no longer active.")], ephemeral: true }));
+    return;
+  }
+  for (const option of poll.options) option.votes = option.votes.filter((userId) => userId !== interaction.user.id);
+  poll.options[index].votes.push(interaction.user.id);
+  saveData();
+  await interaction.update({ components: [pollContainer(poll)], flags: MessageFlags.IsComponentsV2 });
+}
+
+function scheduleExistingPolls() {
+  for (const guild of client.guilds.cache.values()) {
+    const data = guildData(guild.id);
+    for (const poll of Object.values(data.polls)) if (poll.status === "open") schedulePollExpiry(guild, poll);
+  }
+}
+
 const ticketHandlers = { ticketSetup, ticketPanel, ticketClose, ticketAdd, ticketRemove, ticketRename, ticketInfo, ticketStats, showTicketModal, openTicket, claimTicket, closeTicket };
 
 const commands = [
   ...purgeCommands,
+
+  new SlashCommandBuilder()
+    .setName("poll-create")
+    .setDescription("Create a V2 poll with live participant counts.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addStringOption((opt) => opt.setName("title").setDescription("Poll title").setMaxLength(100).setRequired(true))
+    .addIntegerOption((opt) => opt.setName("duration").setDescription("Duration in minutes").setMinValue(1).setMaxValue(10080).setRequired(true))
+    .addStringOption((opt) => opt.setName("option_1").setDescription("First option").setMaxLength(80).setRequired(true))
+    .addStringOption((opt) => opt.setName("option_2").setDescription("Second option").setMaxLength(80).setRequired(true))
+    .addStringOption((opt) => opt.setName("description").setDescription("Poll description").setMaxLength(900).setRequired(false))
+    .addStringOption((opt) => opt.setName("option_3").setDescription("Third option").setMaxLength(80).setRequired(false))
+    .addStringOption((opt) => opt.setName("option_4").setDescription("Fourth option").setMaxLength(80).setRequired(false))
+    .addStringOption((opt) => opt.setName("option_5").setDescription("Fifth option").setMaxLength(80).setRequired(false))
+    .addStringOption((opt) => opt.setName("thumbnail").setDescription("Optional HTTPS thumbnail URL").setMaxLength(500).setRequired(false)),
+
+  new SlashCommandBuilder()
+    .setName("poll-edit")
+    .setDescription("Edit an existing Beacon poll.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addStringOption((opt) => opt.setName("poll_id").setDescription("Poll ID from the footer").setMaxLength(60).setRequired(true))
+    .addStringOption((opt) => opt.setName("title").setDescription("New poll title").setMaxLength(100).setRequired(false))
+    .addStringOption((opt) => opt.setName("description").setDescription("New poll description").setMaxLength(900).setRequired(false))
+    .addIntegerOption((opt) => opt.setName("duration").setDescription("Reset duration in minutes").setMinValue(1).setMaxValue(10080).setRequired(false))
+    .addStringOption((opt) => opt.setName("option_1").setDescription("Replace options: provide at least two").setMaxLength(80).setRequired(false))
+    .addStringOption((opt) => opt.setName("option_2").setDescription("Second replacement option").setMaxLength(80).setRequired(false))
+    .addStringOption((opt) => opt.setName("option_3").setDescription("Third replacement option").setMaxLength(80).setRequired(false))
+    .addStringOption((opt) => opt.setName("option_4").setDescription("Fourth replacement option").setMaxLength(80).setRequired(false))
+    .addStringOption((opt) => opt.setName("option_5").setDescription("Fifth replacement option").setMaxLength(80).setRequired(false))
+    .addStringOption((opt) => opt.setName("thumbnail").setDescription("New HTTPS thumbnail URL; empty clears it").setMaxLength(500).setRequired(false)),
+
+  new SlashCommandBuilder()
+    .setName("poll-delete")
+    .setDescription("Delete an existing Beacon poll.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addStringOption((opt) => opt.setName("poll_id").setDescription("Poll ID from the footer").setMaxLength(60).setRequired(true)),
 
   new SlashCommandBuilder()
     .setName("help")
@@ -1692,6 +1955,21 @@ const commands = [
         .setDescription("Role given to new members")
         .setRequired(false)
     ),
+
+  new SlashCommandBuilder()
+    .setName("honeypot-setup")
+    .setDescription("Configure a protected anti-spam honeypot channel.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addChannelOption((opt) => opt.setName("channel").setDescription("Channel to protect").addChannelTypes(ChannelType.GuildText).setRequired(true))
+    .addBooleanOption((opt) => opt.setName("enabled").setDescription("Enable protection now").setRequired(true))
+    .addBooleanOption((opt) => opt.setName("ban").setDescription("Ban members who post there").setRequired(false))
+    .addBooleanOption((opt) => opt.setName("delete").setDescription("Delete triggering messages").setRequired(false))
+    .addStringOption((opt) => opt.setName("message").setDescription("Panel message shown in the channel").setMaxLength(1800).setRequired(false)),
+
+  new SlashCommandBuilder()
+    .setName("honeypot-disable")
+    .setDescription("Disable the configured honeypot without deleting its channel.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   new SlashCommandBuilder()
     .setName("health")
@@ -2120,10 +2398,53 @@ client.once("clientReady", async () => {
   try {
     await registerCommands();
     await syncDiscordStats();
+    scheduleExistingPolls();
   } catch (err) {
     console.error(`[commands] Failed to register slash commands: ${err.message}`);
   }
 });
+
+function sendJson(response, status, value) {
+  const body = JSON.stringify(value);
+  response.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+  response.end(body);
+}
+
+function startProfileSyncServer() {
+  const server = http.createServer((request, response) => {
+    if (request.method !== "POST" || request.url !== "/api/profile-sync") return sendJson(response, 404, { error: "Not found" });
+    if (request.headers.authorization !== `Bearer ${PROFILE_SYNC_AUTH}`) return sendJson(response, 401, { error: "Unauthorized" });
+    let raw = "";
+    request.on("data", (chunk) => {
+      raw += chunk;
+      if (raw.length > 12 * 1024 * 1024) request.destroy();
+    });
+    request.on("error", () => {});
+    request.on("end", async () => {
+      try {
+        const input = JSON.parse(raw || "{}");
+        const guildId = String(input.guildId || "");
+        if (!/^\d{17,22}$/.test(guildId)) return sendJson(response, 400, { error: "Invalid guild ID" });
+        if (!client.isReady()) return sendJson(response, 503, { error: "Beacon is still connecting to Discord" });
+        const guild = await client.guilds.fetch(guildId);
+        const member = await guild.members.fetchMe();
+        const changes = {};
+        for (const field of ["avatar", "banner", "bio"]) {
+          if (Object.prototype.hasOwnProperty.call(input, field)) changes[field] = input[field];
+        }
+        if (!Object.keys(changes).length) return sendJson(response, 400, { error: "No profile changes" });
+        const updated = await member.edit(changes);
+        return sendJson(response, 200, { ok: true, message: "Beacon's server profile was updated by the bot.", profile: {
+          avatar: updated.avatar || null, banner: updated.banner || null, bio: updated.bio || "", userId: client.user.id,
+        } });
+      } catch (error) {
+        console.error("[profile-sync] failed", error);
+        return sendJson(response, 502, { error: error?.message || "Discord profile update failed" });
+      }
+    });
+  });
+  server.listen(PROFILE_SYNC_PORT, "0.0.0.0", () => console.log(`[profile-sync] Listening on port ${PROFILE_SYNC_PORT}`));
+}
 
 client.on("guildCreate", async (guild) => {
   console.log(`[guild-join] Joined new guild: ${guild.name} (${guild.id}) with ${guild.memberCount} members`);
@@ -2202,6 +2523,7 @@ client.on("messageCreate", async (message) => {
   if (!message.guild || message.author.bot) return;
 
   const data = guildData(message.guild.id);
+  if (await handleHoneypotMessage(message, data)) return;
   resetDailyIfNeeded(data);
 
   data.stats.messagesToday += 1;
@@ -2292,10 +2614,16 @@ client.on("interactionCreate", async (interaction) => {
 async function handleCommand(interaction) {
   const command = interaction.commandName;
   const data = guildData(interaction.guild.id);
+  addBotLog(interaction.guild, "Command executed", `${interaction.user.tag} used /${command}.`);
 
+  if (command === "poll-create") return pollCreate(interaction, data);
+  if (command === "poll-edit") return pollEdit(interaction, data);
+  if (command === "poll-delete") return pollDelete(interaction, data);
   if (command === "help") return sendHelp(interaction);
   if (command === "quickstart") return quickStart(interaction, data);
   if (command === "setup") return setup(interaction, data);
+  if (command === "honeypot-setup") return honeypotSetup(interaction, data);
+  if (command === "honeypot-disable") return honeypotDisable(interaction, data);
   if (command === "health") return health(interaction, data);
   if (command === "dashboard") return dashboard(interaction, data);
   if (command === "emoji-steal") return prepareEmojiSteal(interaction, false, beaconUi());
@@ -2327,6 +2655,7 @@ const helpPages = [
     title: "Core tools",
     description: "The essentials for running a healthy Beacon server.",
     commands: [
+      ["/poll-create /poll-edit /poll-delete", "Create and manage live V2 polls with participant counts."],
       ["/quickstart", "See the recommended setup flow."],
       ["/setup", "Configure welcome, logs, onboarding and the member role."],
       ["/health", "See the community health score and next actions."],
@@ -2362,6 +2691,7 @@ const helpPages = [
       ["/rolepanel", "Create a selectable role menu."],
       ["/purge", "Clean recent messages with filters."],
       ["/emoji-steal / bulk", "Copy custom emojis with a confirmation step."],
+      ["/honeypot-setup / /honeypot-disable", "Protect a channel from spam and raid bots with configurable moderation."],
     ],
   },
 ];
@@ -2787,6 +3117,8 @@ async function settings(interaction, data) {
       { name: "Support role", value: data.settings.ticketSupportRoleId ? `<@&${data.settings.ticketSupportRoleId}>` : "Not set", inline: true },
       { name: "Ticket limit", value: `${data.settings.ticketMaxOpenPerUser} open per member`, inline: true },
       { name: "Transcript DM", value: data.settings.ticketDmTranscript ? "Enabled" : "Disabled", inline: true },
+      { name: "Honeypot", value: data.settings.honeypotEnabled && data.settings.honeypotChannelId ? `<#${data.settings.honeypotChannelId}> · Enabled` : "Disabled", inline: true },
+      { name: "Honeypot action", value: `${data.settings.honeypotBanEnabled ? "Ban" : "Log only"} / ${data.settings.honeypotDeleteMessage ? "Delete" : "Keep message"}`, inline: true },
       { name: "Ticket panel", value: `**${data.settings.ticketPanelTitle}**\n${data.settings.ticketPanelMessage.slice(0, 800)}`, inline: false },
       { name: "Ticket rules", value: data.settings.ticketPanelRules.slice(0, 800), inline: false },
       { name: "Ticket buttons", value: `${data.settings.ticketButtonLabel} / ${data.settings.ticketClaimButtonLabel} / ${data.settings.ticketCloseButtonLabel}`, inline: true },
@@ -2844,6 +3176,11 @@ async function handleModal(interaction) {
 
 async function handleButton(interaction) {
   const data = guildData(interaction.guild.id);
+
+  if (interaction.customId.startsWith("poll_vote:")) {
+    await handlePollVote(interaction, data);
+    return;
+  }
 
   if (interaction.customId.startsWith("emoji_steal_confirm:")) {
     await confirmEmojiSteal(interaction, interaction.customId.split(":")[1], beaconUi());
@@ -3002,7 +3339,19 @@ async function handleSelect(interaction) {
   }
 }
 
+function addBotLog(guild, title, description) {
+  const data = guildData(guild.id);
+  data.botLogs.unshift({
+    title: String(title || "Bot action").slice(0, 100),
+    description: String(description || "").slice(0, 300),
+    at: new Date().toISOString(),
+  });
+  data.botLogs = data.botLogs.slice(0, 100);
+  saveData();
+}
+
 async function log(guild, title, description) {
+  addBotLog(guild, title, description);
   const data = guildData(guild.id);
   const channel = guild.channels.cache.get(data.settings.logChannelId);
   if (!channel) return;
@@ -3015,6 +3364,7 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
+startProfileSyncServer();
 client.login(TOKEN)
   .catch((err) => {
     console.error(err);
