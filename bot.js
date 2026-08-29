@@ -2405,8 +2405,8 @@ async function syncCachedGuildCommands(rest) {
 
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
-  await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
-  console.log(`[commands] Synced ${commands.length} global slash commands`);
+  await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] });
+  console.log("[commands] Cleared global slash commands; using immediate guild commands");
   await syncCachedGuildCommands(rest);
 }
 
