@@ -786,7 +786,7 @@ export async function onRequestGet({ request, env }) {
         row.className = "ticket-panel-row is-selected";
         row.type = "button";
         row.dataset.ticketPanelRow = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-        row.innerHTML = "<span><strong>" + (ticketPanelList?.children.length + 1 || 2) + "</strong> " + name.replace(/[&<>]/g, "") + "</span><span class=\"ticket-panel-chevron\">›</span>";
+        row.innerHTML = '<span><strong>' + (ticketPanelList?.children.length + 1 || 2) + '</strong> ' + name.replace(/[&<>]/g, '') + '</span><span class="ticket-panel-chevron">›</span>';
         ticketPanelList?.querySelectorAll(".ticket-panel-row").forEach((item) => item.classList.remove("is-selected"));
         ticketPanelList?.append(row);
         if (ticketEditorTitle) ticketEditorTitle.textContent = name;
