@@ -730,6 +730,12 @@ cookieSettingsButtons.forEach((button) => button.addEventListener("click", openC
 cookieCloseButtons.forEach((button) => button.addEventListener("click", closeCookieSettings));
 cookieAnalyticsToggles.forEach((toggle) => toggle.addEventListener("click", () => {
   cookieAnalyticsEnabled = !cookieAnalyticsEnabled;
+  cookieAnalyticsToggles.forEach((item) => {
+    item.classList.remove("is-switching");
+    void item.offsetWidth;
+    item.classList.add("is-switching");
+    window.setTimeout(() => item.classList.remove("is-switching"), 360);
+  });
   updateCookieToggles();
 }));
 cookieAcceptAllButtons.forEach((button) => button.addEventListener("click", () => applyCookieChoice(true)));

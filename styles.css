@@ -472,6 +472,15 @@ body.external-modal-open { overflow: hidden; }
 .cookie-toggle.is-on::after { content: "✓"; color: #d39500; }
 .cookie-toggle--small { width: 44px; height: 22px; }
 .cookie-toggle--small::after { width: 16px; height: 16px; font-size: .78rem; }
+.cookie-toggle { position: relative; display: block; width: 52px; height: 26px; flex: 0 0 auto; border: 0; border-radius: 999px; padding: 0; color: #5f6975; background: #718092; cursor: pointer; transition: background .22s ease, transform .22s cubic-bezier(.2,.8,.2,1); }
+.cookie-toggle::after { content: "\00D7"; position: absolute; top: 3px; left: 3px; display: grid; width: 20px; height: 20px; place-items: center; border-radius: 50%; color: #718092; background: #fff; font-size: .95rem; font-weight: 900; line-height: 1; transition: transform .28s cubic-bezier(.2,1.4,.35,1), color .18s ease; }
+.cookie-toggle.is-on { background: #ffc31c; }
+.cookie-toggle.is-on::after { content: "\2713"; color: #d39500; transform: translateX(26px); }
+.cookie-toggle--small { width: 44px; height: 22px; }
+.cookie-toggle--small::after { top: 3px; left: 3px; width: 16px; height: 16px; font-size: .78rem; }
+.cookie-toggle--small.is-on::after { transform: translateX(22px); }
+.cookie-toggle.is-switching { animation: cookie-toggle-stretch .34s ease both; }
+.cookie-toggle.is-switching::after { animation: cookie-thumb-stretch .34s ease both; }
 .cookie-settings__service-list { margin: 0; padding: 0; list-style: none; }
 .cookie-settings__service-list li { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 38px; padding: 0 16px 0 28px; border-bottom: 1px solid #dbe3ea; color: #626976; font-size: .86rem; }
 .cookie-settings__service-list li::before { content: "•"; margin-right: auto; color: #626976; font-weight: 900; }
@@ -485,6 +494,8 @@ body.external-modal-open { overflow: hidden; }
 @keyframes cookie-pop-in { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
 @keyframes cookie-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes cookie-settings-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes cookie-toggle-stretch { 0%, 100% { transform: scaleX(1); } 45% { transform: scaleX(1.12); } }
+@keyframes cookie-thumb-stretch { 0%, 100% { transform: translateX(0) scaleX(1); } 45% { transform: translateX(3px) scaleX(.78); } }
 @media (max-width: 600px) {
   .cookie-notice { right: 14px; bottom: 14px; }
   .cookie-floating-button { right: 14px !important; bottom: 14px !important; width: 54px; height: 54px; min-height: 54px; }
