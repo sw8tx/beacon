@@ -71,6 +71,7 @@ const PRESTIGE_LEVEL_REQUIREMENT = 25;
 const HONEYPOT_DESCRIPTION = "This channel is used to catch spam bots. Any messages sent here will result in a ban.";
 const xpCooldowns = new Map();
 const honeypotSetupDrafts = new Map();
+const pendingModerationActions = new Map();
 
 if (!TOKEN || TOKEN.startsWith("PASTE_")) {
   console.error("Missing Discord bot token. Set DISCORD_TOKEN in your .env file or in your hosting environment.");
@@ -1645,6 +1646,225 @@ async function handleHoneypotMessage(message, data) {
   return true;
 }
 
+function moderationActionId() {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function parseDiscordUserId(value) {
+  const match = String(value || "").match(/\d{17,22}/);
+  return match ? match[0] : null;
+}
+
+function moderationActionTitle(type) {
+  return type === "unban" ? "Unban" : "Ban";
+}
+
+function moderationConfirmContainer(action) {
+  const title = moderationActionTitle(action.type);
+  const details = [
+    `**Target**\n<@${action.targetId}>`,
+    `**User ID**\n\`${action.targetId}\``,
+    `**Reason**\n${action.reason || "No reason provided."}`,
+  ];
+
+  if (action.type === "ban") {
+    details.push(`**Delete messages**\n${action.deleteMessageDays} day(s)`);
+  }
+
+  return new ContainerBuilder()
+    .setAccentColor(action.type === "ban" ? Colors.Red : BRAND_COLOR)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`## Confirm ${title}\n${details.join("\n\n")}`)
+    )
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`mod_action_confirm:${action.id}`).setLabel("Confirm").setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`mod_action_cancel:${action.id}`).setLabel("Cancel").setStyle(ButtonStyle.Danger)
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# This confirmation expires in 10 minutes. Nothing happens until you confirm."));
+}
+
+function moderationResultContainer(title, description, success = true) {
+  return new ContainerBuilder()
+    .setAccentColor(success ? BRAND_COLOR : Colors.Red)
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}\n${description}`));
+}
+
+async function ensureModerationPermissions(interaction) {
+  if (!interaction.memberPermissions?.has(PermissionFlagsBits.BanMembers)) {
+    await interaction.reply({
+      components: [moderationResultContainer("Permission missing", "You need **Ban Members** to use this command.", false)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return false;
+  }
+
+  const botMember = interaction.guild.members.me || await interaction.guild.members.fetchMe().catch(() => null);
+  if (!botMember?.permissions.has(PermissionFlagsBits.BanMembers)) {
+    await interaction.reply({
+      components: [moderationResultContainer("Bot permission missing", "Beacon needs **Ban Members** before it can ban or unban users.", false)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return false;
+  }
+
+  return true;
+}
+
+async function prepareModerationAction(interaction, type, targetId, reason, deleteMessageDays = 0) {
+  if (!await ensureModerationPermissions(interaction)) return;
+  if (!targetId) {
+    await interaction.reply({
+      components: [moderationResultContainer("Invalid user ID", "Send a valid Discord user ID with 17-22 digits.", false)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
+  if (targetId === interaction.user.id) {
+    await interaction.reply({
+      components: [moderationResultContainer("Action blocked", "You cannot target yourself with this command.", false)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
+  if (targetId === interaction.client.user.id) {
+    await interaction.reply({
+      components: [moderationResultContainer("Action blocked", "Beacon cannot target itself.", false)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  if (type === "ban") {
+    const member = await interaction.guild.members.fetch(targetId).catch(() => null);
+    if (member && !member.bannable) {
+      await interaction.reply({
+        components: [moderationResultContainer("Cannot ban user", "That member is above Beacon in the role hierarchy or otherwise cannot be banned.", false)],
+        flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+      });
+      return;
+    }
+  }
+
+  const id = moderationActionId();
+  const action = {
+    id,
+    type,
+    guildId: interaction.guild.id,
+    moderatorId: interaction.user.id,
+    targetId,
+    reason: String(reason || "No reason provided.").slice(0, 512),
+    deleteMessageDays: Math.max(0, Math.min(7, Number(deleteMessageDays) || 0)),
+    createdAt: Date.now(),
+  };
+
+  pendingModerationActions.set(id, action);
+  setTimeout(() => pendingModerationActions.delete(id), 10 * 60_000).unref?.();
+
+  await interaction.reply({
+    components: [moderationConfirmContainer(action)],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  });
+}
+
+async function banCommand(interaction) {
+  const user = interaction.options.getUser("user", true);
+  const reason = interaction.options.getString("reason") || `Banned by ${interaction.user.tag}`;
+  const deleteMessageDays = interaction.options.getInteger("delete_days") || 0;
+  await prepareModerationAction(interaction, "ban", user.id, reason, deleteMessageDays);
+}
+
+async function banIdCommand(interaction) {
+  const targetId = parseDiscordUserId(interaction.options.getString("user_id", true));
+  const reason = interaction.options.getString("reason") || `Banned by ${interaction.user.tag}`;
+  const deleteMessageDays = interaction.options.getInteger("delete_days") || 0;
+  await prepareModerationAction(interaction, "ban", targetId, reason, deleteMessageDays);
+}
+
+async function unbanCommand(interaction) {
+  const user = interaction.options.getUser("user", true);
+  const reason = interaction.options.getString("reason") || `Unbanned by ${interaction.user.tag}`;
+  await prepareModerationAction(interaction, "unban", user.id, reason, 0);
+}
+
+async function unbanIdCommand(interaction) {
+  const targetId = parseDiscordUserId(interaction.options.getString("user_id", true));
+  const reason = interaction.options.getString("reason") || `Unbanned by ${interaction.user.tag}`;
+  await prepareModerationAction(interaction, "unban", targetId, reason, 0);
+}
+
+async function confirmModerationAction(interaction, id) {
+  const action = pendingModerationActions.get(id);
+  if (!action) {
+    await interaction.reply({
+      components: [moderationResultContainer("Confirmation expired", "Run the command again if you still want to do this.", false)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
+  if (action.guildId !== interaction.guild.id || action.moderatorId !== interaction.user.id) {
+    await interaction.reply({
+      components: [moderationResultContainer("Not your confirmation", "Only the moderator who started this action can confirm it.", false)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
+  if (!await ensureModerationPermissions(interaction)) return;
+
+  pendingModerationActions.delete(id);
+  await interaction.deferUpdate();
+
+  try {
+    if (action.type === "ban") {
+      await interaction.guild.members.ban(action.targetId, {
+        reason: action.reason,
+        deleteMessageSeconds: action.deleteMessageDays * 24 * 60 * 60,
+      });
+      await interaction.editReply({
+        components: [moderationResultContainer("User banned", `<@${action.targetId}> was banned.\nReason: ${action.reason}`)],
+        flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+      });
+      await log(interaction.guild, "User banned", `${interaction.user.tag} banned ${action.targetId}. Reason: ${action.reason}`);
+      return;
+    }
+
+    await interaction.guild.members.unban(action.targetId, action.reason);
+    await interaction.editReply({
+      components: [moderationResultContainer("User unbanned", `<@${action.targetId}> was unbanned.\nReason: ${action.reason}`)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    await log(interaction.guild, "User unbanned", `${interaction.user.tag} unbanned ${action.targetId}. Reason: ${action.reason}`);
+  } catch (err) {
+    await interaction.editReply({
+      components: [moderationResultContainer("Action failed", err?.message || "Discord rejected the moderation action.", false)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    }).catch(() => null);
+  }
+}
+
+async function cancelModerationAction(interaction, id) {
+  const action = pendingModerationActions.get(id);
+  if (!action) {
+    await interaction.reply({
+      components: [moderationResultContainer("Confirmation expired", "There is nothing left to cancel.", false)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
+  if (action.moderatorId !== interaction.user.id) {
+    await interaction.reply({
+      components: [moderationResultContainer("Not your confirmation", "Only the moderator who started this action can cancel it.", false)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  pendingModerationActions.delete(id);
+  await interaction.update({
+    components: [moderationResultContainer("Action cancelled", "No moderation action was performed.", false)],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  });
+}
+
 const pendingEmojiSteals = new Map();
 const BEACON_YELLOW = 0xffb800;
 
@@ -2119,6 +2339,98 @@ const commands = [
     .setDescription("Delete an existing Beacon poll.")
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addStringOption((opt) => opt.setName("poll_id").setDescription("Poll ID from the footer").setMaxLength(60).setRequired(true)),
+
+  new SlashCommandBuilder()
+    .setName("ban")
+    .setDescription("Ban a user with a Components V2 confirmation.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+    .addUserOption((opt) =>
+      opt
+        .setName("user")
+        .setDescription("User to ban")
+        .setRequired(true)
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName("reason")
+        .setDescription("Reason for the ban")
+        .setMaxLength(500)
+        .setRequired(false)
+    )
+    .addIntegerOption((opt) =>
+      opt
+        .setName("delete_days")
+        .setDescription("Delete messages from the last 0-7 days")
+        .setMinValue(0)
+        .setMaxValue(7)
+        .setRequired(false)
+    ),
+
+  new SlashCommandBuilder()
+    .setName("ban-id")
+    .setDescription("Ban a user by ID, even before they join.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+    .addStringOption((opt) =>
+      opt
+        .setName("user_id")
+        .setDescription("Discord user ID to ban")
+        .setMinLength(17)
+        .setMaxLength(22)
+        .setRequired(true)
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName("reason")
+        .setDescription("Reason for the ban")
+        .setMaxLength(500)
+        .setRequired(false)
+    )
+    .addIntegerOption((opt) =>
+      opt
+        .setName("delete_days")
+        .setDescription("Delete messages from the last 0-7 days")
+        .setMinValue(0)
+        .setMaxValue(7)
+        .setRequired(false)
+    ),
+
+  new SlashCommandBuilder()
+    .setName("unban")
+    .setDescription("Unban a user with a Components V2 confirmation.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+    .addUserOption((opt) =>
+      opt
+        .setName("user")
+        .setDescription("User to unban")
+        .setRequired(true)
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName("reason")
+        .setDescription("Reason for the unban")
+        .setMaxLength(500)
+        .setRequired(false)
+    ),
+
+  new SlashCommandBuilder()
+    .setName("unban-id")
+    .setDescription("Unban a user by Discord user ID.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+    .addStringOption((opt) =>
+      opt
+        .setName("user_id")
+        .setDescription("Discord user ID to unban")
+        .setMinLength(17)
+        .setMaxLength(22)
+        .setRequired(true)
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName("reason")
+        .setDescription("Reason for the unban")
+        .setMaxLength(500)
+        .setRequired(false)
+    ),
 
   new SlashCommandBuilder()
     .setName("help")
@@ -2845,6 +3157,10 @@ async function handleCommand(interaction) {
   if (command === "poll-create") return pollCreate(interaction, data);
   if (command === "poll-edit") return pollEdit(interaction, data);
   if (command === "poll-delete") return pollDelete(interaction, data);
+  if (command === "ban") return banCommand(interaction);
+  if (command === "ban-id") return banIdCommand(interaction);
+  if (command === "unban") return unbanCommand(interaction);
+  if (command === "unban-id") return unbanIdCommand(interaction);
   if (command === "help") return sendHelp(interaction);
   if (command === "quickstart") return quickStart(interaction, data);
   if (command === "setup") return setup(interaction, data);
@@ -2918,6 +3234,8 @@ const helpPages = [
       ["/ticketinfo / /ticketstats", "Inspect ticket ownership and workload."],
       ["/rolepanel", "Create a selectable role menu."],
       ["/purge", "Clean recent messages with filters."],
+      ["/ban / /ban-id", "Ban members or pre-ban a Discord user ID after a V2 confirmation."],
+      ["/unban / /unban-id", "Unban by user or Discord user ID after a V2 confirmation."],
       ["/emoji-steal / bulk", "Copy custom emojis with a confirmation step."],
       ["/honeypot-setup / /honeypot-configure / /honeypot-disable", "Protect a channel from spam and raid bots with configurable moderation."],
       ["/dmca-info", "Show the official domain-verification guidance; no automatic takedown claims are made."],
@@ -3526,6 +3844,16 @@ async function handleButton(interaction) {
       components: [honeypotNoticeContainer("Honeypot setup cancelled", "No changes were saved.")],
       flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
     });
+    return;
+  }
+
+  if (interaction.customId.startsWith("mod_action_confirm:")) {
+    await confirmModerationAction(interaction, interaction.customId.split(":")[1]);
+    return;
+  }
+
+  if (interaction.customId.startsWith("mod_action_cancel:")) {
+    await cancelModerationAction(interaction, interaction.customId.split(":")[1]);
     return;
   }
 
