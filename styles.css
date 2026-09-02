@@ -434,3 +434,58 @@ body.external-modal-open { overflow: hidden; }
   .mock-command-card { width: 66%; }
   .activity-art__toast { right: 0; width: 70%; }
 }
+
+.cookie-notice[hidden],
+.cookie-settings-modal[hidden] { display: none !important; }
+.cookie-notice { position: fixed; right: 18px; bottom: 18px; z-index: 90; width: min(360px, calc(100vw - 28px)); color: #2b2f38; }
+.cookie-notice__card { overflow: hidden; border: 1px solid rgba(15,23,42,.08); border-radius: 8px; background: #fff; box-shadow: 0 22px 65px rgba(0,0,0,.22); animation: cookie-pop-in .28s ease-out both; }
+.cookie-notice__card h2 { margin: 0; padding: 20px 20px 10px; color: #2b2f38; font: 800 1rem/1.2 "DM Sans", sans-serif; }
+.cookie-notice__card p { margin: 0; padding: 6px 20px 14px; color: #626976; font-size: .92rem; line-height: 1.48; }
+.cookie-google-pills { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 20px 16px; }
+.cookie-google-pills span,
+.cookie-name { display: inline-flex; min-height: 26px; align-items: center; justify-content: center; border: 1px solid rgba(255,195,28,.5); border-radius: 999px; padding: 3px 10px; color: #3c2b00; background: #ffc31c; font: 900 .76rem/1 "Space Grotesk", sans-serif; box-shadow: 0 5px 14px rgba(255,195,28,.22); }
+.cookie-notice__actions { display: grid; gap: 8px; padding: 16px 20px; border-top: 1px solid #eef1f4; background: #fff; }
+.cookie-button { min-height: 40px; border: 0; border-radius: 8px; padding: 0 16px; font: 900 .84rem/1 "DM Sans", sans-serif; cursor: pointer; transition: transform .16s ease, filter .16s ease, background .16s ease; }
+.cookie-button:hover { transform: translateY(-1px); filter: brightness(1.02); }
+.cookie-button--primary { color: #111827; background: #ffc31c; box-shadow: 0 8px 18px rgba(255,195,28,.2); }
+.cookie-button--muted { color: #2b2f38; background: #eaf0f4; }
+.cookie-notice__privacy { display: inline-flex; margin: 0 20px 16px; color: #2b2f38; font-size: .82rem; font-weight: 800; text-decoration: underline; }
+.cookie-settings-modal { position: fixed; inset: 0; z-index: 95; display: grid; place-items: center; padding: 22px; }
+.cookie-settings-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.62); animation: cookie-fade-in .18s ease-out both; }
+.cookie-settings { position: relative; width: min(690px, 100%); max-height: min(88vh, 720px); overflow: auto; border-radius: 8px; color: #2b2f38; background: #fff; box-shadow: 0 28px 80px rgba(0,0,0,.34); animation: cookie-settings-in .22s ease-out both; }
+.cookie-settings h2 { margin: 0; padding: 24px 24px 26px; border-bottom: 1px solid #eef1f4; color: #2b2f38; font: 900 1rem/1.2 "DM Sans", sans-serif; }
+.cookie-settings__close { position: absolute; top: 16px; right: 20px; display: grid; width: 40px; height: 40px; place-items: center; border: 0; border-radius: 10px; color: #2b2f38; background: #eaf0f4; font-size: 1.55rem; cursor: pointer; }
+.cookie-settings__group { margin: 16px 22px 0; overflow: hidden; border: 1px solid #dbe3ea; border-radius: 9px; background: #fff; }
+.cookie-settings__head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; border-bottom: 1px solid #dbe3ea; }
+.cookie-settings__head strong { color: #2b2f38; font-size: .95rem; }
+.cookie-settings__group p { margin: 0; padding: 14px 16px; color: #626976; font-size: .88rem; line-height: 1.55; }
+.cookie-toggle { display: inline-grid; width: 52px; height: 26px; place-items: center end; border: 0; border-radius: 999px; padding: 3px; color: #5f6975; background: #718092; font-weight: 900; cursor: pointer; }
+.cookie-toggle::before { content: attr(aria-label); position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.cookie-toggle.is-on { place-items: center end; color: #fff; background: #ffc31c; }
+.cookie-toggle.is-on::after,
+.cookie-toggle::after { content: "×"; display: grid; width: 20px; height: 20px; place-items: center; border-radius: 50%; color: #718092; background: #fff; font-size: .95rem; line-height: 1; }
+.cookie-toggle.is-on::after { content: "✓"; color: #d39500; }
+.cookie-toggle--small { width: 44px; height: 22px; }
+.cookie-toggle--small::after { width: 16px; height: 16px; font-size: .78rem; }
+.cookie-settings__service-list { margin: 0; padding: 0; list-style: none; }
+.cookie-settings__service-list li { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 38px; padding: 0 16px 0 28px; border-bottom: 1px solid #dbe3ea; color: #626976; font-size: .86rem; }
+.cookie-settings__service-list li::before { content: "º"; margin-right: auto; color: #626976; font-weight: 900; }
+.cookie-settings__service-list span { margin-right: auto; }
+.cookie-table { border-top: 1px solid #eef1f4; }
+.cookie-table > div { display: grid; grid-template-columns: 92px 102px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px 16px; border-top: 1px solid #eef1f4; color: #4f5662; font-size: .78rem; }
+.cookie-table > div:first-child { border-top: 0; color: #2b2f38; font-size: .8rem; }
+.cookie-settings__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-top: 28px; padding: 16px 22px 18px; border-top: 1px solid #eef1f4; background: #fff; }
+.cookie-settings__actions .cookie-button { min-width: 160px; }
+.cookie-settings__actions .cookie-button--muted { margin-left: auto; }
+@keyframes cookie-pop-in { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes cookie-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cookie-settings-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (max-width: 600px) {
+  .cookie-notice { right: 14px; bottom: 14px; }
+  .cookie-settings-modal { padding: 10px; place-items: end center; }
+  .cookie-settings { max-height: 92vh; }
+  .cookie-table > div { grid-template-columns: 1fr; gap: 5px; }
+  .cookie-settings__actions { display: grid; }
+  .cookie-settings__actions .cookie-button,
+  .cookie-settings__actions .cookie-button--muted { width: 100%; min-width: 0; margin-left: 0; }
+}

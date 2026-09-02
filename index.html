@@ -313,6 +313,61 @@
         <p class="external-modal__copied" data-copy-feedback role="status" aria-live="polite"></p>
       </section>
     </div>
-    <script src="app.js?v=111"></script>
+    <div class="cookie-notice" id="cookie-notice" role="region" aria-labelledby="cookie-notice-title" hidden>
+      <div class="cookie-notice__card">
+        <h2 id="cookie-notice-title">Cookie Notice</h2>
+        <p>We use necessary cookies for the website to work. Google Analytics cookies are only kept if you accept analytics.</p>
+        <div class="cookie-google-pills" aria-label="Google cookies Beacon may keep when analytics is accepted">
+          <span>_ga</span>
+          <span>_ga_*</span>
+          <span>FPID</span>
+        </div>
+        <div class="cookie-notice__actions">
+          <button class="cookie-button cookie-button--primary" type="button" data-cookie-accept-all>Accept All Cookies</button>
+          <button class="cookie-button cookie-button--primary" type="button" data-cookie-necessary>Accept Necessary Cookies Only</button>
+          <button class="cookie-button cookie-button--muted" type="button" data-cookie-settings>Cookie Settings</button>
+        </div>
+        <a class="cookie-notice__privacy" href="/privacy">Privacy Policy</a>
+      </div>
+    </div>
+    <div class="cookie-settings-modal" id="cookie-settings-modal" hidden>
+      <div class="cookie-settings-modal__backdrop" data-cookie-close></div>
+      <section class="cookie-settings" role="dialog" aria-modal="true" aria-labelledby="cookie-settings-title">
+        <button class="cookie-settings__close" type="button" data-cookie-close aria-label="Close cookie settings">Ã—</button>
+        <h2 id="cookie-settings-title">Cookie Settings</h2>
+        <div class="cookie-settings__group">
+          <div class="cookie-settings__head">
+            <strong>Necessary cookies</strong>
+            <span class="cookie-toggle is-on" aria-label="Necessary cookies are always on">✓</span>
+          </div>
+          <p>These cookies enable essential website functions like saving your consent choice, login state, security checks and site preferences.</p>
+        </div>
+        <div class="cookie-settings__group">
+          <div class="cookie-settings__head">
+            <strong>Performance & analytics cookies</strong>
+            <button class="cookie-toggle" type="button" data-cookie-analytics-toggle aria-pressed="false" aria-label="Toggle Google Analytics cookies">×</button>
+          </div>
+          <ul class="cookie-settings__service-list">
+            <li>
+              <span>Google Analytics</span>
+              <button class="cookie-toggle cookie-toggle--small" type="button" data-cookie-analytics-toggle aria-pressed="false" aria-label="Toggle Google Analytics cookies">×</button>
+            </li>
+          </ul>
+          <p>These cookies help us understand which pages are useful and how visitors move through Beacon. We only keep them if analytics is enabled.</p>
+          <div class="cookie-table" role="table" aria-label="Google Analytics cookies Beacon may keep">
+            <div role="row"><strong role="columnheader">Cookie</strong><strong role="columnheader">Service</strong><strong role="columnheader">Description</strong></div>
+            <div role="row"><span role="cell" class="cookie-name">_ga</span><span role="cell">Google Analytics</span><span role="cell">Used to distinguish visitors and report site traffic.</span></div>
+            <div role="row"><span role="cell" class="cookie-name">_ga_*</span><span role="cell">Google Analytics</span><span role="cell">Used by GA4 properties to persist session and measurement state.</span></div>
+            <div role="row"><span role="cell" class="cookie-name">FPID</span><span role="cell">Google Analytics</span><span role="cell">First-party analytics identifier, only used when configured and accepted.</span></div>
+          </div>
+        </div>
+        <div class="cookie-settings__actions">
+          <button class="cookie-button cookie-button--primary" type="button" data-cookie-accept-all>Accept All Cookies</button>
+          <button class="cookie-button cookie-button--primary" type="button" data-cookie-necessary>Accept Necessary Cookies Only</button>
+          <button class="cookie-button cookie-button--muted" type="button" data-cookie-save>Save settings</button>
+        </div>
+      </section>
+    </div>
+    <script src="app.js?v=112"></script>
   </body>
 </html>

@@ -631,3 +631,106 @@ async function initThreeLaptop() {
 }
 
 requestAnimationFrame(revealOnScroll);
+
+const COOKIE_CONSENT_KEY = "beacon-cookie-consent-v1";
+const cookieNotice = document.querySelector("#cookie-notice");
+const cookieSettingsModal = document.querySelector("#cookie-settings-modal");
+const cookieSettingsButtons = [...document.querySelectorAll("[data-cookie-settings]")];
+const cookieCloseButtons = [...document.querySelectorAll("[data-cookie-close]")];
+const cookieAcceptAllButtons = [...document.querySelectorAll("[data-cookie-accept-all]")];
+const cookieNecessaryButtons = [...document.querySelectorAll("[data-cookie-necessary]")];
+const cookieSaveButton = document.querySelector("[data-cookie-save]");
+const cookieAnalyticsToggles = [...document.querySelectorAll("[data-cookie-analytics-toggle]")];
+let cookieAnalyticsEnabled = false;
+
+function getCookieConsent() {
+  try {
+    return JSON.parse(localStorage.getItem(COOKIE_CONSENT_KEY) || "null");
+  } catch (_) {
+    return null;
+  }
+}
+
+function setCookieConsent(analytics) {
+  const consent = {
+    necessary: true,
+    analytics: Boolean(analytics),
+    googleCookiesKept: analytics ? ["_ga", "_ga_*", "FPID"] : [],
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(consent));
+  } catch (_) {}
+  if (!consent.analytics) clearGoogleAnalyticsCookies();
+  return consent;
+}
+
+function expireCookie(name, domain = "") {
+  const domainPart = domain ? `;domain=${domain}` : "";
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/${domainPart};SameSite=Lax`;
+}
+
+function clearGoogleAnalyticsCookies() {
+  const hostname = window.location.hostname;
+  const domains = ["", hostname, `.${hostname}`];
+  const googleCookieNames = document.cookie
+    .split(";")
+    .map((part) => part.trim().split("=")[0])
+    .filter((name) => name === "_ga" || name.startsWith("_ga_") || name === "FPID");
+
+  ["_ga", "FPID", ...googleCookieNames].forEach((name) => {
+    domains.forEach((domain) => expireCookie(name, domain));
+  });
+}
+
+function updateCookieToggles() {
+  cookieAnalyticsToggles.forEach((toggle) => {
+    toggle.classList.toggle("is-on", cookieAnalyticsEnabled);
+    toggle.setAttribute("aria-pressed", cookieAnalyticsEnabled ? "true" : "false");
+  });
+}
+
+function openCookieSettings() {
+  if (!cookieSettingsModal) return;
+  cookieSettingsModal.hidden = false;
+  cookieSettingsModal.querySelector(".cookie-settings__close")?.focus();
+}
+
+function closeCookieSettings() {
+  if (!cookieSettingsModal) return;
+  cookieSettingsModal.hidden = true;
+}
+
+function hideCookieNotice() {
+  if (cookieNotice) cookieNotice.hidden = true;
+  closeCookieSettings();
+}
+
+function applyCookieChoice(analytics) {
+  cookieAnalyticsEnabled = Boolean(analytics);
+  setCookieConsent(cookieAnalyticsEnabled);
+  updateCookieToggles();
+  hideCookieNotice();
+}
+
+const existingCookieConsent = getCookieConsent();
+if (existingCookieConsent) {
+  cookieAnalyticsEnabled = Boolean(existingCookieConsent.analytics);
+  if (!cookieAnalyticsEnabled) clearGoogleAnalyticsCookies();
+} else if (cookieNotice) {
+  cookieNotice.hidden = false;
+}
+updateCookieToggles();
+
+cookieSettingsButtons.forEach((button) => button.addEventListener("click", openCookieSettings));
+cookieCloseButtons.forEach((button) => button.addEventListener("click", closeCookieSettings));
+cookieAnalyticsToggles.forEach((toggle) => toggle.addEventListener("click", () => {
+  cookieAnalyticsEnabled = !cookieAnalyticsEnabled;
+  updateCookieToggles();
+}));
+cookieAcceptAllButtons.forEach((button) => button.addEventListener("click", () => applyCookieChoice(true)));
+cookieNecessaryButtons.forEach((button) => button.addEventListener("click", () => applyCookieChoice(false)));
+cookieSaveButton?.addEventListener("click", () => applyCookieChoice(cookieAnalyticsEnabled));
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && cookieSettingsModal && !cookieSettingsModal.hidden) closeCookieSettings();
+});
