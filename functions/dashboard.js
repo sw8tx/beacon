@@ -163,6 +163,7 @@ export async function onRequestGet({ request, env }) {
   const requestedSection = requestedServerParam.split("/")[1] || "";
   const requestedServer = liveSelectionServers.find((server) => server.id === requestedServerId && server.withBeacon && server.isOwner);
   const selectedServer = requestedServer || liveSelectionServers[0];
+  const hasActiveServer = Boolean(selectedServer?.withBeacon && selectedServer?.isOwner);
   const resolvedServerName = selectedServer?.name || serverName;
   const resolvedServerIcon = selectedServer?.iconUrl || "";
   const dashboardAvatar = resolvedServerIcon ? escapeHtml(resolvedServerIcon) : avatar;
@@ -559,7 +560,7 @@ export async function onRequestGet({ request, env }) {
           ${navHtml}
         </nav>
       </aside>
-      <main class="dash-main${hasRequestedServer ? "" : " is-server-locked"}">
+      <main class="dash-main${hasActiveServer ? "" : " is-server-locked"}">
         <div class="server-select-gate">
           <h1 class="server-select-title">Your servers</h1>
           <section class="server-choice-group server-choice-group--with">
@@ -662,7 +663,7 @@ export async function onRequestGet({ request, env }) {
     <script>
       const tabs = [...document.querySelectorAll("[data-dashboard-tab]")];
       const sections = [...document.querySelectorAll("[data-dashboard-section]")];
-      let serverSelected = ${hasRequestedServer ? "true" : "false"};
+      let serverSelected = ${hasActiveServer ? "true" : "false"};
       const dashMain = document.querySelector(".dash-main");
       function activateDashboardTab(id) {
         if (!serverSelected) {
