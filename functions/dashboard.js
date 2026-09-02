@@ -378,6 +378,8 @@ export async function onRequestGet({ request, env }) {
       .dash-panel{max-width:1020px;margin:42px auto 0;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.025);padding:24px}
       .dash-content-section{display:none}
       .dash-content-section.is-active{display:block}
+      body:has(.dash-content-section:target) .dash-content-section{display:none}
+      body:has(.dash-content-section:target) .dash-content-section:target{display:block}
       .dash-panel h2{margin:0 0 8px;color:#fff;font-size:1.25rem}
       .dash-panel p{margin:0;color:#9ea6b5;font-size:.98rem;line-height:1.6}
       .ticket-config-panel{max-width:1100px;background:#182332;border-color:rgba(255,255,255,.12)}
