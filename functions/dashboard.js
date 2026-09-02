@@ -666,7 +666,7 @@ export async function onRequestGet({ request, env }) {
       let serverSelected = ${hasActiveServer ? "true" : "false"};
       const dashMain = document.querySelector(".dash-main");
       function activateDashboardTab(id) {
-        if (!serverSelected) {
+        if (!serverSelected && dashMain?.classList.contains("is-server-locked")) {
           showDashboardToast("Select a server first");
           return;
         }
@@ -681,6 +681,7 @@ export async function onRequestGet({ request, env }) {
           activateDashboardTab(tab.dataset.dashboardTab);
         });
       });
+      window.addEventListener("hashchange", () => activateDashboardTab(location.hash.slice(1)));
       const toast = document.querySelector("#dash-toast");
       let toastTimer = null;
       function showDashboardToast(message, type = "default") {
