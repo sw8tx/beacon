@@ -113,6 +113,11 @@ const defaultGuildData = () => ({
     ticketDetailsPlaceholder: "Describe the issue, request, order ID, screenshots, links, or anything the team should know.",
     ticketMaxOpenPerUser: 1,
     ticketDmTranscript: true,
+    ticketLogChannelId: null,
+    ticketReviewChannelId: null,
+    ticketArchiveCategoryId: null,
+    ticketArchiveOnClose: false,
+    ticketRatingEnabled: true,
     honeypotChannelId: null,
     honeypotEnabled: false,
     honeypotAction: "ban",
@@ -664,6 +669,103 @@ function supportTeamLabel(guild, data) {
   return guild.roles.cache.get(data.settings.ticketSupportRoleId)?.name || "staff";
 }
 
+function ticketPriorityLabel(priority) {
+  return {
+    low: "Low",
+    medium: "Medium",
+    high: "High",
+    urgent: "Urgent",
+  }[priority] || "Medium";
+}
+
+async function sendTicketLog(guild, data, title, description, ui) {
+  const channel = guild.channels.cache.get(data.settings.ticketLogChannelId);
+  if (!channel) return;
+  await channel.send(ui.withBrandFiles({ embeds: [ui.brandEmbed(title, description)] })).catch(() => null);
+}
+
+function ticketRatingContainer(guildId, ticketId, rating = null) {
+  const buttons = [1, 2, 3, 4, 5].map((value) =>
+    new ButtonBuilder()
+      .setCustomId(`ticket_rating:${guildId}:${ticketId}:${value}`)
+      .setLabel("⭐".repeat(value))
+      .setStyle(rating === value ? ButtonStyle.Primary : ButtonStyle.Secondary)
+      .setDisabled(Boolean(rating))
+  );
+
+  return new ContainerBuilder()
+    .setAccentColor(BRAND_COLOR)
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      rating
+        ? `## Thank you for your rating\nYou rated this support ticket **${rating}/5**.`
+        : "## How was your support?\nPlease rate your ticket experience."
+    ))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(buttons))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Your feedback helps the staff team improve support."));
+}
+
+async function sendTicketRatingRequest(clientRef, guild, data, ticket) {
+  if (!data.settings.ticketRatingEnabled) return;
+  const owner = await clientRef.users.fetch(ticket.ownerId).catch(() => null);
+  if (!owner) return;
+  await owner.send({
+    components: [ticketRatingContainer(guild.id, ticket.channelId)],
+    flags: MessageFlags.IsComponentsV2,
+  }).catch(() => null);
+}
+
+async function handleTicketRatingButton(interaction) {
+  const [, guildId, ticketId, ratingText] = interaction.customId.split(":");
+  const rating = Number(ratingText);
+  const data = db.guilds?.[guildId];
+  const ticket = data?.tickets?.[ticketId];
+  const replyFlags = MessageFlags.IsComponentsV2 | (interaction.guildId ? MessageFlags.Ephemeral : 0);
+
+  if (!ticket || !Number.isInteger(rating) || rating < 1 || rating > 5) {
+    await interaction.reply({
+      components: [moderationResultContainer("Rating unavailable", "This ticket rating request is no longer valid.", false)],
+      flags: replyFlags,
+    });
+    return;
+  }
+  if (ticket.ownerId !== interaction.user.id) {
+    await interaction.reply({
+      components: [moderationResultContainer("Not your ticket", "Only the ticket owner can rate this support ticket.", false)],
+      flags: replyFlags,
+    });
+    return;
+  }
+  if (ticket.rating) {
+    await interaction.reply({
+      components: [moderationResultContainer("Already rated", `This ticket was already rated **${ticket.rating}/5**.`, false)],
+      flags: replyFlags,
+    });
+    return;
+  }
+
+  ticket.rating = rating;
+  ticket.ratedBy = interaction.user.id;
+  ticket.ratedAt = new Date().toISOString();
+  saveData();
+
+  await interaction.update({
+    components: [ticketRatingContainer(guildId, ticketId, rating)],
+    flags: MessageFlags.IsComponentsV2,
+  });
+
+  if (data.settings.ticketReviewChannelId) {
+    const guild = client.guilds.cache.get(guildId) || await client.guilds.fetch(guildId).catch(() => null);
+    const channel = guild ? await guild.channels.fetch(data.settings.ticketReviewChannelId).catch(() => null) : null;
+    await channel?.send(withBrandFiles({
+      embeds: [successEmbed("Ticket rated", `<@${ticket.ownerId}> rated ticket \`${ticket.name || ticket.channelId}\` **${rating}/5**.`)
+        .addFields(
+          { name: "Ticket ID", value: `\`${ticket.channelId}\``, inline: true },
+          { name: "Subject", value: shortText(ticket.subject, "No subject", 1024), inline: false }
+        )],
+    })).catch(() => null);
+  }
+}
+
 function ticketControlRow(data, ticket) {
   const claimed = Boolean(ticket?.claimedBy);
   return new ActionRowBuilder().addComponents(
@@ -686,6 +788,7 @@ function ticketOpenedEmbed(data, ticket, guild, description, ui) {
     .addFields(
       { name: "Owner", value: memberLabel(guild, ticket.ownerId, "member"), inline: true },
       { name: "Status", value: claimedBy ? "Claimed" : "Open", inline: true },
+      { name: "Priority", value: ticketPriorityLabel(ticket.priority), inline: true },
       { name: "Team", value: claimedBy || supportTeamLabel(guild, data), inline: true },
       { name: "Subject", value: shortText(ticket.subject, "No subject", 1024), inline: false },
       { name: "Details", value: shortText(ticket.details, "No details added yet.", 1024), inline: false },
@@ -732,6 +835,11 @@ async function ticketSetup(interaction, data, ui) {
   const detailsPlaceholder = interaction.options.getString("details_placeholder");
   const maxOpen = interaction.options.getInteger("max_open");
   const dmTranscript = interaction.options.getBoolean("dm_transcript");
+  const logChannel = interaction.options.getChannel("log_channel");
+  const reviewChannel = interaction.options.getChannel("review_channel");
+  const archiveCategory = interaction.options.getChannel("archive_category");
+  const archiveOnClose = interaction.options.getBoolean("archive_on_close");
+  const ratingEnabled = interaction.options.getBoolean("rating_enabled");
 
   if (category) data.settings.ticketCategoryId = category.id;
   if (supportRole) data.settings.ticketSupportRoleId = supportRole.id;
@@ -750,14 +858,24 @@ async function ticketSetup(interaction, data, ui) {
   if (detailsPlaceholder) data.settings.ticketDetailsPlaceholder = detailsPlaceholder.slice(0, 100);
   if (maxOpen) data.settings.ticketMaxOpenPerUser = maxOpen;
   if (dmTranscript !== null) data.settings.ticketDmTranscript = dmTranscript;
+  if (logChannel) data.settings.ticketLogChannelId = logChannel.id;
+  if (reviewChannel) data.settings.ticketReviewChannelId = reviewChannel.id;
+  if (archiveCategory) data.settings.ticketArchiveCategoryId = archiveCategory.id;
+  if (archiveOnClose !== null) data.settings.ticketArchiveOnClose = archiveOnClose;
+  if (ratingEnabled !== null) data.settings.ticketRatingEnabled = ratingEnabled;
   ui.saveData();
 
-  const embed = ui.successEmbed("Ticket setup saved", "Beacon tickets are ready. No log channel needed.")
+  const embed = ui.successEmbed("Ticket setup saved", "Beacon tickets are ready. Optional channels can be left empty.")
     .addFields(
       { name: "Category", value: data.settings.ticketCategoryId ? `<#${data.settings.ticketCategoryId}>` : "Not set", inline: true },
       { name: "Support role", value: data.settings.ticketSupportRoleId ? `<@&${data.settings.ticketSupportRoleId}>` : "Not set", inline: true },
+      { name: "Log channel", value: data.settings.ticketLogChannelId ? `<#${data.settings.ticketLogChannelId}>` : "Not set", inline: true },
+      { name: "Review channel", value: data.settings.ticketReviewChannelId ? `<#${data.settings.ticketReviewChannelId}>` : "Not set", inline: true },
+      { name: "Archive category", value: data.settings.ticketArchiveCategoryId ? `<#${data.settings.ticketArchiveCategoryId}>` : "Not set", inline: true },
+      { name: "Archive on close", value: data.settings.ticketArchiveOnClose ? "Enabled" : "Disabled", inline: true },
       { name: "Max open", value: `${data.settings.ticketMaxOpenPerUser} per member`, inline: true },
       { name: "Transcript DM", value: data.settings.ticketDmTranscript ? "Enabled" : "Disabled", inline: true },
+      { name: "Ratings", value: data.settings.ticketRatingEnabled ? "Enabled" : "Disabled", inline: true },
       { name: "Panel title", value: data.settings.ticketPanelTitle, inline: false },
       { name: "Panel message", value: data.settings.ticketPanelMessage.slice(0, 1024), inline: false },
       { name: "Panel rules", value: data.settings.ticketPanelRules.slice(0, 1024), inline: false },
@@ -867,10 +985,109 @@ async function ticketRename(interaction, data, ui) {
   await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket renamed", `This ticket is now \`${name}\`.`)] }));
 }
 
-async function ticketInfo(interaction, data, ui) {
+async function ticketPriority(interaction, data, ui) {
+  const ticket = ticketForChannel(data, interaction.channel.id);
+  const priority = interaction.options.getString("level", true);
+  if (!ticket) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("This command only works inside an open ticket.")], ephemeral: true }));
+    return;
+  }
+  if (!isTicketStaff(interaction.member, data)) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Only the support team can change ticket priority.")], ephemeral: true }));
+    return;
+  }
+
+  ticket.priority = priority;
+  ui.saveData();
+  await interaction.channel.send(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket priority updated", `Priority is now **${ticketPriorityLabel(priority)}**.`)] })).catch(() => null);
+  await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Priority saved", `This ticket is now **${ticketPriorityLabel(priority)}**.`)], ephemeral: true }));
+  await sendTicketLog(interaction.guild, data, "Ticket priority updated", `${interaction.user.tag} set <#${ticket.channelId}> to ${ticketPriorityLabel(priority)}.`, ui);
+}
+
+async function ticketTransfer(interaction, data, ui) {
+  const ticket = ticketForChannel(data, interaction.channel.id);
+  const user = interaction.options.getUser("user", true);
+  if (!ticket) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("This command only works inside an open ticket.")], ephemeral: true }));
+    return;
+  }
+  if (!isTicketStaff(interaction.member, data)) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Only the support team can transfer tickets.")], ephemeral: true }));
+    return;
+  }
+
+  const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+  if (!member || !isTicketStaff(member, data)) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Transfer target must be a staff member.")], ephemeral: true }));
+    return;
+  }
+
+  ticket.claimedBy = user.id;
+  ui.saveData();
+  await interaction.channel.permissionOverwrites.edit(user.id, {
+    ViewChannel: true,
+    SendMessages: true,
+    ReadMessageHistory: true,
+  }).catch(() => null);
+  await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket transferred", `This ticket was transferred to ${user}.`)] }));
+  await sendTicketLog(interaction.guild, data, "Ticket transferred", `${interaction.user.tag} transferred <#${ticket.channelId}> to ${user.tag}.`, ui);
+}
+
+async function ticketRating(interaction, data, ui) {
+  const ticket = ticketForChannel(data, interaction.channel.id) || Object.values(data.tickets || {}).find((item) => item.channelId === interaction.channel.id);
+  if (!ticket) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("This command only works inside a ticket channel.")], ephemeral: true }));
+    return;
+  }
+  if (!isTicketStaff(interaction.member, data)) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Only the support team can request ticket ratings.")], ephemeral: true }));
+    return;
+  }
+
+  await sendTicketRatingRequest(interaction.client, interaction.guild, data, ticket);
+  await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Rating requested", `A rating request was sent to <@${ticket.ownerId}>.`)], ephemeral: true }));
+}
+
+async function archiveTicketChannel(interaction, data, ticket, ui, reason = "Archived by staff") {
+  ticket.status = "archived";
+  ticket.archivedBy = interaction.user.id;
+  ticket.archivedAt = new Date().toISOString();
+  ticket.closeReason = reason;
+  ui.saveData();
+
+  const archiveCategory = data.settings.ticketArchiveCategoryId ? interaction.guild.channels.cache.get(data.settings.ticketArchiveCategoryId) : null;
+  if (archiveCategory) await interaction.channel.setParent(archiveCategory.id, { lockPermissions: false }).catch(() => null);
+  await interaction.channel.permissionOverwrites.edit(ticket.ownerId, {
+    ViewChannel: false,
+    SendMessages: false,
+  }).catch(() => null);
+  await interaction.channel.setName(cleanChannelName(`archived-${interaction.channel.name}`)).catch(() => null);
+  await interaction.channel.setTopic(`Archived Beacon ticket for ${ticket.ownerId}`).catch(() => null);
+
+  await sendTicketLog(interaction.guild, data, "Ticket archived", `${interaction.user.tag} archived <#${ticket.channelId}>. Reason: ${reason}`, ui);
+}
+
+async function ticketArchive(interaction, data, ui) {
   const ticket = ticketForChannel(data, interaction.channel.id);
   if (!ticket) {
     await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("This command only works inside an open ticket.")], ephemeral: true }));
+    return;
+  }
+  if (!isTicketStaff(interaction.member, data)) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("Only the support team can archive tickets.")], ephemeral: true }));
+    return;
+  }
+
+  const reason = interaction.options.getString("reason") || "Archived by staff";
+  await archiveTicketChannel(interaction, data, ticket, ui, reason);
+  await sendTicketRatingRequest(interaction.client, interaction.guild, data, ticket);
+  await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket archived", "This ticket was archived and will not be deleted.")] }));
+}
+
+async function ticketInfo(interaction, data, ui) {
+  const ticket = ticketForChannel(data, interaction.channel.id) || Object.values(data.tickets || {}).find((item) => item.channelId === interaction.channel.id);
+  if (!ticket) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.errorEmbed("This command only works inside a ticket channel.")], ephemeral: true }));
     return;
   }
 
@@ -879,8 +1096,10 @@ async function ticketInfo(interaction, data, ui) {
     .addFields(
       { name: "Owner", value: `<@${ticket.ownerId}>`, inline: true },
       { name: "Status", value: ticket.status, inline: true },
+      { name: "Priority", value: ticketPriorityLabel(ticket.priority), inline: true },
       { name: "Opened", value: `<t:${created}:R>`, inline: true },
       { name: "Claimed by", value: ticket.claimedBy ? `<@${ticket.claimedBy}>` : "Unclaimed", inline: true },
+      { name: "Rating", value: ticket.rating ? `${ticket.rating}/5 ⭐` : "Not rated", inline: true },
       { name: "Channel", value: `${interaction.channel}`, inline: true },
       { name: "Details", value: (ticket.details || "No details saved.").slice(0, 1024), inline: false }
     );
@@ -892,21 +1111,29 @@ async function ticketStats(interaction, data, ui) {
   const tickets = Object.values(data.tickets || {});
   const open = tickets.filter((ticket) => ticket.status === "open");
   const closed = tickets.filter((ticket) => ticket.status === "closed");
+  const archived = tickets.filter((ticket) => ticket.status === "archived");
   const claimed = open.filter((ticket) => ticket.claimedBy);
   const unclaimed = open.filter((ticket) => !ticket.claimedBy);
+  const rated = tickets.filter((ticket) => ticket.rating);
+  const averageRating = rated.length
+    ? (rated.reduce((sum, ticket) => sum + Number(ticket.rating || 0), 0) / rated.length).toFixed(1)
+    : "No ratings";
   const newest = open
     .slice()
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
 
-  const embed = ui.brandEmbed("Ticket Stats", "Current ticket workload without needing a log channel.")
+  const embed = ui.brandEmbed("Ticket Stats", "Current ticket workload, archives and support ratings.")
     .addFields(
       { name: "Open", value: `${open.length}`, inline: true },
       { name: "Closed", value: `${closed.length}`, inline: true },
+      { name: "Archived", value: `${archived.length}`, inline: true },
       { name: "Claimed / Unclaimed", value: `${claimed.length} / ${unclaimed.length}`, inline: true },
       { name: "Support role", value: data.settings.ticketSupportRoleId ? `<@&${data.settings.ticketSupportRoleId}>` : "Not set", inline: true },
       { name: "Max open", value: `${data.settings.ticketMaxOpenPerUser} per member`, inline: true },
       { name: "Transcript DM", value: data.settings.ticketDmTranscript ? "Enabled" : "Disabled", inline: true },
+      { name: "Archive on close", value: data.settings.ticketArchiveOnClose ? "Enabled" : "Disabled", inline: true },
+      { name: "Average rating", value: `${averageRating}`, inline: true },
       {
         name: "Newest open tickets",
         value: newest.length
@@ -997,6 +1224,7 @@ async function openTicket(interaction, data, subject, details, ui) {
     openedBy: interaction.user.id,
     claimedBy: null,
     status: "open",
+    priority: "medium",
     name: channelName,
     subject,
     details,
@@ -1020,6 +1248,7 @@ async function openTicket(interaction, data, subject, details, ui) {
     allowedMentions: { users: [interaction.user.id], roles: data.settings.ticketSupportRoleId ? [data.settings.ticketSupportRoleId] : [] },
   }));
 
+  await sendTicketLog(interaction.guild, data, "Ticket opened", `${interaction.user.tag} opened <#${channel.id}>. Subject: ${subject}`, ui);
   await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket opened", `Your ticket is ready: ${channel}`)], ephemeral: true }));
 }
 
@@ -1094,6 +1323,15 @@ async function closeTicket(interaction, data, reason, ui) {
     if (owner) {
       await owner.send(ui.withBrandFiles({ embeds: [logEmbed], files: [transcriptFile] })).catch(() => null);
     }
+  }
+
+  await sendTicketRatingRequest(interaction.client, interaction.guild, data, ticket);
+  await sendTicketLog(interaction.guild, data, "Ticket closed", `${interaction.user.tag} closed <#${ticket.channelId}>. Reason: ${reason}`, ui);
+
+  if (data.settings.ticketArchiveOnClose) {
+    await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket archived", data.settings.ticketDmTranscript ? "Transcript DM attempted. This channel was archived instead of deleted." : "This channel was archived instead of deleted.")] }));
+    await archiveTicketChannel(interaction, data, ticket, ui, reason);
+    return;
   }
 
   await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket closing", data.settings.ticketDmTranscript ? "Transcript DM attempted. This channel will be deleted in 5 seconds." : "This channel will be deleted in 5 seconds.")] }));
@@ -2300,7 +2538,15 @@ function scheduleExistingPolls() {
   }
 }
 
-const ticketHandlers = { ticketSetup, ticketPanel, ticketClose, ticketAdd, ticketRemove, ticketRename, ticketInfo, ticketStats, showTicketModal, openTicket, claimTicket, closeTicket };
+async function handleTicketCommand(interaction, data, ui) {
+  const subcommand = interaction.options.getSubcommand();
+  if (subcommand === "priority") return ticketPriority(interaction, data, ui);
+  if (subcommand === "transfer") return ticketTransfer(interaction, data, ui);
+  if (subcommand === "rating") return ticketRating(interaction, data, ui);
+  if (subcommand === "archive") return ticketArchive(interaction, data, ui);
+}
+
+const ticketHandlers = { ticketSetup, ticketPanel, ticketClose, ticketAdd, ticketRemove, ticketRename, ticketInfo, ticketStats, showTicketModal, openTicket, claimTicket, closeTicket, ticketPriority, ticketTransfer, ticketRating, ticketArchive };
 
 const commands = [
   ...purgeCommands,
@@ -2731,6 +2977,39 @@ const commands = [
         .setName("dm_transcript")
         .setDescription("DM the transcript to the ticket owner when closed")
         .setRequired(false)
+    )
+    .addChannelOption((opt) =>
+      opt
+        .setName("log_channel")
+        .setDescription("Optional channel for ticket logs")
+        .addChannelTypes(ChannelType.GuildText)
+        .setRequired(false)
+    )
+    .addChannelOption((opt) =>
+      opt
+        .setName("review_channel")
+        .setDescription("Optional channel for ticket ratings")
+        .addChannelTypes(ChannelType.GuildText)
+        .setRequired(false)
+    )
+    .addChannelOption((opt) =>
+      opt
+        .setName("archive_category")
+        .setDescription("Optional category for archived tickets")
+        .addChannelTypes(ChannelType.GuildCategory)
+        .setRequired(false)
+    )
+    .addBooleanOption((opt) =>
+      opt
+        .setName("archive_on_close")
+        .setDescription("Archive tickets when closed instead of deleting them")
+        .setRequired(false)
+    )
+    .addBooleanOption((opt) =>
+      opt
+        .setName("rating_enabled")
+        .setDescription("Ask ticket owners for a 1-5 star rating after closing")
+        .setRequired(false)
     ),
 
   new SlashCommandBuilder()
@@ -2743,6 +3022,55 @@ const commands = [
         .setDescription("Where the ticket panel should be posted")
         .addChannelTypes(ChannelType.GuildText)
         .setRequired(true)
+    ),
+
+  new SlashCommandBuilder()
+    .setName("ticket")
+    .setDescription("Manage the current ticket.")
+    .addSubcommand((sub) =>
+      sub
+        .setName("priority")
+        .setDescription("Set the current ticket priority.")
+        .addStringOption((opt) =>
+          opt
+            .setName("level")
+            .setDescription("Ticket priority")
+            .addChoices(
+              { name: "Low", value: "low" },
+              { name: "Medium", value: "medium" },
+              { name: "High", value: "high" },
+              { name: "Urgent", value: "urgent" },
+            )
+            .setRequired(true)
+        )
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("transfer")
+        .setDescription("Transfer this ticket to another staff member.")
+        .addUserOption((opt) =>
+          opt
+            .setName("user")
+            .setDescription("Staff member to take this ticket")
+            .setRequired(true)
+        )
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("rating")
+        .setDescription("Send the ticket owner a 1-5 star rating request.")
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("archive")
+        .setDescription("Archive this ticket instead of deleting it.")
+        .addStringOption((opt) =>
+          opt
+            .setName("reason")
+            .setDescription("Optional archive reason")
+            .setMaxLength(500)
+            .setRequired(false)
+        )
     ),
 
   new SlashCommandBuilder()
@@ -3178,6 +3506,7 @@ async function handleCommand(interaction) {
   if (command === "dmwelcome") return dmWelcome(interaction, data);
   if (command === "ticketsetup") return ticketHandlers.ticketSetup(interaction, data, beaconUi());
   if (command === "ticketpanel") return ticketHandlers.ticketPanel(interaction, data, beaconUi());
+  if (command === "ticket") return handleTicketCommand(interaction, data, beaconUi());
   if (command === "ticketclose") return ticketHandlers.ticketClose(interaction, data, beaconUi());
   if (command === "ticketadd") return ticketHandlers.ticketAdd(interaction, data, beaconUi());
   if (command === "ticketremove") return ticketHandlers.ticketRemove(interaction, data, beaconUi());
@@ -3228,6 +3557,7 @@ const helpPages = [
     commands: [
       ["/ticketsetup", "Customize roles, text, limits and transcript DMs."],
       ["/ticketpanel", "Post the public panel that opens private tickets."],
+      ["/ticket priority / transfer / rating / archive", "Set priority, transfer ownership, request reviews or archive tickets."],
       ["/ticketclose", "Close a ticket and create its transcript."],
       ["/ticketadd / /ticketremove", "Manage people in the current ticket."],
       ["/ticketrename", "Rename the current ticket channel."],
@@ -3662,8 +3992,13 @@ async function settings(interaction, data) {
       { name: "DM message", value: data.settings.dmWelcomeMessage.slice(0, 1024) || "Not set", inline: false },
       { name: "Ticket category", value: data.settings.ticketCategoryId ? `<#${data.settings.ticketCategoryId}>` : "Not set", inline: true },
       { name: "Support role", value: data.settings.ticketSupportRoleId ? `<@&${data.settings.ticketSupportRoleId}>` : "Not set", inline: true },
+      { name: "Ticket log channel", value: data.settings.ticketLogChannelId ? `<#${data.settings.ticketLogChannelId}>` : "Not set", inline: true },
+      { name: "Review channel", value: data.settings.ticketReviewChannelId ? `<#${data.settings.ticketReviewChannelId}>` : "Not set", inline: true },
+      { name: "Archive category", value: data.settings.ticketArchiveCategoryId ? `<#${data.settings.ticketArchiveCategoryId}>` : "Not set", inline: true },
+      { name: "Archive on close", value: data.settings.ticketArchiveOnClose ? "Enabled" : "Disabled", inline: true },
       { name: "Ticket limit", value: `${data.settings.ticketMaxOpenPerUser} open per member`, inline: true },
       { name: "Transcript DM", value: data.settings.ticketDmTranscript ? "Enabled" : "Disabled", inline: true },
+      { name: "Ticket ratings", value: data.settings.ticketRatingEnabled ? "Enabled" : "Disabled", inline: true },
       { name: "Honeypot", value: data.settings.honeypotEnabled && data.settings.honeypotChannelId ? `<#${data.settings.honeypotChannelId}> · Enabled` : "Disabled", inline: true },
       { name: "Honeypot action", value: `${data.settings.honeypotBanEnabled ? "Ban" : "Log only"} / ${data.settings.honeypotDeleteMessage ? "Delete" : "Keep message"}`, inline: true },
       { name: "Ticket panel", value: `**${data.settings.ticketPanelTitle}**\n${data.settings.ticketPanelMessage.slice(0, 800)}`, inline: false },
@@ -3831,6 +4166,11 @@ async function saveHoneypotSetup(interaction, data) {
 }
 
 async function handleButton(interaction) {
+  if (interaction.customId.startsWith("ticket_rating:")) {
+    await handleTicketRatingButton(interaction);
+    return;
+  }
+
   const data = guildData(interaction.guild.id);
 
   if (interaction.customId === "honeypot_setup_save") {
