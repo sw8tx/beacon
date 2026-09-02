@@ -664,6 +664,58 @@ export async function onRequestGet({ request, env }) {
       </main>
     </div>
     <script>
+      (() => {
+        const imageState = { avatar: null, banner: null };
+        window.__beaconCustomizeImages = imageState;
+        const fallbackSave = document.querySelector(".save-bot");
+        fallbackSave?.addEventListener("click", async () => {
+          if (fallbackSave.dataset.mainHandler === "true") return;
+          const serverId = "${escapeHtml(selectedServer?.id || "")}";
+          if (!serverId) return;
+          fallbackSave.disabled = true;
+          try {
+            const payload = { bio: document.querySelector(".bio-field textarea")?.value || "" };
+            if (imageState.avatar) payload.avatar = imageState.avatar;
+            if (imageState.banner) payload.banner = imageState.banner;
+            const response = await fetch("/api/dashboard/customize?server=" + encodeURIComponent(serverId), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.error || "Could not save bot changes");
+            fallbackSave.textContent = "Saved";
+          } catch (error) {
+            fallbackSave.textContent = error.message || "Save failed";
+          } finally {
+            fallbackSave.disabled = false;
+            window.setTimeout(() => { fallbackSave.textContent = "Save Bot Changes"; }, 1800);
+          }
+        });
+        document.querySelectorAll(".asset-upload").forEach((input) => {
+          input.addEventListener("change", () => {
+            const file = input.files?.[0];
+            if (!file || !file.type.startsWith("image/")) return;
+            const reader = new FileReader();
+            reader.addEventListener("load", () => {
+              const image = new Image();
+              image.addEventListener("load", () => {
+                const canvas = document.createElement("canvas");
+                const scale = Math.min(1, 2048 / Math.max(image.naturalWidth, image.naturalHeight));
+                canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+                canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+                canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+                const value = canvas.toDataURL("image/png");
+                const type = input.id === "avatar-upload" ? "avatar" : "banner";
+                const preview = input.closest(".asset-editor")?.querySelector("img");
+                if (preview) { preview.src = value; preview.parentElement?.classList.add("has-custom-image"); }
+                imageState[type] = value;
+                window.dispatchEvent(new CustomEvent("beacon-customize-image", { detail: { type, value } }));
+              });
+              image.src = reader.result;
+            });
+            reader.readAsDataURL(file);
+          });
+        });
+      })();
+    </script>
+    <script>
       const tabs = [...document.querySelectorAll("[data-dashboard-tab]")];
       const sections = [...document.querySelectorAll("[data-dashboard-section]")];
       let serverSelected = ${hasActiveServer ? "true" : "false"};
@@ -743,6 +795,11 @@ export async function onRequestGet({ request, env }) {
       let bannerChanged = false;
       let avatarApplied = false;
       let bannerApplied = false;
+      window.addEventListener("beacon-customize-image", (event) => {
+        const type = event.detail?.type;
+        if (type === "avatar") { avatarValue = event.detail.value; avatarChanged = true; avatarApplied = false; }
+        if (type === "banner") { bannerValue = event.detail.value; bannerChanged = true; bannerApplied = false; }
+      });
       function updateImageState(preview, value) {
         preview?.parentElement?.classList.toggle("has-custom-image", Boolean(value));
       }
@@ -752,11 +809,12 @@ export async function onRequestGet({ request, env }) {
         if (saved?.avatar && avatarPreview) { avatarValue = saved.avatar; avatarApplied = saved.appliedAvatar === true; avatarChanged = !avatarApplied; avatarPreview.src = saved.avatar; updateImageState(avatarPreview, avatarValue); }
         if (saved?.banner && bannerPreview) { bannerValue = saved.banner; bannerApplied = saved.appliedBanner === true; bannerChanged = !bannerApplied; bannerPreview.src = saved.banner; updateImageState(bannerPreview, bannerValue); }
       } catch (_) {}
+      if (saveButton) saveButton.dataset.mainHandler = "true";
       saveButton?.addEventListener("click", async () => {
         if (!dashboardServerId) return showDashboardToast("Select a server first", "error");
         const payload = { bio: bioInput?.value || "" };
-        if (avatarChanged) payload.avatar = avatarValue;
-        if (bannerChanged) payload.banner = bannerValue;
+        if (avatarChanged || window.__beaconCustomizeImages?.avatar) payload.avatar = avatarValue || window.__beaconCustomizeImages.avatar;
+        if (bannerChanged || window.__beaconCustomizeImages?.banner) payload.banner = bannerValue || window.__beaconCustomizeImages.banner;
         saveButton.disabled = true;
         saveButton.textContent = "Saving...";
         try {
