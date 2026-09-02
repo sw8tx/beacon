@@ -274,8 +274,8 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .footer-brand > a { display: inline-flex; width: max-content; align-items: center; gap: 10px; color: #f6f3ea; font: 700 1rem "Space Grotesk", sans-serif; }
 .footer-brand img { object-fit: contain; }
 .sponsor-label { margin-top: 5px; color: #a7aaa4; font-size: .65rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
-.sponsor-link { display: inline-flex; width: max-content; align-items: center; border-radius: 7px; }
-.sponsor-logo { display: block; width: min(180px, 100%); height: auto; max-height: 38px; object-fit: contain; object-position: left center; opacity: .92; mix-blend-mode: screen; }
+.sponsor-link { display: inline-flex; width: max-content; align-items: center; padding: 4px 8px; border-radius: 7px; background: #050505; }
+.sponsor-logo { display: block; width: min(220px, 100%); height: auto; max-height: 50px; object-fit: contain; object-position: left center; opacity: .98; mix-blend-mode: normal; }
 .sponsor-logo { transition: opacity .18s ease, transform .18s ease; }
 .sponsor-link:hover .sponsor-logo, .sponsor-link:focus-visible .sponsor-logo { opacity: 1; transform: translateY(-1px); }
 .footer-links { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 11px 23px; }
