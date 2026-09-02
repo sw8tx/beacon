@@ -891,7 +891,35 @@ async function ticketSetup(interaction, data, ui) {
     new ButtonBuilder().setCustomId("ticket_open").setLabel(data.settings.ticketButtonLabel.slice(0, 80)).setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.reply(ui.withBrandFiles({ embeds: [embed], components: [row], ephemeral: true }));
+  const panelSelect = new StringSelectMenuBuilder()
+    .setCustomId("ticket_setup_panel_select")
+    .setPlaceholder("Choose the ticket panel to use")
+    .addOptions({
+      label: "Ticket Panel",
+      value: "default",
+      description: "Use the current Beacon ticket panel",
+      default: true,
+    });
+
+  await interaction.reply({
+    components: [
+      new ContainerBuilder()
+        .setAccentColor(BRAND_COLOR)
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent("## Ticket setup saved"),
+          new TextDisplayBuilder().setContent("Choose which ticket panel should be used when you run /ticketpanel. Optional channels can stay empty.")
+        )
+        .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+        .addActionRowComponents(new ActionRowBuilder().addComponents(panelSelect))
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+          "**Category:** " + (data.settings.ticketCategoryId ? "<#" + data.settings.ticketCategoryId + ">" : "Not set") + "\n" +
+          "**Log:** " + (data.settings.ticketLogChannelId ? "<#" + data.settings.ticketLogChannelId + ">" : "Not set") + "\n" +
+          "**Review:** " + (data.settings.ticketReviewChannelId ? "<#" + data.settings.ticketReviewChannelId + ">" : "Not set") + "\n" +
+          "**Archive:** " + (data.settings.ticketArchiveCategoryId ? "<#" + data.settings.ticketArchiveCategoryId + ">" : "Not set")
+        )),
+    ],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  });
 }
 
 async function ticketPanel(interaction, data, ui) {
@@ -4341,6 +4369,18 @@ async function handleSelect(interaction) {
   const data = guildData(interaction.guild.id);
 
   if (await handleHoneypotSetupSelect(interaction, data)) return;
+
+  if (interaction.customId === "ticket_setup_panel_select") {
+    await interaction.update({
+      components: [
+        new ContainerBuilder()
+          .setAccentColor(BRAND_COLOR)
+          .addTextDisplayComponents(new TextDisplayBuilder().setContent("## Ticket panel selected\nBeacon will use the selected panel when /ticketpanel is posted."))
+      ],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
 
   const roles = data.rolePanels[interaction.customId];
 

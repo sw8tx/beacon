@@ -38,12 +38,24 @@ async function getDashboardServers(env, discordAccessToken, request) {
     if (!Array.isArray(userGuilds)) return [];
     const servers = await Promise.all(userGuilds.map(async (guild) => {
       let withBeacon = beaconServerIds.has(String(guild.id));
+      let channels = [];
       if (botToken) {
         try {
           const botGuildResponse = await fetch(`https://discord.com/api/v10/guilds/${guild.id}`, {
             headers: { authorization: `Bot ${botToken}` },
           });
           if (botGuildResponse.ok || botGuildResponse.status === 404) withBeacon = botGuildResponse.ok;
+          if (botGuildResponse.ok) {
+            const channelsResponse = await fetch(`https://discord.com/api/v10/guilds/${guild.id}/channels`, {
+              headers: { authorization: `Bot ${botToken}` },
+            });
+            if (channelsResponse.ok) {
+              const channelData = await channelsResponse.json();
+              channels = Array.isArray(channelData) ? channelData
+                .filter((channel) => [0, 4].includes(channel?.type))
+                .map((channel) => ({ id: String(channel.id), name: String(channel.name || "channel"), type: Number(channel.type) })) : [];
+            }
+          }
         } catch (_) {
           // Keep the synced ID result if Discord is temporarily unavailable.
         }
@@ -60,6 +72,7 @@ async function getDashboardServers(env, discordAccessToken, request) {
         categories: Number(syncedServers.get(String(guild.id))?.categories) || 0,
         shardId: Number(syncedServers.get(String(guild.id))?.shardId) || 0,
         iconUrl: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=256` : "",
+        channels,
         withBeacon,
       };
     }));
@@ -191,6 +204,9 @@ export async function onRequestGet({ request, env }) {
     return `<a class="dash-side-link${active}" href="#${id}" data-dashboard-tab="${id}"><span class="nav-mark"></span>${label}</a>`;
   }).join("");
   const botBio = "Beacon Community OS\nhttps://beacon-bot.site";
+  const ticketChannelOptions = (selectedServer?.channels || []).map((channel) =>
+    `<option value="${escapeHtml(channel.id)}">${escapeHtml(channel.type === 4 ? "Category · " : "# ")}${escapeHtml(channel.name)}</option>`
+  ).join("");
   const ticketPanelHtml = `
         <section class="dash-content-section" id="server-configs" data-dashboard-section="server-configs">
           <div class="dash-panel ticket-config-panel">
@@ -219,6 +235,14 @@ export async function onRequestGet({ request, env }) {
                 <span>Panel message</span>
                 <textarea data-ticket-message maxlength="2000">Click the button below to open a private ticket with the Beacon support team.</textarea>
               </label>
+              <div class="ticket-settings-grid">
+                <label class="ticket-field"><span>Panel layout</span><select data-ticket-layout><option value="buttons">Buttons</option><option value="dropdown">Dropdown menu</option></select></label>
+                <label class="ticket-field"><span>Ticket buttons</span><select data-ticket-button-count><option value="1">1 button</option><option value="2">2 buttons</option><option value="3">3 buttons</option><option value="4">4 buttons</option><option value="5">5 buttons</option></select></label>
+                <label class="ticket-field"><span>Ticket category</span><select data-ticket-channel="category"><option value="">Not set</option>${ticketChannelOptions}</select></label>
+                <label class="ticket-field"><span>Log channel</span><select data-ticket-channel="log"><option value="">Not set</option>${ticketChannelOptions}</select></label>
+                <label class="ticket-field"><span>Review channel</span><select data-ticket-channel="review"><option value="">Not set</option>${ticketChannelOptions}</select></label>
+                <label class="ticket-field"><span>Archive category</span><select data-ticket-channel="archive"><option value="">Not set</option>${ticketChannelOptions}</select></label>
+              </div>
               <div class="ticket-preview-label">Message Preview</div>
               <article class="ticket-discord-preview">
                 <div class="ticket-preview-author">
@@ -332,6 +356,8 @@ export async function onRequestGet({ request, env }) {
       .ticket-field{display:grid;gap:8px;margin-top:18px;color:#fff;font-size:.86rem;font-weight:900}
       .ticket-field textarea,.ticket-field input{width:100%;min-height:150px;resize:vertical;border:1px solid rgba(255,255,255,.15);border-radius:7px;background:#2b3a4d;color:#fff;padding:14px;font:700 .96rem/1.5 "DM Sans",sans-serif}
       .ticket-field input{min-height:44px;resize:none}
+      .ticket-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px;margin-top:4px}
+      .ticket-field select{width:100%;min-height:44px;border:1px solid rgba(255,255,255,.15);border-radius:7px;background:#2b3a4d;color:#fff;padding:0 12px;font:700 .84rem "DM Sans",sans-serif}
       .ticket-preview-label{margin:24px 0 10px;color:#9ea6b5;font-size:.72rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
       .ticket-discord-preview{border-radius:7px;background:#36393f;padding:18px}
       .ticket-preview-author{display:flex;align-items:center;gap:8px;color:#fff;font-size:.82rem}
@@ -770,6 +796,18 @@ export async function onRequestGet({ request, env }) {
       const ticketMessageInput = document.querySelector("[data-ticket-message]");
       const ticketPreviewMessage = document.querySelector("[data-ticket-preview-message]");
       const ticketPanelList = document.querySelector("[data-ticket-panel-list]");
+      const ticketLayoutSelect = document.querySelector("[data-ticket-layout]");
+      const ticketButtonCountSelect = document.querySelector("[data-ticket-button-count]");
+      const ticketChannelSelects = [...document.querySelectorAll("[data-ticket-channel]")];
+      function ticketPanelDraft() {
+        return {
+          name: ticketEditorTitle?.textContent || "Ticket Panel",
+          message: ticketMessageInput?.value || "",
+          layout: ticketLayoutSelect?.value || "buttons",
+          buttonCount: ticketButtonCountSelect?.value || "1",
+          channels: Object.fromEntries(ticketChannelSelects.map((select) => [select.dataset.ticketChannel, select.value])),
+        };
+      }
       function closeTicketPanelModal() { if (ticketModal) ticketModal.hidden = true; }
       function updateTicketPreview() {
         if (ticketPreviewMessage && ticketMessageInput) ticketPreviewMessage.textContent = ticketMessageInput.value || "Your ticket message will appear here.";
@@ -795,13 +833,16 @@ export async function onRequestGet({ request, env }) {
       });
       ticketMessageInput?.addEventListener("input", updateTicketPreview);
       document.querySelector("[data-ticket-save]")?.addEventListener("click", () => {
-        try { localStorage.setItem(ticketPanelStorageKey, JSON.stringify({ name: ticketEditorTitle?.textContent || "Ticket Panel", message: ticketMessageInput?.value || "" })); } catch (_) {}
+        try { localStorage.setItem(ticketPanelStorageKey, JSON.stringify(ticketPanelDraft())); } catch (_) {}
         showDashboardToast("Ticket panel draft saved");
       });
       try {
         const savedTicketPanel = JSON.parse(localStorage.getItem(ticketPanelStorageKey) || "null");
         if (savedTicketPanel?.name && ticketEditorTitle) ticketEditorTitle.textContent = savedTicketPanel.name;
         if (savedTicketPanel?.message && ticketMessageInput) ticketMessageInput.value = savedTicketPanel.message;
+        if (savedTicketPanel?.layout && ticketLayoutSelect) ticketLayoutSelect.value = savedTicketPanel.layout;
+        if (savedTicketPanel?.buttonCount && ticketButtonCountSelect) ticketButtonCountSelect.value = savedTicketPanel.buttonCount;
+        if (savedTicketPanel?.channels) ticketChannelSelects.forEach((select) => { select.value = savedTicketPanel.channels[select.dataset.ticketChannel] || ""; });
         updateTicketPreview();
       } catch (_) {}
       document.querySelectorAll(".sync-button").forEach((button) => {
