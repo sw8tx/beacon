@@ -15,8 +15,44 @@ const authRequiredLinks = [...document.querySelectorAll("[data-requires-auth]")]
 const heroTypewriter = document.querySelector("[data-typewriter-lines]");
 const claimButtons = [...document.querySelectorAll("[data-claim-badge]")];
 const giveawayCards = [...document.querySelectorAll(".insight-card--giveaway")];
+const externalModal = document.querySelector("#external-modal");
+const externalLinks = [...document.querySelectorAll("[data-external-site]")];
+const externalCloseButtons = [...document.querySelectorAll("[data-external-close]")];
+const copyExternalButton = document.querySelector("[data-copy-external]");
+const copyFeedback = document.querySelector("[data-copy-feedback]");
 let heroTypewriterTimer = null;
 let isDiscordSignedIn = false;
+
+function closeExternalModal() {
+  if (!externalModal) return;
+  externalModal.hidden = true;
+  document.body.classList.remove("external-modal-open");
+  if (copyFeedback) copyFeedback.textContent = "";
+}
+
+function openExternalModal() {
+  if (!externalModal) return;
+  externalModal.hidden = false;
+  document.body.classList.add("external-modal-open");
+  externalModal.querySelector(".external-modal__close")?.focus();
+}
+
+externalLinks.forEach((link) => link.addEventListener("click", (event) => {
+  event.preventDefault();
+  openExternalModal();
+}));
+externalCloseButtons.forEach((button) => button.addEventListener("click", closeExternalModal));
+copyExternalButton?.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText("https://nxtbyte.de/");
+    if (copyFeedback) copyFeedback.textContent = "Link copied to clipboard.";
+  } catch (_) {
+    if (copyFeedback) copyFeedback.textContent = "Copy failed. Please copy the link above.";
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && externalModal && !externalModal.hidden) closeExternalModal();
+});
 
 function setClaimedState(button) {
   button.classList.add("is-claimed");
