@@ -1478,7 +1478,7 @@ function honeypotContainer(data) {
             .setDisabled(true)
         )
     )
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Powered by AlphaCloud"));
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Powered by Beacon Bot"));
 }
 
 function honeypotSetupContainer(data, draft) {
