@@ -634,6 +634,7 @@ requestAnimationFrame(revealOnScroll);
 
 const COOKIE_CONSENT_KEY = "beacon-cookie-consent-v1";
 const cookieNotice = document.querySelector("#cookie-notice");
+const cookieFloatingButton = document.querySelector(".cookie-floating-button");
 const cookieSettingsModal = document.querySelector("#cookie-settings-modal");
 const cookieSettingsButtons = [...document.querySelectorAll("[data-cookie-settings]")];
 const cookieCloseButtons = [...document.querySelectorAll("[data-cookie-close]")];
@@ -703,6 +704,7 @@ function closeCookieSettings() {
 
 function hideCookieNotice() {
   if (cookieNotice) cookieNotice.hidden = true;
+  if (cookieFloatingButton) cookieFloatingButton.hidden = false;
   closeCookieSettings();
 }
 
@@ -719,7 +721,9 @@ if (existingCookieConsent) {
   if (!cookieAnalyticsEnabled) clearGoogleAnalyticsCookies();
 } else if (cookieNotice) {
   cookieNotice.hidden = false;
+  if (cookieFloatingButton) cookieFloatingButton.hidden = true;
 }
+if (existingCookieConsent && cookieFloatingButton) cookieFloatingButton.hidden = false;
 updateCookieToggles();
 
 cookieSettingsButtons.forEach((button) => button.addEventListener("click", openCookieSettings));
