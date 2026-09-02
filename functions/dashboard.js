@@ -72,7 +72,7 @@ async function getDashboardServers(env, discordAccessToken, request) {
         categories: Number(syncedServers.get(String(guild.id))?.categories) || 0,
         shardId: Number(syncedServers.get(String(guild.id))?.shardId) || 0,
         iconUrl: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=256` : "",
-        channels,
+        channelOptions: channels,
         withBeacon,
       };
     }));
@@ -204,7 +204,7 @@ export async function onRequestGet({ request, env }) {
     return `<a class="dash-side-link${active}" href="#${id}" data-dashboard-tab="${id}"><span class="nav-mark"></span>${label}</a>`;
   }).join("");
   const botBio = "Beacon Community OS\nhttps://beacon-bot.site";
-  const ticketChannelOptions = (selectedServer?.channels || []).map((channel) =>
+  const ticketChannelOptions = (selectedServer?.channelOptions || []).map((channel) =>
     `<option value="${escapeHtml(channel.id)}">${escapeHtml(channel.type === 4 ? "Category · " : "# ")}${escapeHtml(channel.name)}</option>`
   ).join("");
   const ticketPanelHtml = `
