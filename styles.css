@@ -471,7 +471,7 @@ body.external-modal-open { overflow: hidden; }
 .cookie-toggle--small::after { width: 16px; height: 16px; font-size: .78rem; }
 .cookie-settings__service-list { margin: 0; padding: 0; list-style: none; }
 .cookie-settings__service-list li { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 38px; padding: 0 16px 0 28px; border-bottom: 1px solid #dbe3ea; color: #626976; font-size: .86rem; }
-.cookie-settings__service-list li::before { content: "º"; margin-right: auto; color: #626976; font-weight: 900; }
+.cookie-settings__service-list li::before { content: "•"; margin-right: auto; color: #626976; font-weight: 900; }
 .cookie-settings__service-list span { margin-right: auto; }
 .cookie-table { border-top: 1px solid #eef1f4; }
 .cookie-table > div { display: grid; grid-template-columns: 92px 102px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px 16px; border-top: 1px solid #eef1f4; color: #4f5662; font-size: .78rem; }
