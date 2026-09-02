@@ -9,6 +9,7 @@ const {
   AttachmentBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ChannelSelectMenuBuilder,
   ChannelType,
   Client,
   Colors,
@@ -62,12 +63,14 @@ const LOGO_FILE = path.join(__dirname, "beacon-logo.png");
 const LOGO_ATTACHMENT_NAME = "beacon-logo.png";
 const BRAND_THUMBNAIL_URL = `attachment://${LOGO_ATTACHMENT_NAME}`;
 const BRAND_COLOR = 0xff9c1b;
+const HONEYPOT_COLOR = 0xb238ff;
 const XP_COOLDOWN_MS = 60_000;
 const XP_MIN_PER_MESSAGE = 15;
 const XP_MAX_PER_MESSAGE = 25;
 const PRESTIGE_LEVEL_REQUIREMENT = 25;
-const HONEYPOT_DESCRIPTION = "This is a Honeypot Channel, Text here and you get banned";
+const HONEYPOT_DESCRIPTION = "This channel is used to catch spam bots. Any messages sent here will result in a ban.";
 const xpCooldowns = new Map();
+const honeypotSetupDrafts = new Map();
 
 if (!TOKEN || TOKEN.startsWith("PASTE_")) {
   console.error("Missing Discord bot token. Set DISCORD_TOKEN in your .env file or in your hosting environment.");
@@ -1388,7 +1391,7 @@ async function handlePurgeCommand(interaction, ui) {
   return true;
 }
 
-function honeypotContainer(data) {
+function legacyHoneypotContainer(data) {
   const action = data.settings.honeypotAction || (data.settings.honeypotBanEnabled ? "ban" : "none");
   const actionLabel = {
     ban: "🔨 Banned",
@@ -1408,7 +1411,7 @@ function honeypotContainer(data) {
     );
 }
 
-async function honeypotSetup(interaction, data) {
+async function legacyHoneypotSetup(interaction, data) {
   const channel = interaction.options.getChannel("channel", true);
   const enabled = interaction.options.getBoolean("enabled", true);
   const action = interaction.options.getString("action");
@@ -1432,6 +1435,154 @@ async function honeypotSetup(interaction, data) {
     components: [new ContainerBuilder().setAccentColor(BRAND_COLOR).addTextDisplayComponents(
       new TextDisplayBuilder().setContent(`## Honeypot configured\n${channel} is ${enabled ? "enabled" : "saved but disabled"}.\nAction: **${data.settings.honeypotAction || "ban"}** · ${data.settings.honeypotDeleteMessage ? "messages deleted" : "messages kept"}.`)
     )],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  });
+}
+
+function honeypotDraftKey(interaction) {
+  return `${interaction.guild.id}:${interaction.user.id}`;
+}
+
+function honeypotActionLabel(action) {
+  return {
+    ban: "Ban",
+    kick: "Kick",
+    timeout: "Timeout (10 min)",
+    none: "Log only",
+  }[action] || "Ban";
+}
+
+function honeypotDraftFromSettings(data) {
+  return {
+    channelId: data.settings.honeypotChannelId || null,
+    enabled: Boolean(data.settings.honeypotEnabled),
+    action: data.settings.honeypotAction || (data.settings.honeypotBanEnabled ? "ban" : "none"),
+    deleteMessage: data.settings.honeypotDeleteMessage !== false,
+  };
+}
+
+function honeypotContainer(data) {
+  return new ContainerBuilder()
+    .setAccentColor(HONEYPOT_COLOR)
+    .addSectionComponents(
+      new SectionBuilder()
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent("## DO NOT SEND MESSAGES IN THIS CHANNEL"),
+          new TextDisplayBuilder().setContent(HONEYPOT_DESCRIPTION)
+        )
+        .setButtonAccessory(
+          new ButtonBuilder()
+            .setCustomId("honeypot_bans_counter")
+            .setLabel(`Bans: ${data.settings.honeypotBanCount || 0}`)
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(true)
+        )
+    )
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Powered by AlphaCloud"));
+}
+
+function honeypotSetupContainer(data, draft) {
+  const channelText = draft.channelId ? `<#${draft.channelId}>` : "Not selected";
+  const deleteText = draft.deleteMessage ? "Delete trigger messages" : "Keep trigger messages";
+
+  const channelSelect = new ChannelSelectMenuBuilder()
+    .setCustomId("honeypot_setup_channel")
+    .setPlaceholder("Select the honeypot text channel...")
+    .setChannelTypes(ChannelType.GuildText)
+    .setMinValues(1)
+    .setMaxValues(1);
+
+  if (draft.channelId) channelSelect.addDefaultChannels(draft.channelId);
+
+  const enabledSelect = new StringSelectMenuBuilder()
+    .setCustomId("honeypot_setup_enabled")
+    .setPlaceholder("Protection status")
+    .addOptions(
+      { label: "Enabled", value: "true", description: "Messages in the channel trigger the honeypot.", default: draft.enabled },
+      { label: "Disabled", value: "false", description: "Save the channel but do not punish anyone yet.", default: !draft.enabled }
+    );
+
+  const actionSelect = new StringSelectMenuBuilder()
+    .setCustomId("honeypot_setup_action")
+    .setPlaceholder("Punishment action")
+    .addOptions(
+      { label: "Ban", value: "ban", description: "Ban users who send messages there.", default: draft.action === "ban" },
+      { label: "Kick", value: "kick", description: "Kick users who send messages there.", default: draft.action === "kick" },
+      { label: "Timeout (10 minutes)", value: "timeout", description: "Timeout users instead of banning.", default: draft.action === "timeout" },
+      { label: "Log only", value: "none", description: "Only delete/log without punishment.", default: draft.action === "none" }
+    );
+
+  const deleteSelect = new StringSelectMenuBuilder()
+    .setCustomId("honeypot_setup_delete")
+    .setPlaceholder("Message cleanup")
+    .addOptions(
+      { label: "Delete messages", value: "true", description: "Remove the bait message after it triggers.", default: draft.deleteMessage },
+      { label: "Keep messages", value: "false", description: "Leave the triggering message visible.", default: !draft.deleteMessage }
+    );
+
+  return new ContainerBuilder()
+    .setAccentColor(HONEYPOT_COLOR)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent("## Honeypot Setup\nChoose the protected channel and how Beacon should react."),
+      new TextDisplayBuilder().setContent(
+        `| Channel Setup | Value |\n| :-- | :-- |\n| Target channel | ${channelText} |\n| Protection | ${draft.enabled ? "Enabled" : "Disabled"} |`
+      ),
+      new TextDisplayBuilder().setContent(
+        `| Moderation | Value |\n| :-- | :-- |\n| User action | ${honeypotActionLabel(draft.action)} |\n| Messages | ${deleteText} |\n| Current bans | ${data.settings.honeypotBanCount || 0} |`
+      )
+    )
+    .addSeparatorComponents(new SeparatorBuilder())
+    .addActionRowComponents(
+      new ActionRowBuilder().addComponents(channelSelect),
+      new ActionRowBuilder().addComponents(enabledSelect),
+      new ActionRowBuilder().addComponents(actionSelect),
+      new ActionRowBuilder().addComponents(deleteSelect),
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId("honeypot_setup_save").setLabel("Save Changes").setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId("honeypot_setup_cancel").setLabel("Cancel").setStyle(ButtonStyle.Secondary)
+      )
+    );
+}
+
+function honeypotNoticeContainer(title, description) {
+  return new ContainerBuilder()
+    .setAccentColor(HONEYPOT_COLOR)
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}\n${description}`));
+}
+
+async function honeypotSetup(interaction, data) {
+  const draft = honeypotDraftFromSettings(data);
+  honeypotSetupDrafts.set(honeypotDraftKey(interaction), draft);
+
+  await interaction.reply({
+    components: [honeypotSetupContainer(data, draft)],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  });
+}
+
+async function honeypotConfigure(interaction, data) {
+  const channel = interaction.options.getChannel("channel", true);
+  const enabled = interaction.options.getBoolean("enabled", true);
+  const action = interaction.options.getString("action");
+  const deleteMessage = interaction.options.getBoolean("delete");
+
+  data.settings.honeypotChannelId = channel.id;
+  data.settings.honeypotEnabled = enabled;
+  if (action) {
+    data.settings.honeypotAction = action;
+    data.settings.honeypotBanEnabled = action === "ban";
+  }
+  if (deleteMessage !== null) data.settings.honeypotDeleteMessage = deleteMessage;
+  saveData();
+
+  const panel = await channel.send({ components: [honeypotContainer(data)], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
+  if (panel) {
+    data.settings.honeypotMessageId = panel.id;
+    saveData();
+  }
+
+  await interaction.reply({
+    components: [honeypotNoticeContainer("Honeypot configured", `${channel} is ${enabled ? "enabled" : "saved but disabled"}.\nAction: **${data.settings.honeypotAction || "ban"}** | ${data.settings.honeypotDeleteMessage ? "messages deleted" : "messages kept"}.`)],
     flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
   });
 }
@@ -2012,20 +2163,7 @@ const commands = [
   new SlashCommandBuilder()
     .setName("honeypot-setup")
     .setDescription("Configure a protected anti-spam honeypot channel.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-    .addChannelOption((opt) => opt.setName("channel").setDescription("Channel to protect").addChannelTypes(ChannelType.GuildText).setRequired(true))
-    .addBooleanOption((opt) => opt.setName("enabled").setDescription("Enable protection now").setRequired(true))
-    .addStringOption((opt) => opt
-      .setName("action")
-      .setDescription("What happens to a user who posts there")
-      .addChoices(
-        { name: "Ban", value: "ban" },
-        { name: "Kick", value: "kick" },
-        { name: "Timeout (10 minutes)", value: "timeout" },
-        { name: "Log only", value: "none" },
-      )
-      .setRequired(false))
-    .addBooleanOption((opt) => opt.setName("delete").setDescription("Delete triggering messages").setRequired(false)),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   new SlashCommandBuilder()
     .setName("honeypot-disable")
@@ -2677,6 +2815,11 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
 
+    if (interaction.isChannelSelectMenu()) {
+      await handleHoneypotChannelSelect(interaction);
+      return;
+    }
+
     if (interaction.isStringSelectMenu()) {
       await handleSelect(interaction);
       return;
@@ -2707,7 +2850,7 @@ async function handleCommand(interaction) {
   if (command === "setup") return setup(interaction, data);
   if (command === "honeypot-setup") return honeypotSetup(interaction, data);
   if (command === "honeypot-disable") return honeypotDisable(interaction, data);
-  if (command === "honeypot-configure") return honeypotSetup(interaction, data);
+  if (command === "honeypot-configure") return honeypotConfigure(interaction, data);
   if (command === "dmca-info") return dmcaInfo(interaction);
   if (command === "health") return health(interaction, data);
   if (command === "dashboard") return dashboard(interaction, data);
@@ -3268,8 +3411,123 @@ async function handleModal(interaction) {
 
 }
 
+function activeHoneypotDraft(interaction, data) {
+  const key = honeypotDraftKey(interaction);
+  const draft = honeypotSetupDrafts.get(key) || honeypotDraftFromSettings(data);
+  honeypotSetupDrafts.set(key, draft);
+  return draft;
+}
+
+async function handleHoneypotChannelSelect(interaction) {
+  if (interaction.customId !== "honeypot_setup_channel") {
+    await interaction.reply(withBrandFiles({ embeds: [errorEmbed("Unknown channel menu.")], ephemeral: true }));
+    return;
+  }
+
+  const data = guildData(interaction.guild.id);
+  const draft = activeHoneypotDraft(interaction, data);
+  draft.channelId = interaction.values[0] || null;
+
+  await interaction.update({
+    components: [honeypotSetupContainer(data, draft)],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  });
+}
+
+async function handleHoneypotSetupSelect(interaction, data) {
+  if (!interaction.customId.startsWith("honeypot_setup_")) return false;
+
+  const draft = activeHoneypotDraft(interaction, data);
+  const value = interaction.values[0];
+
+  if (interaction.customId === "honeypot_setup_enabled") draft.enabled = value === "true";
+  if (interaction.customId === "honeypot_setup_action") draft.action = value || "ban";
+  if (interaction.customId === "honeypot_setup_delete") draft.deleteMessage = value !== "false";
+
+  await interaction.update({
+    components: [honeypotSetupContainer(data, draft)],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  });
+  return true;
+}
+
+async function saveHoneypotSetup(interaction, data) {
+  const key = honeypotDraftKey(interaction);
+  const draft = honeypotSetupDrafts.get(key);
+
+  if (!draft || !draft.channelId) {
+    await interaction.update({
+      components: [honeypotNoticeContainer("Pick a channel first", "Choose the text channel Beacon should protect, then press **Save Changes** again.")],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const channel = await interaction.guild.channels.fetch(draft.channelId).catch(() => null);
+  if (!channel || channel.type !== ChannelType.GuildText) {
+    await interaction.update({
+      components: [honeypotNoticeContainer("Channel unavailable", "That text channel no longer exists. Run `/honeypot-setup` and choose another one.")],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const botMember = interaction.guild.members.me || await interaction.guild.members.fetchMe().catch(() => null);
+  const permissions = channel.permissionsFor(botMember);
+  if (!permissions?.has(PermissionFlagsBits.ViewChannel) || !permissions?.has(PermissionFlagsBits.SendMessages)) {
+    await interaction.update({
+      components: [honeypotNoticeContainer("Missing channel permissions", `Beacon needs **View Channel** and **Send Messages** in ${channel}.`)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  data.settings.honeypotChannelId = channel.id;
+  data.settings.honeypotEnabled = draft.enabled;
+  data.settings.honeypotAction = draft.action;
+  data.settings.honeypotBanEnabled = draft.action === "ban";
+  data.settings.honeypotDeleteMessage = draft.deleteMessage;
+  saveData();
+
+  const panel = await channel.send({
+    components: [honeypotContainer(data)],
+    flags: MessageFlags.IsComponentsV2,
+  }).catch(() => null);
+
+  if (!panel) {
+    await interaction.update({
+      components: [honeypotNoticeContainer("Could not post panel", `Beacon could not send the honeypot message in ${channel}. Check channel permissions and try again.`)],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  data.settings.honeypotMessageId = panel.id;
+  saveData();
+  honeypotSetupDrafts.delete(key);
+
+  await interaction.update({
+    components: [honeypotNoticeContainer("Honeypot saved", `The Components V2 honeypot panel was posted in ${channel}.\nProtection: **${draft.enabled ? "Enabled" : "Disabled"}** | Action: **${honeypotActionLabel(draft.action)}**`)],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  });
+}
+
 async function handleButton(interaction) {
   const data = guildData(interaction.guild.id);
+
+  if (interaction.customId === "honeypot_setup_save") {
+    await saveHoneypotSetup(interaction, data);
+    return;
+  }
+
+  if (interaction.customId === "honeypot_setup_cancel") {
+    honeypotSetupDrafts.delete(honeypotDraftKey(interaction));
+    await interaction.update({
+      components: [honeypotNoticeContainer("Honeypot setup cancelled", "No changes were saved.")],
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
+    return;
+  }
 
   if (interaction.customId.startsWith("poll_vote:")) {
     await handlePollVote(interaction, data);
@@ -3413,6 +3671,9 @@ async function handleEventButton(interaction, data) {
 
 async function handleSelect(interaction) {
   const data = guildData(interaction.guild.id);
+
+  if (await handleHoneypotSetupSelect(interaction, data)) return;
+
   const roles = data.rolePanels[interaction.customId];
 
   if (!roles) {
