@@ -274,10 +274,9 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .footer-brand > a { display: inline-flex; width: max-content; align-items: center; gap: 10px; color: #f6f3ea; font: 700 1rem "Space Grotesk", sans-serif; }
 .footer-brand img { object-fit: contain; }
 .sponsor-label { margin-top: 5px; color: #a7aaa4; font-size: .65rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
-.sponsor-link { display: inline-flex; width: max-content; align-items: center; padding: 4px 8px; border-radius: 7px; background: #050505; }
-.sponsor-logo { display: block; width: min(220px, 100%); height: auto; max-height: 50px; object-fit: contain; object-position: left center; opacity: .98; mix-blend-mode: normal; }
-.sponsor-logo { transition: opacity .18s ease, transform .18s ease; }
-.sponsor-link:hover .sponsor-logo, .sponsor-link:focus-visible .sponsor-logo { opacity: 1; transform: translateY(-1px); }
+.sponsor-link { display: inline-flex; width: max-content; align-items: center; min-height: 38px; padding: 8px 13px; border: 1px solid rgba(255,255,255,.12); border-radius: 7px; color: #f8fbff; background: rgba(255,255,255,.06); box-shadow: inset 0 1px 0 rgba(255,255,255,.06); transition: border-color .18s ease, color .18s ease, transform .18s ease, background .18s ease; }
+.sponsor-domain { color: inherit; font: 800 1.05rem "Space Grotesk", sans-serif; letter-spacing: .02em; }
+.sponsor-link:hover, .sponsor-link:focus-visible { border-color: rgba(49,182,230,.55); color: #31b6e6; transform: translateY(-1px); background: rgba(49,182,230,.12); }
 .footer-links { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 11px 23px; }
 .footer-links { color: #d7dad4; font-weight: 700; }
 .footer-links a:hover { color: var(--yellow); }
