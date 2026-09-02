@@ -191,9 +191,66 @@ export async function onRequestGet({ request, env }) {
     return `<a class="dash-side-link${active}" href="#${id}" data-dashboard-tab="${id}"><span class="nav-mark"></span>${label}</a>`;
   }).join("");
   const botBio = "Beacon Community OS\nhttps://beacon-bot.site";
+  const ticketPanelHtml = `
+        <section class="dash-content-section" id="server-configs" data-dashboard-section="server-configs">
+          <div class="dash-panel ticket-config-panel">
+            <div class="ticket-config-top">
+              <div>
+                <span class="ticket-overline">Server Configs · Tickets</span>
+                <h2>Ticket Panels</h2>
+                <p>Create a clean panel that members can use to open a private ticket.</p>
+              </div>
+              <button class="ticket-add-panel" type="button" data-ticket-add aria-label="Create a new ticket panel">+</button>
+            </div>
+            <div class="ticket-panel-list" data-ticket-panel-list>
+              <button class="ticket-panel-row is-selected" type="button" data-ticket-panel-row="default">
+                <span><strong>1</strong> Ticket Panel</span><span class="ticket-panel-chevron">›</span>
+              </button>
+            </div>
+            <div class="ticket-panel-editor" data-ticket-editor>
+              <div class="ticket-editor-heading">
+                <div>
+                  <span class="ticket-overline">Panel Editor</span>
+                  <h3 data-ticket-editor-title>Ticket Panel</h3>
+                </div>
+                <span class="ticket-draft-pill">Draft</span>
+              </div>
+              <label class="ticket-field">
+                <span>Panel message</span>
+                <textarea data-ticket-message maxlength="2000">Click the button below to open a private ticket with the Beacon support team.</textarea>
+              </label>
+              <div class="ticket-preview-label">Message Preview</div>
+              <article class="ticket-discord-preview">
+                <div class="ticket-preview-author">
+                  <img src="/assets/beacon-logo.png?v=92" width="34" height="34" alt="" />
+                  <strong>Beacon Bot</strong><span>BOT</span>
+                </div>
+                <div class="ticket-preview-card">
+                  <h4 data-ticket-preview-title>Need help?</h4>
+                  <p data-ticket-preview-message>Click the button below to open a private ticket with the Beacon support team.</p>
+                  <button class="ticket-preview-button" type="button" disabled>Open Ticket</button>
+                </div>
+              </article>
+              <button class="ticket-save-panel" type="button" data-ticket-save>Save Panel Draft</button>
+            </div>
+          </div>
+          <div class="ticket-panel-modal" data-ticket-modal hidden>
+            <div class="ticket-panel-modal__backdrop" data-ticket-modal-close></div>
+            <section class="ticket-panel-modal__card" role="dialog" aria-modal="true" aria-labelledby="ticket-modal-title">
+              <button class="ticket-panel-modal__close" type="button" data-ticket-modal-close aria-label="Close">×</button>
+              <h3 id="ticket-modal-title">Create a Panel</h3>
+              <p>A panel lets members open a private ticket. Give it a name to get started.</p>
+              <label class="ticket-field"><span>Panel name</span><input data-ticket-name value="New Panel" maxlength="80" /></label>
+              <div class="ticket-panel-modal__actions">
+                <button class="ticket-modal-cancel" type="button" data-ticket-modal-close>Cancel</button>
+                <button class="ticket-save-panel" type="button" data-ticket-create>Create</button>
+              </div>
+            </section>
+          </div>
+        </section>
+  `;
   const simplePanels = [
     ["command-configs", "Command Configs", "Enable, disable and tune Beacon commands for this server."],
-    ["server-configs", "Server Configs", "General server settings, roles and moderation defaults will show here."],
     ["dashboard-history", "Dashboard History", "Recent dashboard changes and sync events will be listed here."],
     ["statistics", "Statistics", "Server activity, member growth and Beacon usage stats will show here."],
   ].map(([id, title, copy]) => `
@@ -203,7 +260,7 @@ export async function onRequestGet({ request, env }) {
             <p>${copy}</p>
           </div>
         </section>
-  `).join("");
+  `).join("") + ticketPanelHtml;
 
   const html = `<!doctype html>
 <html lang="en">
@@ -260,6 +317,41 @@ export async function onRequestGet({ request, env }) {
       .dash-content-section.is-active{display:block}
       .dash-panel h2{margin:0 0 8px;color:#fff;font-size:1.25rem}
       .dash-panel p{margin:0;color:#9ea6b5;font-size:.98rem;line-height:1.6}
+      .ticket-config-panel{max-width:1100px;background:#182332;border-color:rgba(255,255,255,.12)}
+      .ticket-config-top,.ticket-editor-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+      .ticket-overline{display:block;color:#ffc31c;font-size:.72rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
+      .ticket-config-top h2,.ticket-editor-heading h3{margin:8px 0;color:#fff}
+      .ticket-add-panel{display:grid;width:42px;height:42px;place-items:center;border:0;border-radius:8px;background:#ffc31c;color:#0b0900;font-size:1.6rem;font-weight:900;cursor:pointer}
+      .ticket-panel-list{display:grid;gap:8px;margin-top:22px}
+      .ticket-panel-row{display:flex;min-height:46px;align-items:center;justify-content:space-between;border:1px solid rgba(255,195,28,.32);border-radius:7px;background:#26334a;color:#fff;padding:0 14px;font:800 .88rem "DM Sans",sans-serif;cursor:pointer}
+      .ticket-panel-row.is-selected{border-color:#ffc31c;background:#303e57}
+      .ticket-panel-row strong{display:inline-grid;width:24px;height:24px;margin-right:8px;place-items:center;border-radius:5px;background:#ffc31c;color:#0b0900}
+      .ticket-panel-chevron{color:#ffc31c;font-size:1.3rem}
+      .ticket-panel-editor{margin-top:18px;border-radius:8px;background:#121b28;padding:18px}
+      .ticket-draft-pill{border:1px solid rgba(255,195,28,.4);border-radius:999px;color:#ffc31c;padding:5px 10px;font-size:.7rem;font-weight:900;text-transform:uppercase}
+      .ticket-field{display:grid;gap:8px;margin-top:18px;color:#fff;font-size:.86rem;font-weight:900}
+      .ticket-field textarea,.ticket-field input{width:100%;min-height:150px;resize:vertical;border:1px solid rgba(255,255,255,.15);border-radius:7px;background:#2b3a4d;color:#fff;padding:14px;font:700 .96rem/1.5 "DM Sans",sans-serif}
+      .ticket-field input{min-height:44px;resize:none}
+      .ticket-preview-label{margin:24px 0 10px;color:#9ea6b5;font-size:.72rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
+      .ticket-discord-preview{border-radius:7px;background:#36393f;padding:18px}
+      .ticket-preview-author{display:flex;align-items:center;gap:8px;color:#fff;font-size:.82rem}
+      .ticket-preview-author img{width:34px;height:34px;border-radius:50%;object-fit:contain;background:#111827;padding:4px}
+      .ticket-preview-author span{border-radius:3px;background:#5865f2;padding:2px 4px;font-size:.6rem}
+      .ticket-preview-card{max-width:560px;margin:12px 0 0 42px;border-left:4px solid #ffc31c;border-radius:4px;background:#202225;padding:16px}
+      .ticket-preview-card h4{margin:0 0 8px;color:#fff;font-size:1rem}
+      .ticket-preview-card p{color:#d7d9dc;font-size:.9rem;line-height:1.5}
+      .ticket-preview-button,.ticket-save-panel,.ticket-modal-cancel{min-height:38px;border:0;border-radius:7px;padding:0 16px;font:900 .82rem "DM Sans",sans-serif;cursor:pointer}
+      .ticket-preview-button{margin-top:14px;background:#ffc31c;color:#0b0900}
+      .ticket-save-panel{margin-top:18px;background:#3ca86a;color:#fff}
+      .ticket-panel-modal{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:20px}
+      .ticket-panel-modal[hidden]{display:none}
+      .ticket-panel-modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.72)}
+      .ticket-panel-modal__card{position:relative;width:min(520px,100%);border:1px solid rgba(255,195,28,.25);border-radius:10px;background:#182332;padding:24px;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+      .ticket-panel-modal__card h3{margin:0;color:#fff;font-size:1.3rem}
+      .ticket-panel-modal__card>p{margin-top:8px}
+      .ticket-panel-modal__close{position:absolute;top:12px;right:14px;border:0;background:transparent;color:#9ea6b5;font-size:1.4rem;cursor:pointer}
+      .ticket-panel-modal__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+      .ticket-modal-cancel{background:#303a4b;color:#fff}
       .dash-toast{position:fixed;top:88px;left:50%;z-index:80;display:flex;min-height:42px;align-items:center;justify-content:center;border:1px solid rgba(255,195,28,.42);border-radius:8px;background:rgba(12,13,15,.96);color:#ffc31c;padding:0 18px;font-size:.86rem;font-weight:900;box-shadow:0 20px 50px rgba(255,195,28,.16);opacity:0;pointer-events:none;transform:translate(-50%,-12px);transition:opacity .2s ease,transform .2s ease}
       .dash-toast.is-visible{opacity:1;transform:translate(-50%,0)}
       .dash-toast.is-error{border-color:rgba(255,77,77,.85);background:#3a1016;color:#fff;box-shadow:0 20px 60px rgba(255,35,55,.32)}
@@ -671,6 +763,47 @@ export async function onRequestGet({ request, env }) {
           showDashboardToast("Image removed");
         });
       });
+      const ticketPanelStorageKey = "beacon-ticket-panels-" + location.search;
+      const ticketModal = document.querySelector("[data-ticket-modal]");
+      const ticketNameInput = document.querySelector("[data-ticket-name]");
+      const ticketEditorTitle = document.querySelector("[data-ticket-editor-title]");
+      const ticketMessageInput = document.querySelector("[data-ticket-message]");
+      const ticketPreviewMessage = document.querySelector("[data-ticket-preview-message]");
+      const ticketPanelList = document.querySelector("[data-ticket-panel-list]");
+      function closeTicketPanelModal() { if (ticketModal) ticketModal.hidden = true; }
+      function updateTicketPreview() {
+        if (ticketPreviewMessage && ticketMessageInput) ticketPreviewMessage.textContent = ticketMessageInput.value || "Your ticket message will appear here.";
+      }
+      document.querySelector("[data-ticket-add]")?.addEventListener("click", () => {
+        if (ticketModal) ticketModal.hidden = false;
+        ticketNameInput?.focus();
+        ticketNameInput?.select();
+      });
+      document.querySelectorAll("[data-ticket-modal-close]").forEach((button) => button.addEventListener("click", closeTicketPanelModal));
+      document.querySelector("[data-ticket-create]")?.addEventListener("click", () => {
+        const name = (ticketNameInput?.value || "New Panel").trim().slice(0, 80) || "New Panel";
+        const row = document.createElement("button");
+        row.className = "ticket-panel-row is-selected";
+        row.type = "button";
+        row.dataset.ticketPanelRow = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        row.innerHTML = "<span><strong>" + (ticketPanelList?.children.length + 1 || 2) + "</strong> " + name.replace(/[&<>]/g, "") + "</span><span class=\"ticket-panel-chevron\">›</span>";
+        ticketPanelList?.querySelectorAll(".ticket-panel-row").forEach((item) => item.classList.remove("is-selected"));
+        ticketPanelList?.append(row);
+        if (ticketEditorTitle) ticketEditorTitle.textContent = name;
+        closeTicketPanelModal();
+        showDashboardToast("Ticket panel created");
+      });
+      ticketMessageInput?.addEventListener("input", updateTicketPreview);
+      document.querySelector("[data-ticket-save]")?.addEventListener("click", () => {
+        try { localStorage.setItem(ticketPanelStorageKey, JSON.stringify({ name: ticketEditorTitle?.textContent || "Ticket Panel", message: ticketMessageInput?.value || "" })); } catch (_) {}
+        showDashboardToast("Ticket panel draft saved");
+      });
+      try {
+        const savedTicketPanel = JSON.parse(localStorage.getItem(ticketPanelStorageKey) || "null");
+        if (savedTicketPanel?.name && ticketEditorTitle) ticketEditorTitle.textContent = savedTicketPanel.name;
+        if (savedTicketPanel?.message && ticketMessageInput) ticketMessageInput.value = savedTicketPanel.message;
+        updateTicketPreview();
+      } catch (_) {}
       document.querySelectorAll(".sync-button").forEach((button) => {
         button.addEventListener("click", () => {
           const pill = document.querySelector("[data-sync-pill]");
