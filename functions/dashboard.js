@@ -460,6 +460,7 @@ export async function onRequestGet({ request, env }) {
       .bot-banner-preview span{position:absolute;right:18px;bottom:16px;width:18px;height:18px;background:#caffd6;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%)}
       .asset-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
       .asset-actions button,.reset-bio,.save-bot,.reset-changes{min-width:0;min-height:38px;border:0;border-radius:7px;color:#fff;font:800 .84rem "DM Sans",system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+      .asset-actions button,.customize-actions button{position:relative;z-index:3;pointer-events:auto}
       .asset-actions button{background:#247fbd}
       .asset-actions .danger-mini,.reset-bio{background:#ff4f5e}
       .bio-field{display:grid;gap:10px;margin-top:24px}
@@ -612,13 +613,13 @@ export async function onRequestGet({ request, env }) {
               <article class="asset-editor asset-editor--avatar">
                 <strong>Avatar <small>(1024x1024)</small></strong>
                 <div class="bot-avatar-preview"><img src="/assets/beacon-logo.png?v=92" alt="" /></div>
-                <div class="asset-actions"><button type="button" data-upload-target="avatar-upload">Upload image</button><button class="danger-mini" type="button" data-reset-image="avatar">Delete</button></div>
+                <div class="asset-actions"><button type="button" data-upload-target="avatar-upload" data-native-upload onclick="document.getElementById('avatar-upload')?.click()">Upload image</button><button class="danger-mini" type="button" data-reset-image="avatar">Delete</button></div>
                 <input id="avatar-upload" class="asset-upload" type="file" accept="image/*" hidden />
               </article>
               <article class="asset-editor asset-editor--banner">
                 <strong>Banner <small>(680x240)</small></strong>
                 <div class="bot-banner-preview"><img src="/assets/beacon-logo.png?v=92" alt="" /><span></span></div>
-                <div class="asset-actions"><button type="button" data-upload-target="banner-upload">Upload image</button><button class="danger-mini" type="button" data-reset-image="banner">Delete</button></div>
+                <div class="asset-actions"><button type="button" data-upload-target="banner-upload" data-native-upload onclick="document.getElementById('banner-upload')?.click()">Upload image</button><button class="danger-mini" type="button" data-reset-image="banner">Delete</button></div>
                 <input id="banner-upload" class="asset-upload" type="file" accept="image/*" hidden />
               </article>
             </div>
@@ -800,7 +801,7 @@ export async function onRequestGet({ request, env }) {
         bannerChanged = true;
         showDashboardToast("All changes reset");
       });
-      document.querySelectorAll("[data-upload-target]").forEach((button) => {
+      document.querySelectorAll("[data-upload-target]:not([data-native-upload])").forEach((button) => {
         button.addEventListener("click", () => document.getElementById(button.dataset.uploadTarget)?.click());
       });
       document.querySelectorAll(".asset-upload").forEach((input) => {
