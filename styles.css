@@ -437,7 +437,7 @@ body.external-modal-open { overflow: hidden; }
 
 .cookie-notice[hidden],
 .cookie-settings-modal[hidden] { display: none !important; }
-.cookie-notice { position: fixed; right: 18px; bottom: 18px; z-index: 90; width: min(360px, calc(100vw - 28px)); color: #2b2f38; }
+.cookie-notice { position: fixed !important; right: 18px !important; bottom: 18px !important; left: auto !important; z-index: 90; width: min(360px, calc(100vw - 28px)); color: #2b2f38; }
 .cookie-notice__card { overflow: hidden; border: 1px solid rgba(15,23,42,.08); border-radius: 8px; background: #fff; box-shadow: 0 22px 65px rgba(0,0,0,.22); animation: cookie-pop-in .28s ease-out both; }
 .cookie-notice__card h2 { margin: 0; padding: 20px 20px 10px; color: #2b2f38; font: 800 1rem/1.2 "DM Sans", sans-serif; }
 .cookie-notice__card p { margin: 0; padding: 6px 20px 14px; color: #626976; font-size: .92rem; line-height: 1.48; }
@@ -450,7 +450,7 @@ body.external-modal-open { overflow: hidden; }
 .cookie-button--primary { color: #111827; background: #ffc31c; box-shadow: 0 8px 18px rgba(255,195,28,.2); }
 .cookie-button--muted { color: #2b2f38; background: #eaf0f4; }
 .cookie-notice__privacy { display: inline-flex; margin: 0 20px 16px; color: #2b2f38; font-size: .82rem; font-weight: 800; text-decoration: underline; }
-.cookie-floating-button { position: fixed; right: 18px; bottom: 18px; z-index: 90; min-height: 38px; border: 1px solid rgba(255,195,28,.7); border-radius: 999px; padding: 0 16px; color: #2b2f38; background: #ffc31c; box-shadow: 0 10px 24px rgba(0,0,0,.2); font: 900 .8rem/1 "DM Sans", sans-serif; cursor: pointer; transition: transform .16s ease, filter .16s ease; }
+.cookie-floating-button { position: fixed !important; right: 18px !important; bottom: 18px !important; left: auto !important; z-index: 90; min-height: 38px; border: 1px solid rgba(255,195,28,.7); border-radius: 8px; padding: 0 16px; color: #2b2f38; background: #ffc31c; box-shadow: 0 10px 24px rgba(0,0,0,.2); font: 900 .8rem/1 "DM Sans", sans-serif; cursor: pointer; transition: transform .16s ease, filter .16s ease; }
 .cookie-floating-button:hover { transform: translateY(-1px); filter: brightness(1.03); }
 .cookie-settings-modal { position: fixed; inset: 0; z-index: 95; display: grid; place-items: center; padding: 22px; }
 .cookie-settings-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.62); animation: cookie-fade-in .18s ease-out both; }
