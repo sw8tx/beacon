@@ -27,5 +27,11 @@ export async function onRequest(context) {
     url.pathname = "/badges/";
     return context.next(new Request(url, context.request));
   }
-  return context.next();
+  const response = await context.next();
+  if (url.pathname === "/" || url.pathname === "/index.html") {
+    const headers = new Headers(response.headers);
+    headers.set("cache-control", "no-store, max-age=0");
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+  }
+  return response;
 }

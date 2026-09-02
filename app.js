@@ -1,3 +1,4 @@
+document.documentElement.classList.add("page-ready");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const revealElements = [...document.querySelectorAll("[data-reveal]")];
 const languageMenu = document.querySelector(".language-menu");
