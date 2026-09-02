@@ -51,6 +51,8 @@ const STATS_SECRET = process.env.STATS_SECRET || "";
 const DASHBOARD_URL = process.env.DASHBOARD_URL || "https://beacon-bot.site";
 const STATS_SYNC_ENDPOINT = process.env.STATS_SYNC_ENDPOINT || process.env.SYNC_ENDPOINT || "https://beacon-bot.site/api/discord-stats";
 const STATS_SYNC_INTERVAL_MS = Number(process.env.STATS_SYNC_INTERVAL_MS || process.env.SYNC_INTERVAL_MS || 5_000);
+const TICKET_CONFIG_SYNC_ENDPOINT = process.env.TICKET_CONFIG_SYNC_ENDPOINT || "https://beacon-bot.site/api/ticket-config";
+const TICKET_CONFIG_SYNC_INTERVAL_MS = Number(process.env.TICKET_CONFIG_SYNC_INTERVAL_MS || 15_000);
 const BOT_STATUS = process.env.BOT_STATUS || "Community health";
 const BOT_STATUS_TYPE = Number(process.env.BOT_STATUS_TYPE || 3); // 0 = Playing, 2 = Listening, 3 = Watching, 5 = Competing
 const PROFILE_SYNC_SECRET = String(process.env.PROFILE_SYNC_SECRET || "").trim();
@@ -118,6 +120,10 @@ const defaultGuildData = () => ({
     ticketArchiveCategoryId: null,
     ticketArchiveOnClose: false,
     ticketRatingEnabled: true,
+    ticketPanelLayout: "buttons",
+    ticketButtonCount: 1,
+    ticketPanelOptions: [],
+    ticketButtonOptions: [],
     honeypotChannelId: null,
     honeypotEnabled: false,
     honeypotAction: "ban",
@@ -669,6 +675,53 @@ function supportTeamLabel(guild, data) {
   return guild.roles.cache.get(data.settings.ticketSupportRoleId)?.name || "staff";
 }
 
+let ticketConfigSyncInterval = null;
+async function syncTicketConfigs() {
+  if (!STATS_AUTH_TOKEN || STATS_AUTH_TOKEN.startsWith("PASTE_")) return;
+  for (const guild of client.guilds.cache.values()) {
+    try {
+      const fetchImpl = await getFetch();
+      const response = await fetchImpl(`${TICKET_CONFIG_SYNC_ENDPOINT}?guildId=${encodeURIComponent(guild.id)}`, {
+        headers: { Authorization: `Bearer ${STATS_AUTH_TOKEN}`, "X-Stats-Secret": STATS_AUTH_TOKEN },
+      });
+      if (!response.ok) continue;
+      const payload = await response.json().catch(() => null);
+      const config = payload?.config;
+      if (!config || typeof config !== "object") continue;
+      const data = guildData(guild.id);
+      const draft = config;
+      if (typeof draft.message === "string") data.settings.ticketPanelMessage = draft.message.slice(0, 2000);
+      if (draft.layout === "buttons" || draft.layout === "dropdown") data.settings.ticketPanelLayout = draft.layout;
+      const count = Math.max(1, Math.min(5, Number(draft.buttonCount) || 1));
+      data.settings.ticketButtonCount = count;
+      if (draft.channels && typeof draft.channels === "object") {
+        for (const [key, setting] of [["category", "ticketCategoryId"], ["log", "ticketLogChannelId"], ["review", "ticketReviewChannelId"], ["archive", "ticketArchiveCategoryId"]]) {
+          if (typeof draft.channels[key] === "string") data.settings[setting] = draft.channels[key] || null;
+        }
+      }
+      const options = Array.isArray(draft.options) ? draft.options : [];
+      data.settings.ticketPanelOptions = Array.from({ length: 5 }, (_, index) => ({
+        label: String(options.find((item) => item.kind === "optionLabel" && String(item.index) === String(index + 1))?.value || `Option ${index + 1}`).slice(0, 100),
+        description: String(options.find((item) => item.kind === "optionDescription" && String(item.index) === String(index + 1))?.value || "Open a private ticket").slice(0, 100),
+      }));
+      data.settings.ticketButtonOptions = Array.from({ length: count }, (_, index) => ({
+        label: String(options.find((item) => item.kind === "buttonLabel" && String(item.index) === String(index + 1))?.value || (index === 0 ? data.settings.ticketButtonLabel : `Open Ticket ${index + 1}`)).slice(0, 80),
+        emojiId: String(options.find((item) => item.kind === "buttonEmoji" && String(item.index) === String(index + 1))?.value || "").match(/\d{17,22}/)?.[0] || null,
+      }));
+      saveData();
+    } catch (_) {
+      // The dashboard may be temporarily unavailable; keep the last good config.
+    }
+  }
+}
+
+function startTicketConfigSync() {
+  syncTicketConfigs();
+  if (ticketConfigSyncInterval) clearInterval(ticketConfigSyncInterval);
+  ticketConfigSyncInterval = setInterval(syncTicketConfigs, TICKET_CONFIG_SYNC_INTERVAL_MS);
+  ticketConfigSyncInterval.unref?.();
+}
+
 function ticketPriorityLabel(priority) {
   return {
     low: "Low",
@@ -931,14 +984,27 @@ async function ticketPanel(interaction, data, ui) {
       { name: "Current setup", value: `Support: ${data.settings.ticketSupportRoleId ? `<@&${data.settings.ticketSupportRoleId}>` : "staff only"}\nLimit: ${data.settings.ticketMaxOpenPerUser} open ticket(s) per member`, inline: false }
     );
 
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId("ticket_open")
-      .setLabel(data.settings.ticketButtonLabel.slice(0, 80))
-      .setStyle(ButtonStyle.Secondary)
-  );
+  const configuredButtons = Array.isArray(data.settings.ticketButtonOptions) && data.settings.ticketButtonOptions.length
+    ? data.settings.ticketButtonOptions.slice(0, Math.max(1, Math.min(5, Number(data.settings.ticketButtonCount) || 1)))
+    : [{ label: data.settings.ticketButtonLabel, emojiId: null }];
+  const components = data.settings.ticketPanelLayout === "dropdown"
+    ? [new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
+      .setCustomId("ticket_open_dropdown")
+      .setPlaceholder("Choose a ticket type")
+      .addOptions((data.settings.ticketPanelOptions || []).slice(0, 5).map((option, index) => ({
+        label: shortText(option.label, `Option ${index + 1}`, 100),
+        value: `ticket_${index + 1}`,
+        description: shortText(option.description, "Open a private ticket", 100),
+      })).length ? (data.settings.ticketPanelOptions || []).slice(0, 5).map((option, index) => ({
+        label: shortText(option.label, `Option ${index + 1}`, 100), value: `ticket_${index + 1}`, description: shortText(option.description, "Open a private ticket", 100),
+      })) : [{ label: "Open Ticket", value: "ticket_1", description: "Open a private ticket" }]))]
+    : [new ActionRowBuilder().addComponents(configuredButtons.map((button, index) => {
+      const builder = new ButtonBuilder().setCustomId(`ticket_open:${index + 1}`).setLabel(shortText(button.label, "Open Ticket", 80)).setStyle(index === 0 ? ButtonStyle.Primary : ButtonStyle.Secondary);
+      if (button.emojiId) builder.setEmoji({ id: button.emojiId });
+      return builder;
+    }))];
 
-  const sent = await channel.send(ui.withBrandFiles({ embeds: [embed], components: [row] }));
+  const sent = await channel.send(ui.withBrandFiles({ embeds: [embed], components }));
   await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket panel posted", `Panel is live in ${channel}.\n[Open message](${sent.url})`)], ephemeral: true }));
 }
 
@@ -3283,6 +3349,7 @@ client.once("clientReady", async () => {
   });
 
   startStatsSync();
+  startTicketConfigSync();
 
   try {
     await registerCommands();
@@ -4286,7 +4353,7 @@ async function handleButton(interaction) {
     return;
   }
 
-  if (interaction.customId === "ticket_open") {
+  if (interaction.customId === "ticket_open" || interaction.customId.startsWith("ticket_open:")) {
     await ticketHandlers.showTicketModal(interaction, data, beaconUi());
     return;
   }
@@ -4369,6 +4436,11 @@ async function handleSelect(interaction) {
   const data = guildData(interaction.guild.id);
 
   if (await handleHoneypotSetupSelect(interaction, data)) return;
+
+  if (interaction.customId === "ticket_open_dropdown") {
+    await ticketHandlers.showTicketModal(interaction, data, beaconUi());
+    return;
+  }
 
   if (interaction.customId === "ticket_setup_panel_select") {
     await interaction.update({

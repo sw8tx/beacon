@@ -49,12 +49,16 @@ async function getDashboardServers(env, discordAccessToken, request) {
             const channelsResponse = await fetch(`https://discord.com/api/v10/guilds/${guild.id}/channels`, {
               headers: { authorization: `Bot ${botToken}` },
             });
-            if (channelsResponse.ok) {
-              const channelData = await channelsResponse.json();
-              channels = Array.isArray(channelData) ? channelData
-                .filter((channel) => [0, 4].includes(channel?.type))
-                .map((channel) => ({ id: String(channel.id), name: String(channel.name || "channel"), type: Number(channel.type) })) : [];
+            let channelData = channelsResponse.ok ? await channelsResponse.json() : null;
+            if (!Array.isArray(channelData) && discordAccessToken) {
+              const userChannelsResponse = await fetch(`https://discord.com/api/v10/guilds/${guild.id}/channels`, {
+                headers: { authorization: `Bearer ${discordAccessToken}` },
+              });
+              channelData = userChannelsResponse.ok ? await userChannelsResponse.json() : null;
             }
+            channels = Array.isArray(channelData) ? channelData
+              .filter((channel) => [0, 4].includes(channel?.type))
+              .map((channel) => ({ id: String(channel.id), name: String(channel.name || "channel"), type: Number(channel.type) })) : [];
           }
         } catch (_) {
           // Keep the synced ID result if Discord is temporarily unavailable.
@@ -235,6 +239,10 @@ export async function onRequestGet({ request, env }) {
                 <span>Panel message</span>
                 <textarea data-ticket-message maxlength="2000">Click the button below to open a private ticket with the Beacon support team.</textarea>
               </label>
+              <div class="ticket-emoji-tools">
+                <label class="ticket-field"><span>Custom emoji by ID</span><input data-ticket-emoji-id inputmode="numeric" placeholder="Emoji ID, e.g. 123456789012345678" /></label>
+                <button class="ticket-emoji-add" type="button" data-ticket-emoji-add>Insert emoji</button>
+              </div>
               <div class="ticket-settings-grid">
                 <label class="ticket-field"><span>Panel layout</span><select data-ticket-layout><option value="buttons">Buttons</option><option value="dropdown">Dropdown menu</option></select></label>
                 <label class="ticket-field"><span>Ticket buttons</span><select data-ticket-button-count><option value="1">1 button</option><option value="2">2 buttons</option><option value="3">3 buttons</option><option value="4">4 buttons</option><option value="5">5 buttons</option></select></label>
@@ -242,6 +250,36 @@ export async function onRequestGet({ request, env }) {
                 <label class="ticket-field"><span>Log channel</span><select data-ticket-channel="log"><option value="">Not set</option>${ticketChannelOptions}</select></label>
                 <label class="ticket-field"><span>Review channel</span><select data-ticket-channel="review"><option value="">Not set</option>${ticketChannelOptions}</select></label>
                 <label class="ticket-field"><span>Archive category</span><select data-ticket-channel="archive"><option value="">Not set</option>${ticketChannelOptions}</select></label>
+              </div>
+              <div class="ticket-layout-config" data-ticket-config="dropdown" hidden>
+                <div class="ticket-config-label">Dropdown options</div>
+                <div class="ticket-option-grid">
+                  <input data-ticket-option-label="1" placeholder="Option 1 label" />
+                  <input data-ticket-option-description="1" placeholder="Option 1 description" />
+                  <input data-ticket-option-label="2" placeholder="Option 2 label" />
+                  <input data-ticket-option-description="2" placeholder="Option 2 description" />
+                  <input data-ticket-option-label="3" placeholder="Option 3 label" />
+                  <input data-ticket-option-description="3" placeholder="Option 3 description" />
+                  <input data-ticket-option-label="4" placeholder="Option 4 label" />
+                  <input data-ticket-option-description="4" placeholder="Option 4 description" />
+                  <input data-ticket-option-label="5" placeholder="Option 5 label" />
+                  <input data-ticket-option-description="5" placeholder="Option 5 description" />
+                </div>
+              </div>
+              <div class="ticket-layout-config" data-ticket-config="buttons" hidden>
+                <div class="ticket-config-label">Button labels and emoji IDs</div>
+                <div class="ticket-option-grid ticket-button-grid">
+                  <input data-ticket-button-label="1" placeholder="Button 1 label" />
+                  <input data-ticket-button-emoji="1" placeholder="Button 1 emoji ID" />
+                  <input data-ticket-button-label="2" placeholder="Button 2 label" />
+                  <input data-ticket-button-emoji="2" placeholder="Button 2 emoji ID" />
+                  <input data-ticket-button-label="3" placeholder="Button 3 label" />
+                  <input data-ticket-button-emoji="3" placeholder="Button 3 emoji ID" />
+                  <input data-ticket-button-label="4" placeholder="Button 4 label" />
+                  <input data-ticket-button-emoji="4" placeholder="Button 4 emoji ID" />
+                  <input data-ticket-button-label="5" placeholder="Button 5 label" />
+                  <input data-ticket-button-emoji="5" placeholder="Button 5 emoji ID" />
+                </div>
               </div>
               <div class="ticket-preview-label">Message Preview</div>
               <article class="ticket-discord-preview">
@@ -358,6 +396,14 @@ export async function onRequestGet({ request, env }) {
       .ticket-field input{min-height:44px;resize:none}
       .ticket-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px;margin-top:4px}
       .ticket-field select{width:100%;min-height:44px;border:1px solid rgba(255,255,255,.15);border-radius:7px;background:#2b3a4d;color:#fff;padding:0 12px;font:700 .84rem "DM Sans",sans-serif}
+      .ticket-emoji-tools{display:flex;align-items:end;gap:10px}
+      .ticket-emoji-tools .ticket-field{flex:1}
+      .ticket-emoji-add{min-height:44px;border:0;border-radius:7px;background:#ffc31c;color:#0b0900;padding:0 14px;font:900 .82rem "DM Sans",sans-serif;cursor:pointer}
+      .ticket-layout-config{margin-top:16px;border:1px solid rgba(255,195,28,.18);border-radius:7px;background:#101923;padding:14px}
+      .ticket-layout-config[hidden]{display:none}
+      .ticket-config-label{color:#ffc31c;font-size:.72rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
+      .ticket-option-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+      .ticket-option-grid input{width:100%;min-height:40px;border:1px solid rgba(255,255,255,.15);border-radius:7px;background:#2b3a4d;color:#fff;padding:0 12px;font:700 .82rem "DM Sans",sans-serif}
       .ticket-preview-label{margin:24px 0 10px;color:#9ea6b5;font-size:.72rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
       .ticket-discord-preview{border-radius:7px;background:#36393f;padding:18px}
       .ticket-preview-author{display:flex;align-items:center;gap:8px;color:#fff;font-size:.82rem}
@@ -794,11 +840,23 @@ export async function onRequestGet({ request, env }) {
       const ticketNameInput = document.querySelector("[data-ticket-name]");
       const ticketEditorTitle = document.querySelector("[data-ticket-editor-title]");
       const ticketMessageInput = document.querySelector("[data-ticket-message]");
+      const ticketEmojiIdInput = document.querySelector("[data-ticket-emoji-id]");
+      const ticketEmojiAdd = document.querySelector("[data-ticket-emoji-add]");
       const ticketPreviewMessage = document.querySelector("[data-ticket-preview-message]");
       const ticketPanelList = document.querySelector("[data-ticket-panel-list]");
       const ticketLayoutSelect = document.querySelector("[data-ticket-layout]");
       const ticketButtonCountSelect = document.querySelector("[data-ticket-button-count]");
       const ticketChannelSelects = [...document.querySelectorAll("[data-ticket-channel]")];
+      const ticketLayoutConfigs = [...document.querySelectorAll("[data-ticket-config]")];
+      const ticketOptionInputs = [...document.querySelectorAll("[data-ticket-option-label], [data-ticket-option-description], [data-ticket-button-label], [data-ticket-button-emoji]")];
+      function updateTicketLayoutConfig() {
+        const layout = ticketLayoutSelect?.value || "buttons";
+        ticketLayoutConfigs.forEach((panel) => { panel.hidden = panel.dataset.ticketConfig !== layout; });
+        const count = Number(ticketButtonCountSelect?.value || 1);
+        document.querySelectorAll("[data-ticket-button-label], [data-ticket-button-emoji]").forEach((input) => {
+          input.hidden = Number(input.dataset.ticketButtonLabel || input.dataset.ticketButtonEmoji) > count;
+        });
+      }
       function ticketPanelDraft() {
         return {
           name: ticketEditorTitle?.textContent || "Ticket Panel",
@@ -806,6 +864,11 @@ export async function onRequestGet({ request, env }) {
           layout: ticketLayoutSelect?.value || "buttons",
           buttonCount: ticketButtonCountSelect?.value || "1",
           channels: Object.fromEntries(ticketChannelSelects.map((select) => [select.dataset.ticketChannel, select.value])),
+          options: ticketOptionInputs.map((input) => ({
+            kind: input.dataset.ticketOptionLabel ? "optionLabel" : input.dataset.ticketOptionDescription ? "optionDescription" : input.dataset.ticketButtonLabel ? "buttonLabel" : "buttonEmoji",
+            index: input.dataset.ticketOptionLabel || input.dataset.ticketOptionDescription || input.dataset.ticketButtonLabel || input.dataset.ticketButtonEmoji,
+            value: input.value,
+          })),
         };
       }
       function closeTicketPanelModal() { if (ticketModal) ticketModal.hidden = true; }
@@ -832,9 +895,37 @@ export async function onRequestGet({ request, env }) {
         showDashboardToast("Ticket panel created");
       });
       ticketMessageInput?.addEventListener("input", updateTicketPreview);
-      document.querySelector("[data-ticket-save]")?.addEventListener("click", () => {
-        try { localStorage.setItem(ticketPanelStorageKey, JSON.stringify(ticketPanelDraft())); } catch (_) {}
-        showDashboardToast("Ticket panel draft saved");
+      ticketLayoutSelect?.addEventListener("change", updateTicketLayoutConfig);
+      ticketButtonCountSelect?.addEventListener("change", updateTicketLayoutConfig);
+      ticketEmojiAdd?.addEventListener("click", () => {
+        const id = (ticketEmojiIdInput?.value || "").match(/\d{17,22}/)?.[0];
+        if (!id || !ticketMessageInput) {
+          showDashboardToast("Enter a valid Discord emoji ID", "error");
+          return;
+        }
+        const token = "<:custom:" + id + ">";
+        const start = ticketMessageInput.selectionStart ?? ticketMessageInput.value.length;
+        ticketMessageInput.value = ticketMessageInput.value.slice(0, start) + token + ticketMessageInput.value.slice(ticketMessageInput.selectionEnd ?? start);
+        ticketMessageInput.focus();
+        ticketMessageInput.selectionStart = ticketMessageInput.selectionEnd = start + token.length;
+        updateTicketPreview();
+        showDashboardToast("Custom emoji inserted");
+      });
+      document.querySelector("[data-ticket-save]")?.addEventListener("click", async () => {
+        const draft = ticketPanelDraft();
+        try { localStorage.setItem(ticketPanelStorageKey, JSON.stringify(draft)); } catch (_) {}
+        if (!dashboardServerId) { showDashboardToast("Select a Beacon server first", "error"); return; }
+        try {
+          const response = await fetch("/api/ticket-config?server=" + encodeURIComponent(dashboardServerId), {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ config: draft }),
+          });
+          if (!response.ok) throw new Error("sync failed");
+          showDashboardToast("Ticket panel synced with Beacon");
+        } catch (_) {
+          showDashboardToast("Draft saved locally; server sync failed", "error");
+        }
       });
       try {
         const savedTicketPanel = JSON.parse(localStorage.getItem(ticketPanelStorageKey) || "null");
@@ -843,8 +934,15 @@ export async function onRequestGet({ request, env }) {
         if (savedTicketPanel?.layout && ticketLayoutSelect) ticketLayoutSelect.value = savedTicketPanel.layout;
         if (savedTicketPanel?.buttonCount && ticketButtonCountSelect) ticketButtonCountSelect.value = savedTicketPanel.buttonCount;
         if (savedTicketPanel?.channels) ticketChannelSelects.forEach((select) => { select.value = savedTicketPanel.channels[select.dataset.ticketChannel] || ""; });
+        if (Array.isArray(savedTicketPanel?.options)) savedTicketPanel.options.forEach((saved) => {
+          const selector = saved.kind === "optionLabel" ? "[data-ticket-option-label=\"" + saved.index + "\"]" : saved.kind === "optionDescription" ? "[data-ticket-option-description=\"" + saved.index + "\"]" : saved.kind === "buttonLabel" ? "[data-ticket-button-label=\"" + saved.index + "\"]" : "[data-ticket-button-emoji=\"" + saved.index + "\"]";
+          const input = document.querySelector(selector);
+          if (input) input.value = saved.value || "";
+        });
+        updateTicketLayoutConfig();
         updateTicketPreview();
       } catch (_) {}
+      updateTicketLayoutConfig();
       document.querySelectorAll(".sync-button").forEach((button) => {
         button.addEventListener("click", () => {
           const pill = document.querySelector("[data-sync-pill]");
