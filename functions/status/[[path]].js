@@ -157,7 +157,7 @@ function baseStatusHtml() {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/status/status.css?v=5" />
+    <link rel="stylesheet" href="/status/status.css?v=6" />
   </head>
   <body>
     <header class="status-header">
@@ -169,71 +169,27 @@ function baseStatusHtml() {
     </header>
 
     <main>
-      <section class="status-summary" aria-live="polite">
-        <div class="summary-icon" data-summary-icon>&#10003;</div>
-        <div>
-          <p class="eyebrow">Current status</p>
-          <h1 data-summary-title>All systems optimized</h1>
-          <p data-summary-copy>Beacon Bot and its public services are responding normally.</p>
+      <section class="status-card" aria-live="polite">
+        <div class="card-heading">
+          <div><p class="eyebrow">Beacon Bot</p><h1>System Status</h1></div>
+          <strong class="status-pill" data-summary-title><span class="status-dot"></span>Operational</strong>
         </div>
-      </section>
-
-      <section class="live-metrics" aria-label="Live Beacon metrics">
-        <div><span>Bot session uptime</span><strong data-metric="uptime">--</strong></div>
-        <div><span>Gateway ping</span><strong data-metric="ping">--</strong></div>
-        <div><span>Connected servers</span><strong data-metric="guilds">--</strong></div>
-        <div><span>Community members</span><strong data-metric="users">--</strong></div>
-        <div><span>30-day uptime</span><strong data-metric="uptime-percent">--</strong></div>
-      </section>
-
-      <section class="services" aria-labelledby="services-title">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">30-day service history</p>
-            <h2 id="services-title">Beacon services</h2>
-          </div>
-          <p>Monitoring starts with the first recorded report. Gray days have no data yet.</p>
+        <p class="card-copy" data-summary-copy>Live service information from Beacon Bot.</p>
+        <div class="metric-list" aria-label="Live Beacon statistics">
+          <div><span>Discord Gateway</span><strong data-metric="gateway-status">Connected</strong></div>
+          <div><span>Connected Servers</span><strong><b data-metric="guilds">--</b> servers</strong></div>
+          <div><span>Community Members</span><strong data-metric="users">--</strong></div>
+          <div><span>Bot Session Uptime</span><strong data-metric="uptime">--</strong></div>
+          <div><span>Gateway Latency</span><strong data-metric="ping">--</strong></div>
+          <div><span>30-Day Uptime</span><strong data-metric="uptime-percent">--</strong></div>
+          <div><span>Hosting</span><strong>Infrahost (NxtByte)</strong></div>
         </div>
-
-        <article class="service" data-service="bot">
-          <div class="service-heading">
-            <div><span class="service-check">&#10003;</span><h3>Beacon Bot</h3></div>
-            <strong data-service-uptime>Checking...</strong>
-          </div>
-          <p class="service-detail" data-service-detail>Discord gateway and command service</p>
-          <div class="history" data-history aria-label="Beacon Bot 30-day uptime history"></div>
-          <div class="history-labels"><span>30 days ago</span><span>Today</span></div>
-        </article>
-
-        <article class="service" data-service="gateway">
-          <div class="service-heading">
-            <div><span class="service-check">&#10003;</span><h3>Discord Gateway</h3></div>
-            <strong data-service-uptime>Checking...</strong>
-          </div>
-          <p class="service-detail" data-service-detail>Realtime connection to Discord</p>
-          <div class="history" data-history aria-label="Discord Gateway 30-day uptime history"></div>
-          <div class="history-labels"><span>30 days ago</span><span>Today</span></div>
-        </article>
-
-        <article class="service" data-service="website">
-          <div class="service-heading">
-            <div><span class="service-check">&#10003;</span><h3>Landing Page</h3></div>
-            <strong data-service-uptime>Checking...</strong>
-          </div>
-          <p class="service-detail" data-service-detail>Public Beacon website</p>
-          <div class="history" data-history aria-label="Landing Page 30-day uptime history"></div>
-          <div class="history-labels"><span>30 days ago</span><span>Today</span></div>
-        </article>
-      </section>
-
-      <section class="incident-history" data-incident>
-        <p class="eyebrow">Incident history</p>
-        <div><span class="status-dot"></span><strong data-incident-title>No active incidents</strong><span data-incident-copy>Beacon is operating normally.</span></div>
+        <div class="card-footer"><span>Automatically updated</span><span data-last-updated>Last updated: waiting</span></div>
       </section>
     </main>
 
-    <footer><span>Powered by Beacon Bot</span><span data-last-updated>Last updated: waiting</span></footer>
-    <script src="/status/status-runtime-v2.js?v=5" defer></script>
+    <footer><span>Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
+    <script src="/status/status-runtime-v2.js?v=6" defer></script>
   </body>
 </html>`;
 }
