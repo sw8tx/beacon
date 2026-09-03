@@ -186,7 +186,7 @@ function baseStatusHtml() {
     </main>
 
     <footer><span class="footer-brand"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" />Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
-    <script src="/status/status-runtime-v2.js?v=8" defer></script>
+    <script src="/status/status-runtime-v2.js?v=9" defer></script>
   </body>
 </html>`;
 }

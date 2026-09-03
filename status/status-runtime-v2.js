@@ -40,15 +40,27 @@ function renderHistory(service, days, name, online, percent) {
   service.querySelector("[data-service-percent]").textContent = percent == null ? "Monitoring started" : `${percent.toFixed(2)}% uptime`;
   service.classList.toggle("is-down", !online);
 }
+async function checkWebsite() {
+  const started = performance.now();
+  try {
+    await fetch(`https://beacon-bot.site/?status-check=${Date.now()}`, { cache: "no-store", mode: "no-cors" });
+    return { online: true, latency: Math.round(performance.now() - started) };
+  } catch {
+    return { online: false, latency: null };
+  }
+}
 function updateTime(updatedAt) {
   const timestamp = Date.parse(updatedAt || "");
   lastUpdated.textContent = Number.isFinite(timestamp) ? `Last updated: ${Math.max(0, Math.floor((Date.now() - timestamp) / 1000))} seconds ago` : "Last updated: unavailable";
 }
 async function refreshStatus() {
   try {
-    const response = await fetch(`${API_ENDPOINT}?status-check=${Date.now()}`, { cache: "no-store" });
+    const [response, website] = await Promise.all([
+      fetch(`${API_ENDPOINT}?status-check=${Date.now()}`, { cache: "no-store" }),
+      checkWebsite(),
+    ]);
     if (!response.ok) throw new Error();
-    const stats = await response.json(); const online = Boolean(stats.online); const days = buildDays(stats);
+    const stats = await response.json(); const online = Boolean(stats.online && website.online); const days = buildDays(stats);
     const uptime = Number(stats.uptimePercent); const measured = Number.isFinite(uptime) ? uptime : null;
     summaryCopy.textContent = online ? "Beacon Bot and its Discord services are responding normally." : "Beacon Bot is not currently reporting a healthy connection.";
     document.querySelector('[data-metric="gateway-status"]').textContent = online ? "Connected" : "Unavailable";
@@ -59,7 +71,10 @@ async function refreshStatus() {
     document.querySelector('[data-metric="uptime-percent"]').textContent = measured == null ? "--" : `${measured.toFixed(2)}%`;
     renderHistory(services[0], days, "Primary Bot", online, measured);
     renderHistory(services[1], days, "Discord Gateway", online, measured);
-    renderHistory(services[2], days, "Beacon Website", true, 100);
+    const websiteDays = days.map((day) => day.today
+      ? { ...day, state: website.online ? "up" : "down", percent: website.online ? 100 : 0, reports: website.online ? 1 : 0, expected: 1 }
+      : day);
+    renderHistory(services[2], websiteDays, "Beacon Website", website.online, website.online ? 100 : 0);
     document.body.dataset.lastReportAt = stats.updatedAt || ""; updateTime(stats.updatedAt);
   } catch {
     summaryCopy.textContent = "The live status service could not be reached.";
