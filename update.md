@@ -1,33 +1,57 @@
-# Beacon Update
+# Beacon Bot — Release Notes
 
-A quick update on what’s new since the honeypot release:
+**Release Notes: 3 September 2026**
 
-## Moderation
+## 🆕 We are introducing the Honeypot to Beacon Bot!
 
-`/ban` and `/ban-id` — ban members or users by ID with a confirmation step.
+The Honeypot protects your server from spam and raid bots. Set up a channel that looks interesting to bots, and Beacon can automatically delete the message and ban, kick or timeout the user.
 
-`/unban` and `/unban-id` — unban users by account or user ID.
+### Honeypot commands
 
-`/purge` — clean up recent messages. There are also filters for users, bots, humans, links, invites, images, embeds, mentions and matching text.
+`/honeypot-setup` — Set up the protected channel with an easy configuration menu.
 
-## Community
+`/honeypot-configure` — Configure the channel, protection status, punishment and message cleanup directly with command options.
 
-`/poll-create` — create a live poll with vote counts and a timer.
+`/honeypot-disable` — Disable the Honeypot without deleting the channel or its settings.
 
-`/poll-edit` and `/poll-delete` — update or remove an existing poll.
+## 🛡️ Moderation
 
-`/emoji-steal` and `/emoji-steal-bulk` — copy custom emojis into the server with a confirmation step.
+`/ban` — Ban a member after a confirmation step.
 
-## Tickets
+`/ban-id` — Ban a user by ID, even if they are not currently in the server.
 
-Ticket panels can now use multiple buttons or a dropdown. Tickets also support priority, staff transfer, archiving, ratings, transcripts, limits and separate log/review channels.
+`/unban` — Unban a user from the server.
 
-New ticket commands include:
+`/unban-id` — Unban a user by their Discord ID.
 
-`/ticket priority` · `/ticket transfer` · `/ticket rating` · `/ticket archive`
+`/purge` — Delete recent messages with filters for users, bots, links, invites, files, embeds, mentions and text.
 
-## Status page
+## 📊 Community tools
 
-The status page now tracks the Beacon website separately from the bot, shows service history with hover details, and includes a working Back link to the main website.
+`/poll-create` — Create a live poll with vote counts and an end time.
 
-More small fixes and dashboard improvements are included across the bot and web panel.
+`/poll-edit` — Change an existing poll.
+
+`/poll-delete` — Remove an existing poll.
+
+`/emoji-steal` — Copy one custom emoji into your server.
+
+`/emoji-steal-bulk` — Copy multiple custom emojis at once.
+
+## 🎫 Ticket updates
+
+Ticket panels now support multiple buttons or a dropdown. Tickets can be claimed, transferred, assigned a priority, archived, rated and saved with transcripts.
+
+`/ticket priority` — Set the priority of the current ticket.
+
+`/ticket transfer` — Transfer the ticket to another staff member.
+
+`/ticket rating` — Send the ticket owner a rating request.
+
+`/ticket archive` — Archive a ticket instead of deleting it.
+
+## 🌐 Status page
+
+The status page now checks the Beacon website separately from the bot and shows service history with hover details. It also has a Back button to return to the main website.
+
+Thanks for using Beacon Bot 💛
