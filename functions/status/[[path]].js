@@ -157,22 +157,13 @@ function baseStatusHtml() {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/status/status.css?v=7" />
+    <link rel="stylesheet" href="/status/status.css?v=8" />
   </head>
   <body>
-    <header class="status-header">
-      <a class="status-brand" href="https://beacon-bot.site/">
-        <img src="/assets/beacon-logo.png?v=92" width="34" height="34" alt="" />
-        <strong>Beacon</strong><span>Status</span>
-      </a>
-      <a class="back-link" href="https://beacon-bot.site/">Back to Beacon</a>
-    </header>
-
     <main>
       <section class="status-card" aria-live="polite">
         <div class="card-heading">
-          <div class="brand-title"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" /><div><p class="eyebrow">Beacon Bot</p><h1>System Status</h1></div></div>
-          <strong class="status-pill" data-summary-title><span class="status-dot"></span>Operational</strong>
+          <div><p class="eyebrow">Beacon Bot</p><h1>System Status</h1></div>
         </div>
         <p class="card-copy" data-summary-copy>Live service information from Beacon Bot.</p>
         <div class="metric-list" aria-label="Live Beacon statistics">
@@ -195,7 +186,7 @@ function baseStatusHtml() {
     </main>
 
     <footer><span class="footer-brand"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" />Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
-    <script src="/status/status-runtime-v2.js?v=7" defer></script>
+    <script src="/status/status-runtime-v2.js?v=8" defer></script>
   </body>
 </html>`;
 }

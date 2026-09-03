@@ -1,5 +1,4 @@
 const API_ENDPOINT = "https://beacon-bot.site/api/discord-stats";
-const summaryTitle = document.querySelector("[data-summary-title]");
 const summaryCopy = document.querySelector("[data-summary-copy]");
 const lastUpdated = document.querySelector("[data-last-updated]");
 const services = [...document.querySelectorAll("[data-service]")];
@@ -51,8 +50,6 @@ async function refreshStatus() {
     if (!response.ok) throw new Error();
     const stats = await response.json(); const online = Boolean(stats.online); const days = buildDays(stats);
     const uptime = Number(stats.uptimePercent); const measured = Number.isFinite(uptime) ? uptime : null;
-    summaryTitle.innerHTML = `<span class="status-dot"></span>${online ? "Operational" : "Unavailable"}`;
-    summaryTitle.querySelector(".status-dot").style.background = online ? "var(--green)" : "var(--red)";
     summaryCopy.textContent = online ? "Beacon Bot and its Discord services are responding normally." : "Beacon Bot is not currently reporting a healthy connection.";
     document.querySelector('[data-metric="gateway-status"]').textContent = online ? "Connected" : "Unavailable";
     document.querySelector('[data-metric="guilds"]').textContent = number(stats.guilds);
@@ -65,8 +62,6 @@ async function refreshStatus() {
     renderHistory(services[2], days, "Beacon Website", true, 100);
     document.body.dataset.lastReportAt = stats.updatedAt || ""; updateTime(stats.updatedAt);
   } catch {
-    summaryTitle.innerHTML = '<span class="status-dot"></span>Unavailable';
-    summaryTitle.querySelector(".status-dot").style.background = "var(--red)";
     summaryCopy.textContent = "The live status service could not be reached.";
     document.querySelector('[data-metric="gateway-status"]').textContent = "Unavailable";
     const days = buildDays({ history: [] }); services.forEach((service, index) => renderHistory(service, days, service.querySelector(".service-heading strong").textContent, index === 2, index === 2 ? 100 : null));
