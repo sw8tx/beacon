@@ -51,6 +51,9 @@ const STATS_SECRET = process.env.STATS_SECRET || "";
 const DASHBOARD_URL = process.env.DASHBOARD_URL || "https://beacon-bot.site";
 const STATS_SYNC_ENDPOINT = process.env.STATS_SYNC_ENDPOINT || process.env.SYNC_ENDPOINT || "https://beacon-bot.site/api/discord-stats";
 const STATS_SYNC_INTERVAL_MS = Number(process.env.STATS_SYNC_INTERVAL_MS || process.env.SYNC_INTERVAL_MS || 5_000);
+const STATUS_CHANNEL_ID = "1543574239389417604";
+const STARTUP_STATUS_CHANNEL_ID = "1545090628893806622";
+const STATUS_PAGE_URL = "https://status.beacon-bot.site/";
 const TICKET_CONFIG_SYNC_ENDPOINT = process.env.TICKET_CONFIG_SYNC_ENDPOINT || "https://beacon-bot.site/api/ticket-config";
 const TICKET_CONFIG_SYNC_INTERVAL_MS = Number(process.env.TICKET_CONFIG_SYNC_INTERVAL_MS || 15_000);
 const BOT_STATUS = process.env.BOT_STATUS || "Community health";
@@ -720,6 +723,55 @@ function startTicketConfigSync() {
   if (ticketConfigSyncInterval) clearInterval(ticketConfigSyncInterval);
   ticketConfigSyncInterval = setInterval(syncTicketConfigs, TICKET_CONFIG_SYNC_INTERVAL_MS);
   ticketConfigSyncInterval.unref?.();
+}
+
+async function fetchPublicStatusStats() {
+  try {
+    const fetchImpl = await getFetch();
+    const response = await fetchImpl(`${STATS_SYNC_ENDPOINT}?status-embed=${Date.now()}`, { headers: { accept: "application/json" } });
+    return response.ok ? await response.json().catch(() => null) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function startupStatusEmbed(guild, stats) {
+  const guildCount = Number(stats?.guilds) || client.guilds.cache.size;
+  const memberCount = Number(stats?.users) || client.guilds.cache.reduce((sum, item) => sum + (item.memberCount || 0), 0);
+  const ping = Number(stats?.ping) || Math.max(0, Math.round(client.ws.ping));
+  const uptime = formatUptime(Number(stats?.uptime) || Math.floor(process.uptime()));
+  const serverName = guild?.name || "Beacon Community";
+  const serverMembers = guild?.memberCount || 0;
+  const serverChannels = guild?.channels?.cache?.size || 0;
+  const serverRoles = guild?.roles?.cache?.size || 0;
+
+  return new EmbedBuilder()
+    .setColor(0x35d982)
+    .setAuthor({ name: "Beacon Bot", iconURL: BRAND_THUMBNAIL_URL })
+    .setTitle("Beacon Bot Systemstatus")
+    .setDescription(`Live-Status und Statistiken von Beacon Bot.\n\n**Status**\n🟢 Online und betriebsbereit`)
+    .addFields(
+      { name: "Dein Server", value: `Mitglieder: **${serverMembers}**\nServer: **${serverName}**`, inline: false },
+      { name: "Community", value: `Server: **${guildCount}**\nMitglieder: **${memberCount}**\nKanäle: **${serverChannels}**\nRollen: **${serverRoles}**`, inline: false },
+      { name: "System", value: `Gesamt: **1**\nAktiv: 🟢 **1**\nDeaktiviert: 🔴 **0**\nWarnung: 🟠 **0**`, inline: false },
+      { name: "Live-Status", value: `Latenz: **${ping} ms**\nUptime: **${uptime}**\nHosting: **Infrahost (NxtByte)**`, inline: false },
+    )
+    .addFields({ name: "Links", value: `[Statusseite öffnen](${STATUS_PAGE_URL}) · [Dashboard öffnen](${DASHBOARD_URL})`, inline: false })
+    .setFooter({ text: "Powered by Beacon Bot" })
+    .setTimestamp();
+}
+
+async function postStartupStatus() {
+  const stats = await fetchPublicStatusStats();
+  const targetIds = [STATUS_CHANNEL_ID, STARTUP_STATUS_CHANNEL_ID];
+  for (const channelId of targetIds) {
+    const channel = await client.channels.fetch(channelId).catch(() => null);
+    if (!channel?.isTextBased()) continue;
+    const guild = channel.guild || null;
+    await channel.send(withBrandFiles({ embeds: [startupStatusEmbed(guild, stats)] })).catch((error) => {
+      console.error(`[status-embed] Could not post to ${channelId}: ${error.message}`);
+    });
+  }
 }
 
 function ticketPriorityLabel(priority) {
@@ -3355,6 +3407,7 @@ client.once("clientReady", async () => {
     await registerCommands();
     await syncDiscordStats();
     scheduleExistingPolls();
+    await postStartupStatus();
   } catch (err) {
     console.error(`[commands] Failed to register slash commands: ${err.message}`);
   }

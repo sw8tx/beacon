@@ -232,7 +232,7 @@ function baseStatusHtml() {
       </section>
     </main>
 
-    <footer><span>Beacon status</span><span data-last-updated>Last updated: waiting</span></footer>
+    <footer><span>Powered by Beacon Bot</span><span data-last-updated>Last updated: waiting</span></footer>
     <script src="/status/status-runtime-v2.js?v=5" defer></script>
   </body>
 </html>`;
