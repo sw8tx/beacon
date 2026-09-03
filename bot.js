@@ -735,7 +735,7 @@ async function fetchPublicStatusStats() {
   }
 }
 
-function startupStatusEmbed(guild, stats) {
+function statusV2Container(guild, stats, includeRefresh = true) {
   const guildCount = Number(stats?.guilds) || client.guilds.cache.size;
   const memberCount = Number(stats?.users) || client.guilds.cache.reduce((sum, item) => sum + (item.memberCount || 0), 0);
   const ping = Number(stats?.ping) || Math.max(0, Math.round(client.ws.ping));
@@ -745,20 +745,44 @@ function startupStatusEmbed(guild, stats) {
   const serverChannels = guild?.channels?.cache?.size || 0;
   const serverRoles = guild?.roles?.cache?.size || 0;
 
-  return new EmbedBuilder()
-    .setColor(0x35d982)
-    .setAuthor({ name: "Beacon Bot", iconURL: BRAND_THUMBNAIL_URL })
-    .setTitle("Beacon Bot Systemstatus")
-    .setDescription(`Live-Status und Statistiken von Beacon Bot.\n\n**Status**\n🟢 Online und betriebsbereit`)
-    .addFields(
-      { name: "Dein Server", value: `Mitglieder: **${serverMembers}**\nServer: **${serverName}**`, inline: false },
-      { name: "Community", value: `Server: **${guildCount}**\nMitglieder: **${memberCount}**\nKanäle: **${serverChannels}**\nRollen: **${serverRoles}**`, inline: false },
-      { name: "System", value: `Gesamt: **1**\nAktiv: 🟢 **1**\nDeaktiviert: 🔴 **0**\nWarnung: 🟠 **0**`, inline: false },
-      { name: "Live-Status", value: `Latenz: **${ping} ms**\nUptime: **${uptime}**\nHosting: **Infrahost (NxtByte)**`, inline: false },
-    )
-    .addFields({ name: "Links", value: `[Statusseite öffnen](${STATUS_PAGE_URL}) · [Dashboard öffnen](${DASHBOARD_URL})`, inline: false })
-    .setFooter({ text: "Powered by Beacon Bot" })
-    .setTimestamp();
+  const header = new SectionBuilder()
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent("## Beacon Bot Systemstatus"),
+      new TextDisplayBuilder().setContent("Live-Status und Statistiken von Beacon Bot.")
+    );
+  if (includeRefresh) {
+    header.setButtonAccessory(
+      new ButtonBuilder().setCustomId("beacon_status_refresh").setLabel("Refresh Stats").setStyle(ButtonStyle.Secondary)
+    );
+  }
+
+  return new ContainerBuilder()
+    .setAccentColor(0x35d982)
+    .addSectionComponents(header)
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("### Status\n🟢 **Online und betriebsbereit**"))
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      `### Dein Server\nMitglieder: **${serverMembers}**\nServer: **${serverName}**`
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      `### Community\nServer: **${guildCount}**\nMitglieder: **${memberCount}**\nKanäle: **${serverChannels}**\nRollen: **${serverRoles}**`
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      "### System\nGesamt: **1**\nAktiv: 🟢 **1**\nDeaktiviert: 🔴 **0**\nWarnung: 🟠 **0**"
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      `### Live-Status\nLatenz: **${ping} ms**\nUptime: **${uptime}**\nHosting: **Infrahost (NxtByte)**`
+    ))
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      `**Statusseite:** [status.beacon-bot.site](${STATUS_PAGE_URL})\n**Dashboard:** [beacon-bot.site](${DASHBOARD_URL})`
+    ))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setLabel("Status Website").setStyle(ButtonStyle.Link).setURL(STATUS_PAGE_URL),
+      new ButtonBuilder().setLabel("Dashboard").setStyle(ButtonStyle.Link).setURL(DASHBOARD_URL)
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Powered by Beacon Bot"));
 }
 
 async function postStartupStatus() {
@@ -768,7 +792,10 @@ async function postStartupStatus() {
     const channel = await client.channels.fetch(channelId).catch(() => null);
     if (!channel?.isTextBased()) continue;
     const guild = channel.guild || null;
-    await channel.send(withBrandFiles({ embeds: [startupStatusEmbed(guild, stats)] })).catch((error) => {
+    await channel.send(withBrandFiles({
+      components: [statusV2Container(guild, stats, channelId === STATUS_CHANNEL_ID)],
+      flags: MessageFlags.IsComponentsV2,
+    })).catch((error) => {
       console.error(`[status-embed] Could not post to ${channelId}: ${error.message}`);
     });
   }
@@ -4316,6 +4343,15 @@ async function saveHoneypotSetup(interaction, data) {
 async function handleButton(interaction) {
   if (interaction.customId.startsWith("ticket_rating:")) {
     await handleTicketRatingButton(interaction);
+    return;
+  }
+
+  if (interaction.customId === "beacon_status_refresh") {
+    const stats = await fetchPublicStatusStats();
+    await interaction.update({
+      components: [statusV2Container(interaction.guild || null, stats, true)],
+      flags: MessageFlags.IsComponentsV2,
+    });
     return;
   }
 
