@@ -160,7 +160,9 @@ function baseStatusHtml() {
     <link rel="stylesheet" href="/status/status.css?v=8" />
   </head>
   <body>
-    <a class="return-link" href="https://beacon-bot.site/" aria-label="Back to Beacon">✎</a>
+    <a class="return-link" href="https://beacon-bot.site/" aria-label="Back to Beacon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7" /></svg>
+    </a>
     <main>
       <section class="status-card" aria-live="polite">
         <div class="card-heading">
