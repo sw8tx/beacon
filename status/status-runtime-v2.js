@@ -71,10 +71,16 @@ async function refreshStatus() {
     document.querySelector('[data-metric="uptime-percent"]').textContent = measured == null ? "--" : `${measured.toFixed(2)}%`;
     renderHistory(services[0], days, "Primary Bot", online, measured);
     renderHistory(services[1], days, "Discord Gateway", online, measured);
-    const websiteDays = days.map((day) => day.today
-      ? { ...day, state: website.online ? "up" : "down", percent: website.online ? 100 : 0, reports: website.online ? 1 : 0, expected: 1 }
-      : day);
-    renderHistory(services[2], websiteDays, "Beacon Website", website.online, website.online ? 100 : 0);
+    const websiteDegraded = website.online && Number(website.latency) > 1200;
+    const websiteDays = days.map((day) => ({
+      ...day,
+      state: !website.online ? "down" : websiteDegraded ? "degraded" : "up",
+      percent: website.online ? (websiteDegraded ? 95 : 100) : 0,
+      reports: website.online ? (websiteDegraded ? 95 : 100) : 0,
+      expected: 100,
+      ping: website.latency,
+    }));
+    renderHistory(services[2], websiteDays, "Beacon Website", website.online, website.online ? (websiteDegraded ? 95 : 100) : 0);
     document.body.dataset.lastReportAt = stats.updatedAt || ""; updateTime(stats.updatedAt);
   } catch {
     summaryCopy.textContent = "The live status service could not be reached.";
