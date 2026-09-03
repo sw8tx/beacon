@@ -182,7 +182,7 @@ function baseStatusHtml() {
           <div><span>Bot Session Uptime</span><strong data-metric="uptime">--</strong></div>
           <div><span>Gateway Latency</span><strong data-metric="ping">--</strong></div>
           <div><span>30-Day Uptime</span><strong data-metric="uptime-percent">--</strong></div>
-          <div><span>Hosting</span><strong>Infrahost (NxtByte)</strong></div>
+          <div><span>Hosting</span><strong><img class="hosting-logo" src="/assets/header-footer-logo.png" alt="NXTBYTE" /></strong></div>
         </div>
         <div class="card-footer"><span>Automatically updated</span><span data-last-updated>Last updated: waiting</span></div>
       </section>
