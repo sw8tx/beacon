@@ -747,8 +747,8 @@ function statusV2Container(guild, stats, includeRefresh = true) {
 
   const header = new SectionBuilder()
     .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent("## Beacon Bot Systemstatus"),
-      new TextDisplayBuilder().setContent("Live-Status und Statistiken von Beacon Bot.")
+      new TextDisplayBuilder().setContent("## Beacon Bot Status"),
+      new TextDisplayBuilder().setContent("Live service information and community statistics for Beacon Bot.")
     );
   if (includeRefresh) {
     header.setButtonAccessory(
@@ -760,23 +760,20 @@ function statusV2Container(guild, stats, includeRefresh = true) {
     .setAccentColor(0x35d982)
     .addSectionComponents(header)
     .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent("### Status\n🟢 **Online und betriebsbereit**"))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("### Status\n🟢 **Online and operational**"))
     .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-      `### Dein Server\nMitglieder: **${serverMembers}**\nServer: **${serverName}**`
+      `### Your Server\nMembers: **${serverMembers}**\nServer: **${serverName}**\n\n` +
+      `### Community\nServers: **${guildCount}**\nMembers: **${memberCount}**\nChannels: **${serverChannels}**\nRoles: **${serverRoles}**\n\n` +
+      "### System\nTotal: **1**\nActive: 🟢 **1**\nDisabled: 🔴 **0**\nWarning: 🟠 **0**"
     ))
     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-      `### Community\nServer: **${guildCount}**\nMitglieder: **${memberCount}**\nKanäle: **${serverChannels}**\nRollen: **${serverRoles}**`
-    ))
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-      "### System\nGesamt: **1**\nAktiv: 🟢 **1**\nDeaktiviert: 🔴 **0**\nWarnung: 🟠 **0**"
-    ))
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-      `### Live-Status\nLatenz: **${ping} ms**\nUptime: **${uptime}**\nHosting: **Infrahost (NxtByte)**`
+      `### Live Status\nLatency: **${ping} ms**\nUptime: **${uptime}**\nHosting: **Infrahost (NxtByte)**\n\n` +
+      "Beacon monitors connected servers and automatically synchronizes the latest community statistics."
     ))
     .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-      `**Statusseite:** [status.beacon-bot.site](${STATUS_PAGE_URL})\n**Dashboard:** [beacon-bot.site](${DASHBOARD_URL})`
+      `**Status page:** [status.beacon-bot.site](${STATUS_PAGE_URL})\n**Dashboard:** [beacon-bot.site](${DASHBOARD_URL})`
     ))
     .addActionRowComponents(new ActionRowBuilder().addComponents(
       new ButtonBuilder().setLabel("Status Website").setStyle(ButtonStyle.Link).setURL(STATUS_PAGE_URL),
@@ -793,7 +790,7 @@ async function postStartupStatus() {
     if (!channel?.isTextBased()) continue;
     const guild = channel.guild || null;
     await channel.send(withBrandFiles({
-      components: [statusV2Container(guild, stats, channelId === STATUS_CHANNEL_ID)],
+      components: [statusV2Container(guild, stats, true)],
       flags: MessageFlags.IsComponentsV2,
     })).catch((error) => {
       console.error(`[status-embed] Could not post to ${channelId}: ${error.message}`);
