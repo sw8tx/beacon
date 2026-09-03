@@ -157,7 +157,7 @@ function baseStatusHtml() {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/status/status.css?v=6" />
+    <link rel="stylesheet" href="/status/status.css?v=7" />
   </head>
   <body>
     <header class="status-header">
@@ -171,7 +171,7 @@ function baseStatusHtml() {
     <main>
       <section class="status-card" aria-live="polite">
         <div class="card-heading">
-          <div><p class="eyebrow">Beacon Bot</p><h1>System Status</h1></div>
+          <div class="brand-title"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" /><div><p class="eyebrow">Beacon Bot</p><h1>System Status</h1></div></div>
           <strong class="status-pill" data-summary-title><span class="status-dot"></span>Operational</strong>
         </div>
         <p class="card-copy" data-summary-copy>Live service information from Beacon Bot.</p>
@@ -186,10 +186,16 @@ function baseStatusHtml() {
         </div>
         <div class="card-footer"><span>Automatically updated</span><span data-last-updated>Last updated: waiting</span></div>
       </section>
+      <section class="history-panel" aria-labelledby="history-title">
+        <div class="panel-heading"><div><p class="eyebrow">Uptime over the past 30 days</p><h2 id="history-title">Service history</h2></div><span>Hover over a bar for details</span></div>
+        <article class="service" data-service="bot"><div class="service-heading"><strong>Primary Bot</strong><b data-service-uptime>Checking...</b></div><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
+        <article class="service" data-service="gateway"><div class="service-heading"><strong>Discord Gateway</strong><b data-service-uptime>Checking...</b></div><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
+        <article class="service" data-service="website"><div class="service-heading"><strong>Beacon Website</strong><b data-service-uptime>Checking...</b></div><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
+      </section>
     </main>
 
-    <footer><span>Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
-    <script src="/status/status-runtime-v2.js?v=6" defer></script>
+    <footer><span class="footer-brand"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" />Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
+    <script src="/status/status-runtime-v2.js?v=7" defer></script>
   </body>
 </html>`;
 }
