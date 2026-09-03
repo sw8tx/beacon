@@ -157,7 +157,7 @@ function baseStatusHtml() {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/status/status.css?v=9" />
+    <link rel="stylesheet" href="/status/status.css?v=10" />
   </head>
   <body>
     <a class="return-link" href="https://beacon-bot.site/" aria-label="Back to Beacon">
