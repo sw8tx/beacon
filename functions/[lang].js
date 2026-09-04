@@ -15,6 +15,10 @@ export async function onRequest(context) {
   const key = context.params.lang;
   const language = LANGUAGES[key];
   if (!language) return context.env.ASSETS.fetch(context.request);
+  const pathname = new URL(context.request.url).pathname;
+  if (pathname !== `/${key}` && pathname !== `/${key}/`) {
+    return context.env.ASSETS.fetch(context.request);
+  }
   if (context.request.method !== "GET") return new Response("Method not allowed", { status: 405, headers: { allow: "GET" } });
 
   const rootUrl = new URL("/", context.request.url);
