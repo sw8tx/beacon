@@ -225,13 +225,15 @@ function startHeroTypewriter(text) {
 }
 
 languageOptions.forEach((option) => option.addEventListener("click", (event) => {
-  event.preventDefault();
   setLanguage(option.dataset.lang);
   languageMenu?.removeAttribute("open");
 }));
 
-let savedLanguage = "de";
-try { savedLanguage = localStorage.getItem("beacon-language") || "de"; } catch (_) {}
+const pathLanguage = window.location.pathname.match(/^\/(en|fr|es|de|tr|ar|pt|pt-BR|it|nl)(?:\/|$)/)?.[1] || null;
+let savedLanguage = pathLanguage || "en";
+if (!pathLanguage) {
+  try { savedLanguage = localStorage.getItem("beacon-language") || "en"; } catch (_) {}
+}
 setLanguage(savedLanguage);
 
 async function loadDiscordSession() {
@@ -245,6 +247,7 @@ async function loadDiscordSession() {
     discordAvatar.src = user.avatar || "assets/beacon-logo.png?v=92";
     discordAvatar.alt = `${user.username} profile picture`;
     discordUsername.textContent = user.username;
+    if (discordLogout) discordLogout.textContent = "Log out";
     discordLoginLinks.forEach((link) => {
       link.hidden = true;
       link.setAttribute("aria-hidden", "true");
@@ -256,11 +259,13 @@ async function loadDiscordSession() {
 }
 
 function showAuthRequired() {
+  if (authToast) authToast.textContent = "Need to login first";
+  if (authToast) authToast.hidden = false;
   document.body.classList.remove("auth-flash", "show-auth-toast");
   void document.body.offsetWidth;
   document.body.classList.add("auth-flash", "show-auth-toast");
   window.setTimeout(() => document.body.classList.remove("auth-flash"), 1000);
-  window.setTimeout(() => document.body.classList.remove("show-auth-toast"), 2300);
+  window.setTimeout(() => { document.body.classList.remove("show-auth-toast"); if (authToast) authToast.hidden = true; }, 2300);
 }
 
 let discordSessionPromise = null;

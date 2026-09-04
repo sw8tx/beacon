@@ -35,7 +35,7 @@ function restartLogin(request) {
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
-  const { clientId, clientSecret, botToken, supportGuildId, sessionSecret, redirectUri } = getConfig(env);
+  const { clientId, clientSecret, sessionSecret, redirectUri } = getConfig(env);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const expectedState = getCookie(request, "discord_oauth_state");
@@ -71,18 +71,6 @@ export async function onRequestGet({ request, env }) {
     const userResponse = await fetch(`${DISCORD_API}/users/@me`, { headers: { Authorization: `Bearer ${token.access_token}` } });
     if (!userResponse.ok) return errorResponse("Discord profile could not be loaded.", 400);
     const discordUser = await userResponse.json();
-    if (botToken && supportGuildId) {
-      const joinResponse = await fetch(`${DISCORD_API}/guilds/${supportGuildId}/members/${discordUser.id}`, {
-        method: "PUT",
-        headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ access_token: token.access_token }),
-      });
-      if (!joinResponse.ok && joinResponse.status !== 204) {
-        const joinDetails = await joinResponse.text().catch(() => "");
-        console.error(`[discord-oauth] Support server join skipped after failure: ${joinResponse.status} ${joinDetails.slice(0, 180)}`);
-      }
-    }
-
     const user = {
       id: String(discordUser.id),
       username: String(discordUser.global_name || discordUser.username || "Discord user").slice(0, 80),

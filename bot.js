@@ -3368,6 +3368,10 @@ const commands = [
     ),
 
   new SlashCommandBuilder()
+    .setName("serverinfo")
+    .setDescription("Show server information with interactive detail lists."),
+
+  new SlashCommandBuilder()
     .setName("rank")
     .setDescription("Show a member's level, XP and prestige.")
     .addUserOption((opt) =>
@@ -3688,6 +3692,7 @@ async function handleCommand(interaction) {
   if (command === "rolepanel") return rolePanel(interaction, data);
   if (command === "event") return eventPost(interaction, data);
   if (command === "member") return memberProfile(interaction, data);
+  if (command === "serverinfo") return serverInfo(interaction);
   if (command === "rank") return rank(interaction, data);
   if (command === "leaderboard") return leaderboard(interaction, data);
   if (command === "prestige") return prestige(interaction, data);
@@ -3718,6 +3723,7 @@ const helpPages = [
       ["/announce", "Post a clean announcement."],
       ["/event", "Create an event post with RSVP buttons."],
       ["/member", "View a member's community profile."],
+      ["/serverinfo", "Inspect server stats, roles, members, channels, bots and emojis with private detail buttons."],
       ["/rank", "View level, XP and prestige progress."],
       ["/leaderboard", "Show the server prestige leaderboard."],
       ["/prestige", `Prestige after reaching level ${PRESTIGE_LEVEL_REQUIREMENT}.`],
@@ -4236,6 +4242,118 @@ async function handleModal(interaction) {
 
 }
 
+function serverInfoIconUrl(guild) {
+  return guild?.iconURL({ extension: "png", size: 256 }) || null;
+}
+
+function serverInfoPageItems(guild, kind) {
+  if (kind === "roles") {
+    return [...guild.roles.cache.values()].sort((a, b) => b.position - a.position);
+  }
+  if (kind === "members") {
+    return [...guild.members.cache.values()].sort((a, b) => (a.user.bot === b.user.bot ? a.displayName.localeCompare(b.displayName) : a.user.bot ? 1 : -1));
+  }
+  if (kind === "channels") {
+    return [...guild.channels.cache.values()].sort((a, b) => (a.rawPosition || 0) - (b.rawPosition || 0));
+  }
+  if (kind === "bots") {
+    return [...guild.members.cache.values()].filter((member) => member.user.bot).sort((a, b) => a.displayName.localeCompare(b.displayName));
+  }
+  if (kind === "emojis") {
+    return [...guild.emojis.cache.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return [];
+}
+
+function serverInfoItemText(kind, item) {
+  if (kind === "roles") return item.id === item.guild.roles.everyone.id ? `@everyone · ${item.members.size} members` : `${item} · ${item.members.size} members`;
+  if (kind === "members" || kind === "bots") return `${item} · ${item.user.tag}`;
+  if (kind === "channels") return `${item} · ${item.type === ChannelType.GuildCategory ? "Category" : item.type === ChannelType.GuildVoice ? "Voice" : "Text/Forum"}`;
+  if (kind === "emojis") return `${item}  ${item.name} · ${item.animated ? "Animated" : "Static"}`;
+  return String(item);
+}
+
+function serverInfoDetailContainer(guild, kind, page = 0) {
+  const labels = { roles: "Roles", members: "Members", channels: "Channels", bots: "Bots", emojis: "Emojis" };
+  const label = labels[kind] || "Details";
+  const items = serverInfoPageItems(guild, kind);
+  const pageSize = kind === "channels" ? 25 : 20;
+  const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
+  const currentPage = Math.max(0, Math.min(Number(page) || 0, pageCount - 1));
+  const pageItems = items.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+  const lines = pageItems.length ? pageItems.map((item, index) => `${currentPage * pageSize + index + 1}. ${serverInfoItemText(kind, item)}`).join("\n") : "Nothing to show.";
+  const buttons = [
+    new ButtonBuilder().setCustomId("serverinfo:back").setLabel("Back").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(`serverinfo:${kind}:${currentPage - 1}`).setLabel("Previous").setStyle(ButtonStyle.Secondary).setDisabled(currentPage === 0),
+    new ButtonBuilder().setCustomId(`serverinfo:${kind}:${currentPage + 1}`).setLabel(`Page ${currentPage + 1}/${pageCount}`).setStyle(ButtonStyle.Primary).setDisabled(currentPage >= pageCount - 1),
+    new ButtonBuilder().setCustomId(`serverinfo:${kind}:${currentPage + 1}`).setLabel("Next").setStyle(ButtonStyle.Secondary).setDisabled(currentPage >= pageCount - 1),
+  ];
+
+  const header = new SectionBuilder().addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(`## ${label} · ${guild.name}\n${items.length} total · page ${currentPage + 1} of ${pageCount}`)
+  );
+  const icon = serverInfoIconUrl(guild);
+  if (icon) header.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon).setDescription(`${guild.name} icon`));
+
+  return new ContainerBuilder()
+    .setAccentColor(BRAND_COLOR)
+    .addSectionComponents(header)
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(lines))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(buttons))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# This detail view is visible only to you."));
+}
+
+function serverInfoContainer(guild) {
+  const members = guild.memberCount || guild.members.cache.size;
+  const humans = guild.members.cache.filter((member) => !member.user.bot).size;
+  const bots = guild.members.cache.filter((member) => member.user.bot).size;
+  const channels = guild.channels.cache;
+  const icon = serverInfoIconUrl(guild);
+  const header = new SectionBuilder().addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(`## ${guild.name}\nServer information and quick controls.`)
+  );
+  if (icon) header.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon).setDescription(`${guild.name} icon`));
+
+  return new ContainerBuilder()
+    .setAccentColor(BRAND_COLOR)
+    .addSectionComponents(header)
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      `**Owner**\n<@${guild.ownerId}>\n\n` +
+      `**Members**\n${members} total · ${humans} humans · ${bots} bots\n\n` +
+      `**Channels**\n${channels.size} total · ${channels.filter((channel) => channel.type === ChannelType.GuildText).size} text · ${channels.filter((channel) => channel.type === ChannelType.GuildVoice).size} voice\n\n` +
+      `**Roles**\n${guild.roles.cache.size} · **Emojis** ${guild.emojis.cache.size}\n\n` +
+      `**Created**\n<t:${Math.floor(guild.createdTimestamp / 1000)}:D> (<t:${Math.floor(guild.createdTimestamp / 1000)}:R>)\n\n` +
+      `**Boosts**\nLevel ${guild.premiumTier || 0} · ${guild.premiumSubscriptionCount || 0} boosts`
+    ))
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("serverinfo:roles:0").setLabel(`Roles (${guild.roles.cache.size})`).setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId("serverinfo:members:0").setLabel(`Members (${members})`).setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId("serverinfo:channels:0").setLabel(`Channels (${channels.size})`).setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId("serverinfo:bots:0").setLabel(`Bots (${bots})`).setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId("serverinfo:emojis:0").setLabel(`Emojis (${guild.emojis.cache.size})`).setStyle(ButtonStyle.Secondary)
+    ))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("serverinfo:security").setLabel("Security").setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId("serverinfo:refresh").setLabel("Refresh").setStyle(ButtonStyle.Secondary)
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Use the buttons to inspect the server. Detail lists are private."));
+}
+
+async function serverInfo(interaction) {
+  await interaction.reply({ components: [serverInfoContainer(interaction.guild)], flags: MessageFlags.IsComponentsV2 });
+}
+
+async function serverInfoSecurity(interaction) {
+  const guild = interaction.guild;
+  const verification = guild.verificationLevel ?? 0;
+  const levels = ["None", "Low", "Medium", "High", "Very High"];
+  const text = `## Security · ${guild.name}\n\n**Verification level**\n${levels[verification] || verification}\n\n**2FA requirement**\n${guild.mfaLevel ? "Enabled" : "Not required"}\n\n**Explicit content filter**\n${guild.explicitContentFilter ?? "Unknown"}\n\n**Server features**\n${guild.features.length ? guild.features.map((feature) => `\`${feature}\``).join(", ") : "None"}`;
+  await interaction.reply({ components: [new ContainerBuilder().setAccentColor(BRAND_COLOR).addTextDisplayComponents(new TextDisplayBuilder().setContent(text)).addActionRowComponents(new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("serverinfo:back").setLabel("Back").setStyle(ButtonStyle.Secondary))).addTextDisplayComponents(new TextDisplayBuilder().setContent("-# This detail view is visible only to you."))], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+}
+
 function activeHoneypotDraft(interaction, data) {
   const key = honeypotDraftKey(interaction);
   const draft = honeypotSetupDrafts.get(key) || honeypotDraftFromSettings(data);
@@ -4350,6 +4468,34 @@ async function handleButton(interaction) {
       flags: MessageFlags.IsComponentsV2,
     });
     return;
+  }
+
+  if (interaction.customId === "serverinfo:refresh") {
+    await interaction.update({ components: [serverInfoContainer(interaction.guild)], flags: MessageFlags.IsComponentsV2 });
+    return;
+  }
+
+  if (interaction.customId === "serverinfo:security") {
+    await serverInfoSecurity(interaction);
+    return;
+  }
+
+  if (interaction.customId === "serverinfo:back") {
+    await interaction.update({ components: [serverInfoContainer(interaction.guild)], flags: MessageFlags.IsComponentsV2 });
+    return;
+  }
+
+  if (interaction.customId.startsWith("serverinfo:")) {
+    const [, kind, pageValue] = interaction.customId.split(":");
+    if (["roles", "members", "channels", "bots", "emojis"].includes(kind)) {
+      const payload = {
+        components: [serverInfoDetailContainer(interaction.guild, kind, Number(pageValue) || 0)],
+        flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+      };
+      if (interaction.message?.flags?.has(MessageFlags.Ephemeral)) await interaction.update(payload);
+      else await interaction.reply(payload);
+      return;
+    }
   }
 
   const data = guildData(interaction.guild.id);

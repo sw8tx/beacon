@@ -50,6 +50,7 @@ function uptimePercent(history, monitoringStartedAt) {
   if (!Number.isFinite(startedAt)) return null;
 
   const now = Date.now();
+  if (now - startedAt < 30 * 86400000) return null;
   const windowStart = Math.max(startedAt, now - 30 * 86400000);
   const expectedReports = Math.max(1, Math.floor((now - windowStart) / 60000) + 1);
   const receivedReports = history.reduce((total, entry) => {
@@ -109,7 +110,7 @@ function replaceContent(html, selector, value) {
 
 function renderStatusHtml(html, stats) {
   const allOnline = Boolean(stats.online);
-  const summaryTitle = allOnline ? "All systems optimized" : "Service disruption detected";
+  const summaryTitle = allOnline ? "All systems operational" : "Service disruption detected";
   const summaryCopy = allOnline
     ? "Beacon Bot and its public services are responding normally."
     : "At least one Beacon service is not responding normally.";

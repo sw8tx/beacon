@@ -4,8 +4,20 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#050505" />
-    <meta name="description" content="Beacon is the Discord community operating system for ambitious servers." />
-    <title>Beacon | Discord Community OS</title>
+    <meta name="description" content="Beacon is a Discord bot for tickets, moderation, automation and community management." />
+    <link rel="canonical" href="https://beacon-bot.site/" />
+    <link rel="alternate" hreflang="x-default" href="https://beacon-bot.site/" />
+    <link rel="alternate" hreflang="en" href="https://beacon-bot.site/en/" />
+    <link rel="alternate" hreflang="de" href="https://beacon-bot.site/de/" />
+    <link rel="alternate" hreflang="fr" href="https://beacon-bot.site/fr/" />
+    <link rel="alternate" hreflang="es" href="https://beacon-bot.site/es/" />
+    <link rel="alternate" hreflang="tr" href="https://beacon-bot.site/tr/" />
+    <link rel="alternate" hreflang="ar" href="https://beacon-bot.site/ar/" />
+    <link rel="alternate" hreflang="pt" href="https://beacon-bot.site/pt/" />
+    <link rel="alternate" hreflang="pt-BR" href="https://beacon-bot.site/pt-BR/" />
+    <link rel="alternate" hreflang="it" href="https://beacon-bot.site/it/" />
+    <link rel="alternate" hreflang="nl" href="https://beacon-bot.site/nl/" />
+    <title>Beacon – Discord Bot for Tickets, Moderation &amp; Community</title>
     <link rel="icon" type="image/png" href="assets/beacon-logo.png?v=92" />
     <link rel="shortcut icon" href="assets/beacon-logo.png?v=92" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -31,36 +43,36 @@
       <div class="navbar-actions">
         <details class="language-menu">
           <summary>
-            <span class="language-current-code">DE</span>
-            <span class="language-current-label">Deutsch</span>
+            <span class="language-current-code">EN</span>
+            <span class="language-current-label">English</span>
           </summary>
           <div class="language-options">
-            <a href="#" data-lang="en"><span>US</span>English</a>
-            <a href="#" data-lang="fr"><span>FR</span>Francais</a>
-            <a href="#" data-lang="es"><span>ES</span>Espanol</a>
-            <a class="is-selected" href="#" data-lang="de"><span>DE</span>Deutsch</a>
-            <a href="#" data-lang="tr"><span>TR</span>Turkce</a>
-            <a href="#" data-lang="ar"><span>SA</span>Arabic</a>
-            <a href="#" data-lang="pt"><span>PT</span>Portugues</a>
-            <a href="#" data-lang="pt-BR"><span>BR</span>Portugues (BR)</a>
-            <a href="#" data-lang="it"><span>IT</span>Italiano</a>
-            <a href="#" data-lang="nl"><span>NL</span>Nederlands</a>
+            <a class="is-selected" href="/en/" data-lang="en"><span>US</span>English</a>
+            <a href="/fr/" data-lang="fr"><span>FR</span>Francais</a>
+            <a href="/es/" data-lang="es"><span>ES</span>Espanol</a>
+            <a href="/de/" data-lang="de"><span>DE</span>Deutsch</a>
+            <a href="/tr/" data-lang="tr"><span>TR</span>Turkce</a>
+            <a href="/ar/" data-lang="ar"><span>SA</span>Arabic</a>
+            <a href="/pt/" data-lang="pt"><span>PT</span>Portugues</a>
+            <a href="/pt-BR/" data-lang="pt-BR"><span>BR</span>Portugues (BR)</a>
+            <a href="/it/" data-lang="it"><span>IT</span>Italiano</a>
+            <a href="/nl/" data-lang="nl"><span>NL</span>Nederlands</a>
           </div>
         </details>
         <a class="navbar-button navbar-button--prestige" href="https://prestige.beacon-bot.site/"><span data-i18n="navPrestige">Prestige</span></a>
         <a class="navbar-button navbar-button--login login-float" id="discord-login" href="/api/auth/discord/login"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="login">Login with Discord</span></a>
         <details class="account-menu" id="discord-account" hidden>
-          <summary><img class="account-avatar" id="discord-avatar" src="assets/beacon-logo.png?v=92" alt="" /><span id="discord-username">Discord user</span></summary>
+          <summary><img class="account-avatar" id="discord-avatar" src="assets/beacon-logo.png?v=92" alt="" /><span id="discord-username"></span></summary>
           <div class="account-menu-panel">
             <a class="account-menu-action" href="/dashboard">Dashboard</a>
             <a class="account-menu-action" href="https://status.beacon-bot.site/">Status</a>
-            <button class="account-menu-action" type="button" id="discord-logout">Log out</button>
+            <button class="account-menu-action" type="button" id="discord-logout" aria-label="Log out"></button>
           </div>
         </details>
       </div>
     </nav>
 
-    <div class="auth-toast" id="auth-toast" role="status" aria-live="polite">Need to login first</div>
+    <div class="auth-toast" id="auth-toast" role="status" aria-live="polite" hidden></div>
 
     <main id="top">
       <section class="hero-section">
@@ -282,18 +294,19 @@
     <footer class="site-footer">
       <div class="footer-brand">
         <a href="#top" aria-label="Beacon home"><img src="assets/beacon-logo.png?v=92" width="32" height="32" alt="" /><strong>Beacon</strong></a>
-        <span class="sponsor-label">Hosting: Infrahost (NxtByte)</span>
+        <span class="sponsor-label">Sponsored by</span>
         <a class="sponsor-link" href="https://nxtbyte.de/" data-external-site="https://nxtbyte.de/" aria-label="Visit NxtByte website">
           <img class="sponsor-logo" src="assets/header-footer-logo.png?v=1" alt="NxtByte" />
         </a>
       </div>
       <nav class="footer-legal" aria-label="Legal navigation">
-        <a href="/tos" data-i18n="legalTerms">Terms of Use</a>
-        <a href="/privacy" data-i18n="legalPrivacy">Privacy Policy</a>
-        <a href="/copyright" data-i18n="legalCopyright">Copyright Dispute</a>
-        <a href="/gdpr" data-i18n="legalGdpr">GDPR Notice</a>
-        <a href="/cookies" data-i18n="legalCookies">Cookie Policy</a>
-        <a href="/eula" data-i18n="legalEula">EULA</a>
+        <a href="/tos/" data-i18n="legalTerms">Terms of Use</a>
+        <a href="/privacy/" data-i18n="legalPrivacy">Privacy Policy</a>
+        <a href="/copyright/" data-i18n="legalCopyright">Copyright Dispute</a>
+        <a href="/gdpr/" data-i18n="legalGdpr">GDPR Notice</a>
+        <a href="/cookies/" data-i18n="legalCookies">Cookie Policy</a>
+        <a href="/eula/" data-i18n="legalEula">EULA</a>
+        <a href="/imprint/">Imprint</a>
       </nav>
       <p class="footer-rights">Powered by Beacon Bot</p>
     </footer>
@@ -327,7 +340,7 @@
           <button class="cookie-button cookie-button--primary" type="button" data-cookie-necessary>Accept Necessary Cookies Only</button>
           <button class="cookie-button cookie-button--muted" type="button" data-cookie-settings>Cookie Settings</button>
         </div>
-        <a class="cookie-notice__privacy" href="/privacy">Privacy Policy</a>
+        <a class="cookie-notice__privacy" href="/privacy/">Privacy Policy</a>
       </div>
     </div>
     <button class="cookie-floating-button" type="button" data-cookie-settings title="Cookie Settings" aria-label="Open cookie settings" hidden>

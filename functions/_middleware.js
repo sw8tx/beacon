@@ -33,5 +33,10 @@ export async function onRequest(context) {
     headers.set("cache-control", "no-store, max-age=0");
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
   }
+  const legalPages = new Set(["/tos", "/privacy", "/gdpr", "/cookies", "/eula", "/copyright", "/imprint"]);
+  if (legalPages.has(url.pathname)) {
+    url.pathname += "/";
+    return Response.redirect(url.toString(), 301);
+  }
   return response;
 }

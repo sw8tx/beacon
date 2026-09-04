@@ -62,7 +62,7 @@ async function refreshStatus() {
     if (!response.ok) throw new Error();
     const stats = await response.json(); const online = Boolean(stats.online && website.online); const days = buildDays(stats);
     const uptime = Number(stats.uptimePercent); const measured = Number.isFinite(uptime) ? uptime : null;
-    summaryCopy.textContent = online ? "Beacon Bot and its Discord services are responding normally." : "Beacon Bot is not currently reporting a healthy connection.";
+    summaryCopy.textContent = online ? "All systems operational. Beacon Bot and its Discord services are responding normally." : "Beacon Bot is not currently reporting a healthy connection.";
     document.querySelector('[data-metric="gateway-status"]').textContent = online ? "Connected" : "Unavailable";
     document.querySelector('[data-metric="guilds"]').textContent = number(stats.guilds);
     document.querySelector('[data-metric="users"]').textContent = number(stats.users);
