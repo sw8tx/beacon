@@ -13,7 +13,6 @@ const discordLogout = document.querySelector("#discord-logout");
 const authToast = document.querySelector("#auth-toast");
 const authRequiredLinks = [...document.querySelectorAll("[data-requires-auth]")];
 const heroTypewriter = document.querySelector("[data-typewriter-lines]");
-const claimButtons = [...document.querySelectorAll("[data-claim-badge]")];
 const giveawayCards = [...document.querySelectorAll(".insight-card--giveaway")];
 const externalModal = document.querySelector("#external-modal");
 const externalLinks = [...document.querySelectorAll("[data-external-site]")];
@@ -54,29 +53,17 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && externalModal && !externalModal.hidden) closeExternalModal();
 });
 
-function setClaimedState(button) {
-  button.classList.add("is-claimed");
-  button.innerHTML = '<span aria-hidden="true">✓</span>&nbsp; Already claimed';
-  button.setAttribute("aria-label", "Already claimed");
-  button.setAttribute("aria-disabled", "true");
-  const note = document.getElementById("giveaway-claim-note");
-  if (note) note.textContent = "This Easter badge has already been claimed in this browser.";
-}
-
-claimButtons.forEach((button) => {
-  const key = `beacon-claimed-${button.dataset.claimBadge}`;
-  try {
-    if (localStorage.getItem(key) === "true") setClaimedState(button);
-  } catch (_) {}
-  button.addEventListener("click", (event) => {
-    if (button.classList.contains("is-claimed")) {
+const homeLogo = document.querySelector(".navbar-logo");
+if (homeLogo && window.location.pathname === "/") {
+  let logoClickCount = 0;
+  homeLogo.addEventListener("click", (event) => {
+    logoClickCount += 1;
+    if (logoClickCount === 14) {
       event.preventDefault();
-      return;
+      window.location.href = "/secret-badge";
     }
-    try { localStorage.setItem(key, "true"); } catch (_) {}
-    setClaimedState(button);
   });
-});
+}
 
 function celebrateGiveaway(card) {
   const container = card.querySelector(".giveaway-confetti");
