@@ -65,10 +65,11 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
   }
 }
 function setStatusState(state, copy) {
-  if (!statusState) return;
   const labels = { operational: "Operational", "monitoring-unavailable": "Monitoring unavailable", "service-outage": "Service outage" };
-  statusState.textContent = labels[state] || labels["monitoring-unavailable"];
-  statusState.className = `status-state status-state--${state}`;
+  if (statusState) {
+    statusState.textContent = labels[state] || labels["monitoring-unavailable"];
+    statusState.className = `status-state status-state--${state}`;
+  }
   if (copy) summaryCopy.textContent = copy;
 }
 function formatMonitoringDate(value) {

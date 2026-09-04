@@ -182,7 +182,6 @@ function baseStatusHtml() {
         <div class="card-heading">
           <div><p class="eyebrow">Beacon Bot</p><h1>System Status</h1></div>
         </div>
-        <div class="status-state status-state--monitoring-unavailable" data-status-state>Checking monitoring...</div>
         <p class="card-copy" data-summary-copy>Live service information from Beacon Bot.</p>
         <div class="metric-list" aria-label="Live Beacon statistics">
           <div><span>Discord Gateway</span><strong data-metric="gateway-status">Connected</strong></div>
@@ -191,7 +190,7 @@ function baseStatusHtml() {
           <div><span>Bot Session Uptime</span><strong data-metric="uptime">--</strong></div>
           <div><span>Gateway Latency</span><strong data-metric="ping">--</strong></div>
           <div><span data-uptime-label>Uptime since monitoring started</span><strong data-metric="uptime-percent">--</strong></div>
-          <div><span>Hosting</span><strong><img class="hosting-logo" src="/assets/header-footer-logo.png" alt="NXTBYTE" /></strong></div>
+          <div><span>Sponsored by</span><strong><img class="hosting-logo" src="/assets/header-footer-logo.png" alt="NXTBYTE" /></strong></div>
         </div>
         <div class="card-footer"><span>Automatically updated</span><span data-last-updated>Last updated: waiting</span></div>
       </section>
@@ -203,7 +202,8 @@ function baseStatusHtml() {
       </section>
     </main>
 
-    <footer><span class="footer-brand"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" />Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
+    <footer class="status-footer"><span class="footer-brand"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" />Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
+    <footer class="normal-footer"><a href="https://beacon-bot.site/tos/">Terms of Use</a><a href="https://beacon-bot.site/privacy/">Privacy Policy</a><a href="https://beacon-bot.site/copyright/">Copyright Dispute</a><a href="https://beacon-bot.site/gdpr/">GDPR Notice</a><a href="https://beacon-bot.site/cookies/">Cookie Policy</a><a href="https://beacon-bot.site/eula/">EULA</a><a href="https://beacon-bot.site/imprint/">Imprint</a></footer>
     <script src="/status/status-runtime-v2.js?v=11" defer></script>
   </body>
 </html>`;
