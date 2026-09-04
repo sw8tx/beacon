@@ -14,7 +14,8 @@ const LANGUAGES = {
 export async function onRequest(context) {
   const key = context.params.lang;
   const language = LANGUAGES[key];
-  if (!language || context.request.method !== "GET") return new Response("Not found", { status: 404 });
+  if (!language) return context.env.ASSETS.fetch(context.request);
+  if (context.request.method !== "GET") return new Response("Method not allowed", { status: 405, headers: { allow: "GET" } });
 
   const rootUrl = new URL("/", context.request.url);
   const response = await context.env.ASSETS.fetch(new Request(rootUrl, context.request));

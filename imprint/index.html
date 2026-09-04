@@ -19,7 +19,7 @@
 
       <div class="legal-hero">
         <span class="legal-kicker">Legal · Beacon</span>
-        <h1>Imprint</h1>
+        <h1 id="imprint-title">Imprint</h1>
         <p class="legal-updated">Last updated: September 2026</p>
       </div>
 
@@ -66,5 +66,14 @@
 
       <footer class="legal-footer"><span class="legal-sponsor">Sponsored by <img src="/assets/header-footer-logo.png" alt="NXTBYTE" /></span><span>© 2026 Beacon. All rights reserved. Not affiliated with Discord Inc.</span></footer>
     </main>
+    <script>
+      try {
+        if (localStorage.getItem("beacon-language") === "de") {
+          document.documentElement.lang = "de";
+          document.title = "Impressum | Beacon";
+          document.querySelector("#imprint-title").textContent = "Impressum";
+        }
+      } catch (_) {}
+    </script>
   </body>
 </html>
