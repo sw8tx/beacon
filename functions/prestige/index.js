@@ -44,7 +44,9 @@ const html = `<!doctype html>
           <div class="logo-orbit">
             <img src="/assets/prestige-logo.png?v=1" width="320" height="320" alt="Beacon Prestige logo" />
           </div>
-          <article class="price-card" id="plan">
+          <article class="price-card is-coming-soon" id="plan">
+            <div class="coming-soon-overlay" role="status"><span>Coming Soon</span><small>The Prestige checkout is being prepared.</small></div>
+            <div class="price-card-content">
             <div class="plan-head">
               <div>
                 <h2>Prestige</h2>
@@ -53,7 +55,7 @@ const html = `<!doctype html>
               <span>Lifetime</span>
             </div>
             <div class="price"><strong>$9.99</strong><small>one time</small></div>
-            <a class="buy-button" href="/api/auth/discord/login">Get Prestige</a>
+            <a class="buy-button" href="/api/auth/discord/login" aria-disabled="true" tabindex="-1">Get Prestige</a>
             <ul>
               <li>Prestige leaderboard with custom public link.</li>
               <li>Exclusive prestige profile and leaderboard features.</li>
@@ -62,6 +64,7 @@ const html = `<!doctype html>
               <li>Priority setup help for your server.</li>
             </ul>
             <p class="purchase-note">Price: $9.99 one-time for one server. The purchase flow will show the final total price, provider, payment terms, withdrawal information and cancellation/support options before payment. See the <a href="/tos/">Terms of Use</a> and <a href="/privacy/">Privacy Policy</a>.</p>
+            </div>
           </article>
         </aside>
       </section>

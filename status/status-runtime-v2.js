@@ -77,6 +77,27 @@ function formatMonitoringDate(value) {
   const timestamp = Date.parse(value || "");
   return Number.isFinite(timestamp) ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(timestamp) : "monitoring start";
 }
+function formatIncidentDate(value) {
+  const timestamp = Date.parse(value || "");
+  return Number.isFinite(timestamp) ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(timestamp) : "Unknown";
+}
+function renderIncidents(stats) {
+  const target = document.querySelector("[data-incidents]");
+  if (!target) return;
+  const incidents = Array.isArray(stats.incidents) ? stats.incidents : [];
+  if (!incidents.length) {
+    target.innerHTML = "<p>No incidents recorded in the current monitoring window.</p>";
+    return;
+  }
+  target.replaceChildren(...incidents.map((incident) => {
+    const item = document.createElement("article");
+    const start = Date.parse(incident.startedAt || "");
+    const end = Date.parse(incident.resolvedAt || "");
+    const durationText = Number.isFinite(start) && Number.isFinite(end) ? ` · Duration: ${duration((end - start) / 1000)}` : " · Ongoing";
+    item.innerHTML = `<strong>${incident.resolvedAt ? "Resolved" : "Ongoing"}: ${incident.title || "Service interruption"}</strong><span>From ${formatIncidentDate(incident.startedAt)}${incident.resolvedAt ? ` to ${formatIncidentDate(incident.resolvedAt)}` : ""}${durationText}</span>`;
+    return item;
+  }));
+}
 async function refreshStatus() {
   try {
     const [response, website] = await Promise.all([
@@ -112,11 +133,13 @@ async function refreshStatus() {
     renderHistory(services[3], days, "Dashboard / API", apiOnline, measured, apiOnline ? "Statistics API is responding" : "Statistics API is unavailable");
     renderHistory(services[4], days, "Database", databaseOnline, measured, databaseOnline ? "Status data was read successfully" : "No stored status data is available");
     document.body.dataset.lastReportAt = stats.updatedAt || ""; updateTime(stats.updatedAt);
+    renderIncidents(stats);
   } catch {
     setStatusState("monitoring-unavailable", "The monitoring service could not be reached.");
     document.querySelector('[data-metric="gateway-status"]').textContent = "Unavailable";
     const days = buildDays({ history: [] }); services.forEach((service) => renderHistory(service, days, service.querySelector(".service-heading strong").textContent, false, null, "Monitoring unavailable"));
     updateTime(null);
+    renderIncidents({ incidents: [] });
   }
 }
 refreshStatus();

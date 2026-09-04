@@ -391,6 +391,12 @@ h1 {
   line-height: 1.45;
 }
 
+.price-card-content { transition: filter .2s ease; }
+.price-card.is-coming-soon .price-card-content { filter: blur(7px); user-select: none; }
+.coming-soon-overlay { position: absolute; inset: 0; z-index: 4; display: grid; align-content: center; justify-items: center; gap: 10px; padding: 28px; background: rgba(8,10,12,.34); text-align: center; pointer-events: none; }
+.coming-soon-overlay span { padding: 12px 18px; border: 1px solid rgba(255,212,71,.75); border-radius: 999px; color: #171205; background: #ffd447; box-shadow: 0 12px 34px rgba(255,195,28,.28); font: 900 1.05rem/1 "Space Grotesk", sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.coming-soon-overlay small { max-width: 230px; color: #fff; font-size: .82rem; font-weight: 700; text-shadow: 0 2px 12px #000; }
+
 .purchase-note {
   margin: 22px 0 0;
   color: #969ba5;

@@ -73,19 +73,22 @@ async function readStatus(env) {
   let stats = { ...FALLBACK_STATS };
   let history = [];
   let monitoringStartedAt = null;
+  let incidents = [];
 
   if (env.STATUS_DB) {
     try {
-      const [stateRow, historyResult, monitoringRow] = await Promise.all([
+      const [stateRow, historyResult, monitoringRow, incidentsRow] = await Promise.all([
         env.STATUS_DB.prepare("SELECT payload FROM status_state WHERE id = 1").first(),
         env.STATUS_DB.prepare(
           "SELECT date, reports, ping_total AS pingTotal, last_minute AS lastMinute, last_report_at AS lastReportAt FROM status_history ORDER BY date DESC LIMIT 30"
         ).all(),
         env.STATUS_DB.prepare("SELECT value FROM status_meta WHERE key = 'monitoring-started-at'").first(),
+        env.STATUS_DB.prepare("SELECT value FROM status_meta WHERE key = 'status-incidents'").first(),
       ]);
       if (stateRow?.payload) stats = { ...stats, ...JSON.parse(stateRow.payload) };
       history = (historyResult.results || []).reverse();
       monitoringStartedAt = monitoringRow?.value || null;
+      incidents = JSON.parse(incidentsRow?.value || "[]");
     } catch (error) {
       console.error(`[status] Failed to read D1 status: ${error.message}`);
     }
@@ -105,6 +108,7 @@ async function readStatus(env) {
     monitoringStartedAt,
     ageSeconds,
     uptimePercent: measuredUptime,
+    incidents: Array.isArray(incidents) ? incidents : [],
     statusState: !Number.isFinite(updatedAt) ? "monitoring-unavailable" : online ? "operational" : "service-outage",
   };
 }
@@ -114,6 +118,21 @@ function replaceContent(html, selector, value) {
     new RegExp(`(<[^>]+${selector}[^>]*>)([\\s\\S]*?)(</[^>]+>)`),
     `$1${escapeHtml(value)}$3`
   );
+}
+
+function incidentDate(value) {
+  const timestamp = Date.parse(value || "");
+  return Number.isFinite(timestamp) ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(timestamp) : "Unknown";
+}
+
+function incidentMarkup(incidents) {
+  if (!Array.isArray(incidents) || !incidents.length) return "<p>No incidents recorded in the current monitoring window.</p>";
+  return incidents.slice(0, 20).map((incident) => {
+    const start = Date.parse(incident.startedAt || "");
+    const end = Date.parse(incident.resolvedAt || "");
+    const duration = Number.isFinite(start) && Number.isFinite(end) ? ` · Duration: ${formatDuration((end - start) / 1000)}` : " · Ongoing";
+    return `<article><strong>${incident.resolvedAt ? "Resolved" : "Ongoing"}: ${escapeHtml(incident.title || "Service interruption")}</strong><span>From ${escapeHtml(incidentDate(incident.startedAt))}${incident.resolvedAt ? ` to ${escapeHtml(incidentDate(incident.resolvedAt))}` : ""}${duration}</span></article>`;
+  }).join("");
 }
 
 function renderStatusHtml(html, stats) {
@@ -155,6 +174,7 @@ function renderStatusHtml(html, stats) {
   output = replaceContent(output, "data-incident-title", allOnline ? "No active incidents" : "Active service interruption");
   output = replaceContent(output, "data-incident-copy", allOnline ? "Beacon is operating normally." : "The live monitor is waiting for a healthy Beacon report.");
   output = replaceContent(output, "data-last-updated", ageText);
+  output = output.replace(/<div class="updates-list" data-incidents>[\s\S]*?<\/div>/, `<div class="updates-list" data-incidents>${incidentMarkup(stats.incidents)}</div>`);
   return output;
 }
 
@@ -204,14 +224,14 @@ function baseStatusHtml() {
         <article class="service" data-service="database"><div class="service-heading"><strong>Database</strong><b data-service-uptime>Checking...</b></div><p class="service-detail" data-service-detail>Status and statistics storage</p><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
       </section>
       <section class="updates-grid" aria-label="Incidents and maintenance">
-        <article class="updates-panel"><div class="panel-heading"><div><p class="eyebrow">Past incidents</p><h2>No recent incidents</h2></div></div><p>There are no recorded incidents in the current monitoring window.</p></article>
-        <article class="updates-panel"><div class="panel-heading"><div><p class="eyebrow">Scheduled maintenance</p><h2>No maintenance planned</h2></div></div><p>There is no scheduled maintenance at this time.</p></article>
+        <article class="updates-panel"><div class="panel-heading"><div><p class="eyebrow">Past incidents</p><h2>Past incidents</h2></div></div><div class="updates-list" data-incidents><p>No recent incidents.</p></div></article>
+        <article class="updates-panel"><div class="panel-heading"><div><p class="eyebrow">Scheduled maintenance</p><h2>Scheduled maintenance</h2></div></div><div class="updates-list" data-maintenance><p>No maintenance is currently scheduled.</p></div></article>
       </section>
     </main>
 
     <footer class="status-footer"><span class="footer-brand"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" />Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
     <footer class="normal-footer"><a href="https://beacon-bot.site/tos/">Terms of Use</a><a href="https://beacon-bot.site/privacy/">Privacy Policy</a><a href="https://beacon-bot.site/copyright/">Copyright Dispute</a><a href="https://beacon-bot.site/gdpr/">GDPR Notice</a><a href="https://beacon-bot.site/cookies/">Cookie Policy</a><a href="https://beacon-bot.site/eula/">EULA</a><a href="https://beacon-bot.site/imprint/">Imprint</a></footer>
-    <script src="/status/status-runtime-v2.js?v=11" defer></script>
+    <script src="/status/status-runtime-v2.js?v=12" defer></script>
   </body>
 </html>`;
 }

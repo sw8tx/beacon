@@ -13,6 +13,7 @@ const FALLBACK_STATS = {
 };
 const HISTORY_KEY = "daily-history";
 const MONITORING_STARTED_KEY = "monitoring-started-at";
+const INCIDENTS_KEY = "status-incidents";
 const STALE_AFTER_MS = 3 * 60 * 1000;
 const CACHE_STATS_URL = "https://beacon-bot.site/__discord-stats-cache";
 const DISCORD_API_BASE = "https://discord.com/api/v10";
@@ -281,7 +282,51 @@ async function updateD1History(env, stats) {
   ]);
 }
 
+async function readIncidents(env) {
+  try {
+    if (env.STATUS_DB) {
+      const row = await env.STATUS_DB.prepare("SELECT value FROM status_meta WHERE key = ?").bind(INCIDENTS_KEY).first();
+      const parsed = JSON.parse(row?.value || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    if (env.DISCORD_STATS) {
+      const stored = await env.DISCORD_STATS.get(INCIDENTS_KEY, "json");
+      return Array.isArray(stored) ? stored : [];
+    }
+  } catch (err) {
+    console.error(`[discord-stats] Failed to read incidents: ${err.message}`);
+  }
+  return [];
+}
+
+async function writeIncidents(env, incidents) {
+  const value = JSON.stringify(incidents.slice(0, 20));
+  try {
+    if (env.STATUS_DB) {
+      await env.STATUS_DB.prepare("INSERT INTO status_meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(INCIDENTS_KEY, value).run();
+      return;
+    }
+    if (env.DISCORD_STATS) await env.DISCORD_STATS.put(INCIDENTS_KEY, value);
+  } catch (err) {
+    console.error(`[discord-stats] Failed to write incidents: ${err.message}`);
+  }
+}
+
 async function writeStats(env, stats) {
+  const previous = await readStats(env);
+  const previousAt = Date.parse(previous.updatedAt || "");
+  const currentAt = Date.parse(stats.updatedAt || "");
+  const incidents = await readIncidents(env);
+  if (Number.isFinite(previousAt) && Number.isFinite(currentAt) && currentAt - previousAt >= STALE_AFTER_MS) {
+    incidents.unshift({
+      id: `incident_${currentAt}`,
+      startedAt: new Date(previousAt).toISOString(),
+      resolvedAt: new Date(currentAt).toISOString(),
+      durationSeconds: Math.floor((currentAt - previousAt) / 1000),
+      title: "Beacon monitoring interruption",
+    });
+    await writeIncidents(env, incidents);
+  }
   const storage = {
     database: false,
     hasBinding: Boolean(env.DISCORD_STATS),
@@ -380,6 +425,11 @@ async function handleGet(env) {
     ? Math.max(0, Math.floor((Date.now() - updatedAt) / 1000))
     : null;
 
+  const incidents = await readIncidents(env);
+  const currentIncident = !online && Number.isFinite(updatedAt)
+    ? [{ id: "active_monitoring", startedAt: new Date(updatedAt).toISOString(), resolvedAt: null, title: "Beacon monitoring interruption" }]
+    : [];
+
   return json({
     ...stats,
     online,
@@ -387,6 +437,7 @@ async function handleGet(env) {
     monitoringStartedAt,
     uptimePercent: uptimePercent(history, monitoringStartedAt),
     ageSeconds,
+    incidents: [...currentIncident, ...incidents].slice(0, 20),
   });
 }
 
