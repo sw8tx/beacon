@@ -94,7 +94,7 @@ body.auth-flash::after { content: ""; position: fixed; inset: 0; z-index: 55; po
 
 main { position: relative; flex: 0 0 auto; }
 main::after { content: ""; display: block; height: 0; background: var(--ink); }
-.hero-section { position: relative; display: grid; grid-template-columns: 1fr; align-items: center; min-height: calc(100vh - 150px); padding: 126px 4.2vw 55px; border-bottom: 1px solid rgba(255,255,255,.12); background: linear-gradient(90deg, rgba(4, 8, 24, .62), rgba(4, 8, 24, .2)), url("assets/beacon-background.png?v=2") center / cover no-repeat; }
+.hero-section { position: relative; display: grid; grid-template-columns: 1fr; align-items: center; min-height: calc(100vh - 150px); padding: 126px 4.2vw 55px; border-bottom: 1px solid rgba(255,255,255,.12); background: linear-gradient(90deg, rgba(4, 8, 24, .62), rgba(4, 8, 24, .2)), url("/assets/beacon-background.png?v=2") center / cover no-repeat; }
 .hero-section::before { content: none; }
 .hero-copy { position: relative; z-index: 2; max-width: 700px; min-width: 0; }
 .eyebrow, .section-overline { color: var(--yellow); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }

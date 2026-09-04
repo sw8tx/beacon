@@ -233,7 +233,7 @@ async function loadDiscordSession() {
     const { user } = await response.json();
     if (!user?.username) return;
     isDiscordSignedIn = true;
-    discordAvatar.src = user.avatar || "assets/beacon-logo.png?v=92";
+    discordAvatar.src = user.avatar || "/assets/beacon-logo.png?v=92";
     discordAvatar.alt = `${user.username} profile picture`;
     discordUsername.textContent = user.username;
     if (discordLogout) discordLogout.textContent = "Log out";
@@ -289,7 +289,7 @@ const KNOWN_COMMAND_COUNT = 24;
 const numberFormatter = new Intl.NumberFormat("en-US");
 let statsRequest = null;
 const DEFAULT_SERVERS = [
-  { name: "Beacon", members: 57, iconUrl: "assets/beacon-logo.png?v=92" },
+  { name: "Beacon", members: 57, iconUrl: "/assets/beacon-logo.png?v=92" },
   { name: "Apex Design V2", members: 72, iconUrl: null },
   { name: "Gelsenkirchen RP", members: 61, iconUrl: null },
   { name: "BotTest123", members: 21, iconUrl: null },

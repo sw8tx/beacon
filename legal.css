@@ -20,6 +20,12 @@ h2 { margin: 0 0 12px; color: #fff; font: 700 1.35rem/1.2 "Space Grotesk", sans-
 h2::before { content: ""; display: inline-block; width: 4px; height: 1em; margin: 0 12px -2px 0; border-radius: 4px; background: var(--accent); box-shadow: 0 0 16px rgba(49,182,230,.45); }
 p { margin: 0 0 12px; color: #c0c7c3; }
 p:last-child { margin-bottom: 0; }
+.legal-table-wrap { overflow-x: auto; margin-top: 16px; border: 1px solid rgba(139,191,235,.16); }
+table { width: 100%; min-width: 680px; border-collapse: collapse; color: #c0c7c3; font-size: .82rem; line-height: 1.45; }
+th, td { padding: 12px 13px; border-right: 1px solid rgba(139,191,235,.12); border-bottom: 1px solid rgba(139,191,235,.12); vertical-align: top; text-align: left; }
+th { color: #fff; background: rgba(49,182,230,.1); font-weight: 800; }
+tr:last-child td { border-bottom: 0; }
+th:last-child, td:last-child { border-right: 0; }
 .legal-footer { display: grid; justify-items: center; gap: 14px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); color: #747d79; font-size: .76rem; text-align: center; }
 .legal-sponsor { display: inline-flex; align-items: center; gap: 10px; color: #a4aaa6; font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .legal-sponsor img { width: 135px; max-height: 30px; height: auto; object-fit: contain; }

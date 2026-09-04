@@ -26,7 +26,7 @@ function buildDays(stats) {
   }
   return days;
 }
-function renderHistory(service, days, name, online, percent) {
+function renderHistory(service, days, name, online, percent, detail) {
   const history = service.querySelector("[data-history]");
   history.replaceChildren(...days.map((day) => {
     const bar = document.createElement("span");
@@ -39,6 +39,7 @@ function renderHistory(service, days, name, online, percent) {
   }));
   service.querySelector("[data-service-uptime]").textContent = online ? "Operational" : "Unavailable";
   service.querySelector("[data-service-uptime]").style.color = online ? "var(--green)" : "var(--red)";
+  service.querySelector("[data-service-detail]").textContent = detail;
   service.querySelector("[data-service-percent]").textContent = percent == null ? "Monitoring started" : `${percent.toFixed(2)}% uptime`;
   service.classList.toggle("is-down", !online);
 }
@@ -94,8 +95,10 @@ async function refreshStatus() {
     document.querySelector('[data-metric="ping"]').textContent = Number.isFinite(Number(stats.ping)) ? `${Math.round(stats.ping)} ms` : "--";
     document.querySelector('[data-metric="uptime-percent"]').textContent = measured == null ? "Monitoring started" : `${measured.toFixed(2)}%`;
     if (uptimeLabel) uptimeLabel.textContent = measured == null ? `Uptime since ${formatMonitoringDate(stats.monitoringStartedAt)}` : "30-Day Uptime";
-    renderHistory(services[0], days, "Primary Bot", online, measured);
-    renderHistory(services[1], days, "Discord Gateway", online, measured);
+    const apiOnline = Boolean(response.ok);
+    const databaseOnline = Boolean(stats.updatedAt);
+    renderHistory(services[0], days, "Beacon Bot", Boolean(stats.online), measured, stats.online ? "Discord gateway and command service responding" : "No fresh bot report received");
+    renderHistory(services[1], days, "Discord Gateway", Boolean(stats.online), measured, stats.online ? `Connected - ${Math.round(Number(stats.ping) || 0)} ms gateway ping` : "Discord gateway connection unavailable");
     const websiteDegraded = website.online && Number(website.latency) > 1200;
     const websiteDays = days.map((day) => ({
       ...day,
@@ -105,12 +108,14 @@ async function refreshStatus() {
       expected: 100,
       ping: website.latency,
     }));
-    renderHistory(services[2], websiteDays, "Beacon Website", website.online, website.online ? (websiteDegraded ? 95 : 100) : 0);
+    renderHistory(services[2], websiteDays, "Beacon Website", website.online, website.online ? (websiteDegraded ? 95 : 100) : 0, website.online ? `Public website reachable - ${website.latency} ms response` : "Public website is unreachable");
+    renderHistory(services[3], days, "Dashboard / API", apiOnline, measured, apiOnline ? "Statistics API is responding" : "Statistics API is unavailable");
+    renderHistory(services[4], days, "Database", databaseOnline, measured, databaseOnline ? "Status data was read successfully" : "No stored status data is available");
     document.body.dataset.lastReportAt = stats.updatedAt || ""; updateTime(stats.updatedAt);
   } catch {
     setStatusState("monitoring-unavailable", "The monitoring service could not be reached.");
     document.querySelector('[data-metric="gateway-status"]').textContent = "Unavailable";
-    const days = buildDays({ history: [] }); services.forEach((service) => renderHistory(service, days, service.querySelector(".service-heading strong").textContent, false, null));
+    const days = buildDays({ history: [] }); services.forEach((service) => renderHistory(service, days, service.querySelector(".service-heading strong").textContent, false, null, "Monitoring unavailable"));
     updateTime(null);
   }
 }

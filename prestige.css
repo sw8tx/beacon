@@ -391,6 +391,15 @@ h1 {
   line-height: 1.45;
 }
 
+.purchase-note {
+  margin: 22px 0 0;
+  color: #969ba5;
+  font-size: .78rem;
+  line-height: 1.55;
+}
+
+.purchase-note a { color: #ffd447; }
+
 .price-card li::before {
   content: "+";
   position: absolute;

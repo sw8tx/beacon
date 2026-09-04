@@ -3386,10 +3386,6 @@ const commands = [
     .setDescription("Show the server prestige leaderboard."),
 
   new SlashCommandBuilder()
-    .setName("prestige")
-    .setDescription("Reset your level at the cap and gain one prestige rank."),
-
-  new SlashCommandBuilder()
     .setName("settings")
     .setDescription("Show Beacon settings for this server.")
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
@@ -3609,7 +3605,7 @@ client.on("messageCreate", async (message) => {
       ).addFields(
         { name: "Prestige", value: `${profile.prestige}`, inline: true },
         { name: "Rank", value: `#${rankPosition(data, message.author.id) || "-"}`, inline: true },
-        { name: "Next step", value: profile.level >= PRESTIGE_LEVEL_REQUIREMENT ? "Use `/prestige` to reset your level and climb higher." : "Keep chatting to earn more XP.", inline: false }
+        { name: "Next step", value: profile.level >= PRESTIGE_LEVEL_REQUIREMENT ? "You reached the level cap." : "Keep chatting to earn more XP.", inline: false }
       );
 
       await message.channel.send(withBrandFiles({ embeds: [embed] })).catch(() => null);
@@ -3695,7 +3691,6 @@ async function handleCommand(interaction) {
   if (command === "serverinfo") return serverInfo(interaction);
   if (command === "rank") return rank(interaction, data);
   if (command === "leaderboard") return leaderboard(interaction, data);
-  if (command === "prestige") return prestige(interaction, data);
   if (command === "settings") return settings(interaction, data);
   if (command === "status") return status(interaction);
 }
@@ -3726,7 +3721,6 @@ const helpPages = [
       ["/serverinfo", "Inspect server stats, roles, members, channels, bots and emojis with private detail buttons."],
       ["/rank", "View level, XP and prestige progress."],
       ["/leaderboard", "Show the server prestige leaderboard."],
-      ["/prestige", `Prestige after reaching level ${PRESTIGE_LEVEL_REQUIREMENT}.`],
     ],
   },
   {
@@ -4102,7 +4096,7 @@ async function rank(interaction, data) {
       {
         name: "Progress",
         value: profile.level >= PRESTIGE_LEVEL_REQUIREMENT
-          ? "Ready. Use `/prestige` to reset your level and gain prestige."
+          ? "You reached the level cap."
           : `${profile.xp}/${needed} XP\n${progressBar(progress, 14)}`,
         inline: false,
       }
@@ -4266,10 +4260,10 @@ function serverInfoPageItems(guild, kind) {
 }
 
 function serverInfoItemText(kind, item) {
-  if (kind === "roles") return item.id === item.guild.roles.everyone.id ? `@everyone · ${item.members.size} members` : `${item} · ${item.members.size} members`;
-  if (kind === "members" || kind === "bots") return `${item} · ${item.user.tag}`;
-  if (kind === "channels") return `${item} · ${item.type === ChannelType.GuildCategory ? "Category" : item.type === ChannelType.GuildVoice ? "Voice" : "Text/Forum"}`;
-  if (kind === "emojis") return `${item}  ${item.name} · ${item.animated ? "Animated" : "Static"}`;
+  if (kind === "roles") return item.id === item.guild.roles.everyone.id ? `@everyone | ${item.members.size}` : `${item} | ${item.members.size} members`;
+  if (kind === "members" || kind === "bots") return `${item}`;
+  if (kind === "channels") return `${item} | ${item.type === ChannelType.GuildCategory ? "Category" : item.type === ChannelType.GuildVoice ? "Voice" : "Text"}`;
+  if (kind === "emojis") return `${item} ${item.name}`;
   return String(item);
 }
 
@@ -4282,17 +4276,8 @@ function serverInfoDetailContainer(guild, kind, page = 0) {
   const currentPage = Math.max(0, Math.min(Number(page) || 0, pageCount - 1));
   const pageItems = items.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
   const lines = pageItems.length ? pageItems.map((item, index) => `${currentPage * pageSize + index + 1}. ${serverInfoItemText(kind, item)}`).join("\n") : "Nothing to show.";
-  const buttons = [
-    new ButtonBuilder().setCustomId("serverinfo:back").setLabel("Back").setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`serverinfo:${kind}:${currentPage - 1}`).setLabel("Previous").setStyle(ButtonStyle.Secondary).setDisabled(currentPage === 0),
-    new ButtonBuilder().setCustomId(`serverinfo:${kind}:${currentPage + 1}`).setLabel(`Page ${currentPage + 1}/${pageCount}`).setStyle(ButtonStyle.Primary).setDisabled(currentPage >= pageCount - 1),
-    new ButtonBuilder().setCustomId(`serverinfo:${kind}:${currentPage + 1}`).setLabel("Next").setStyle(ButtonStyle.Secondary).setDisabled(currentPage >= pageCount - 1),
-  ];
-
-  const header = new SectionBuilder().addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`## ${label} · ${guild.name}\n${items.length} total · page ${currentPage + 1} of ${pageCount}`)
-  );
   const icon = serverInfoIconUrl(guild);
+  const header = new SectionBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${label} | ${guild.name}\n${items.length} total | ${currentPage + 1}/${pageCount}`));
   if (icon) header.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon).setDescription(`${guild.name} icon`));
 
   return new ContainerBuilder()
@@ -4300,8 +4285,13 @@ function serverInfoDetailContainer(guild, kind, page = 0) {
     .addSectionComponents(header)
     .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
     .addTextDisplayComponents(new TextDisplayBuilder().setContent(lines))
-    .addActionRowComponents(new ActionRowBuilder().addComponents(buttons))
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# This detail view is visible only to you."));
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("serverinfo:back").setLabel("Back").setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`serverinfo:${kind}:${currentPage - 1}`).setLabel("Previous").setStyle(ButtonStyle.Secondary).setDisabled(currentPage === 0),
+      new ButtonBuilder().setCustomId(`serverinfo:${kind}:${currentPage}:current`).setLabel(`${currentPage + 1}/${pageCount}`).setStyle(ButtonStyle.Primary).setDisabled(true),
+      new ButtonBuilder().setCustomId(`serverinfo:${kind}:${currentPage + 1}`).setLabel("Next").setStyle(ButtonStyle.Secondary).setDisabled(currentPage >= pageCount - 1)
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Private"));
 }
 
 function serverInfoContainer(guild) {
@@ -4309,10 +4299,11 @@ function serverInfoContainer(guild) {
   const humans = guild.members.cache.filter((member) => !member.user.bot).size;
   const bots = guild.members.cache.filter((member) => member.user.bot).size;
   const channels = guild.channels.cache;
+  const textChannels = channels.filter((channel) => channel.type === ChannelType.GuildText).size;
+  const voiceChannels = channels.filter((channel) => channel.type === ChannelType.GuildVoice).size;
+  const timestamp = Math.floor(guild.createdTimestamp / 1000);
   const icon = serverInfoIconUrl(guild);
-  const header = new SectionBuilder().addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`## ${guild.name}\nServer information and quick controls.`)
-  );
+  const header = new SectionBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${guild.name}\nServer info`));
   if (icon) header.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon).setDescription(`${guild.name} icon`));
 
   return new ContainerBuilder()
@@ -4320,40 +4311,49 @@ function serverInfoContainer(guild) {
     .addSectionComponents(header)
     .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-      `**Owner**\n<@${guild.ownerId}>\n\n` +
-      `**Members**\n${members} total · ${humans} humans · ${bots} bots\n\n` +
-      `**Channels**\n${channels.size} total · ${channels.filter((channel) => channel.type === ChannelType.GuildText).size} text · ${channels.filter((channel) => channel.type === ChannelType.GuildVoice).size} voice\n\n` +
-      `**Roles**\n${guild.roles.cache.size} · **Emojis** ${guild.emojis.cache.size}\n\n` +
-      `**Created**\n<t:${Math.floor(guild.createdTimestamp / 1000)}:D> (<t:${Math.floor(guild.createdTimestamp / 1000)}:R>)\n\n` +
-      `**Boosts**\nLevel ${guild.premiumTier || 0} · ${guild.premiumSubscriptionCount || 0} boosts`
+      `Owner: <@${guild.ownerId}>\n` +
+      `Members: ${members} (${humans} human, ${bots} bots)\n` +
+      `Channels: ${channels.size} (${textChannels} text, ${voiceChannels} voice)\n` +
+      `Roles: ${guild.roles.cache.size}`
+    ))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(serverInfoMenu()))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      `Emojis: ${guild.emojis.cache.size}\n` +
+      `Created: <t:${timestamp}:D>\n` +
+      `Boosts: ${guild.premiumSubscriptionCount || 0} | Level ${guild.premiumTier || 0}`
     ))
     .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
     .addActionRowComponents(new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("serverinfo:roles:0").setLabel(`Roles (${guild.roles.cache.size})`).setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId("serverinfo:members:0").setLabel(`Members (${members})`).setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId("serverinfo:channels:0").setLabel(`Channels (${channels.size})`).setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId("serverinfo:bots:0").setLabel(`Bots (${bots})`).setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId("serverinfo:emojis:0").setLabel(`Emojis (${guild.emojis.cache.size})`).setStyle(ButtonStyle.Secondary)
-    ))
-    .addActionRowComponents(new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("serverinfo:security").setLabel("Security").setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId("serverinfo:refresh").setLabel("Refresh").setStyle(ButtonStyle.Secondary)
     ))
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Use the buttons to inspect the server. Detail lists are private."));
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Choose a button"));
 }
 
 async function serverInfo(interaction) {
   await interaction.reply({ components: [serverInfoContainer(interaction.guild)], flags: MessageFlags.IsComponentsV2 });
 }
 
-async function serverInfoSecurity(interaction) {
-  const guild = interaction.guild;
-  const verification = guild.verificationLevel ?? 0;
-  const levels = ["None", "Low", "Medium", "High", "Very High"];
-  const text = `## Security · ${guild.name}\n\n**Verification level**\n${levels[verification] || verification}\n\n**2FA requirement**\n${guild.mfaLevel ? "Enabled" : "Not required"}\n\n**Explicit content filter**\n${guild.explicitContentFilter ?? "Unknown"}\n\n**Server features**\n${guild.features.length ? guild.features.map((feature) => `\`${feature}\``).join(", ") : "None"}`;
-  await interaction.reply({ components: [new ContainerBuilder().setAccentColor(BRAND_COLOR).addTextDisplayComponents(new TextDisplayBuilder().setContent(text)).addActionRowComponents(new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("serverinfo:back").setLabel("Back").setStyle(ButtonStyle.Secondary))).addTextDisplayComponents(new TextDisplayBuilder().setContent("-# This detail view is visible only to you."))], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+function serverInfoMenu() {
+  return new StringSelectMenuBuilder()
+    .setCustomId("serverinfo_menu")
+    .setPlaceholder("Choose what to view")
+    .addOptions(
+      { label: "Roles", value: "roles", description: "View every server role" },
+      { label: "Members", value: "members", description: "View the member list" },
+      { label: "Channels", value: "channels", description: "View server channels" },
+      { label: "Bots", value: "bots", description: "View bots in this server" },
+      { label: "Emojis", value: "emojis", description: "View custom emojis" },
+      { label: "Security", value: "security", description: "View security settings" }
+    );
 }
 
+async function serverInfoSecurity(interaction) {
+  const guild = interaction.guild;
+  const levels = ["None", "Low", "Medium", "High", "Very High"];
+  const text = `## Security | ${guild.name}\n\nVerification: ${levels[guild.verificationLevel] || guild.verificationLevel}\n2FA: ${guild.mfaLevel ? "Enabled" : "Not required"}\nFilter: ${guild.explicitContentFilter ?? "Unknown"}\nFeatures: ${guild.features.length ? guild.features.map((feature) => `\`${feature}\``).join(", ") : "None"}`;
+  const container = new ContainerBuilder().setAccentColor(BRAND_COLOR).addTextDisplayComponents(new TextDisplayBuilder().setContent(text)).addActionRowComponents(new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("serverinfo:back").setLabel("Back").setStyle(ButtonStyle.Secondary))).addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Private"));
+  await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+}
 function activeHoneypotDraft(interaction, data) {
   const key = honeypotDraftKey(interaction);
   const draft = honeypotSetupDrafts.get(key) || honeypotDraftFromSettings(data);
@@ -4668,6 +4668,21 @@ async function handleSelect(interaction) {
   const data = guildData(interaction.guild.id);
 
   if (await handleHoneypotSetupSelect(interaction, data)) return;
+
+  if (interaction.customId === "serverinfo_menu") {
+    const kind = interaction.values[0];
+    if (kind === "security") {
+      await serverInfoSecurity(interaction);
+      return;
+    }
+    if (["roles", "members", "channels", "bots", "emojis"].includes(kind)) {
+      await interaction.reply({
+        components: [serverInfoDetailContainer(interaction.guild, kind, 0)],
+        flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+      });
+      return;
+    }
+  }
 
   if (interaction.customId === "ticket_open_dropdown") {
     await ticketHandlers.showTicketModal(interaction, data, beaconUi());

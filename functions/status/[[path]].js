@@ -183,6 +183,7 @@ function baseStatusHtml() {
           <div><p class="eyebrow">Beacon Bot</p><h1>System Status</h1></div>
         </div>
         <p class="card-copy" data-summary-copy>Live service information from Beacon Bot.</p>
+        <div class="status-state status-state--monitoring-unavailable" data-status-state>Checking monitoring...</div>
         <div class="metric-list" aria-label="Live Beacon statistics">
           <div><span>Discord Gateway</span><strong data-metric="gateway-status">Connected</strong></div>
           <div><span>Connected Servers</span><strong><b data-metric="guilds">--</b> servers</strong></div>
@@ -196,9 +197,15 @@ function baseStatusHtml() {
       </section>
       <section class="history-panel" aria-labelledby="history-title">
         <div class="panel-heading"><div><p class="eyebrow">Uptime over the past 30 days</p><h2 id="history-title">Service history</h2></div><span>Hover over a bar for details</span></div>
-        <article class="service" data-service="bot"><div class="service-heading"><strong>Primary Bot</strong><b data-service-uptime>Checking...</b></div><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
-        <article class="service" data-service="gateway"><div class="service-heading"><strong>Discord Gateway</strong><b data-service-uptime>Checking...</b></div><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
-        <article class="service" data-service="website"><div class="service-heading"><strong>Beacon Website</strong><b data-service-uptime>Checking...</b></div><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
+        <article class="service" data-service="bot"><div class="service-heading"><strong>Beacon Bot</strong><b data-service-uptime>Checking...</b></div><p class="service-detail" data-service-detail>Discord gateway and command service</p><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
+        <article class="service" data-service="gateway"><div class="service-heading"><strong>Discord Gateway</strong><b data-service-uptime>Checking...</b></div><p class="service-detail" data-service-detail>Realtime connection to Discord</p><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
+        <article class="service" data-service="website"><div class="service-heading"><strong>Beacon Website</strong><b data-service-uptime>Checking...</b></div><p class="service-detail" data-service-detail>Public Beacon website</p><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
+        <article class="service" data-service="dashboard"><div class="service-heading"><strong>Dashboard / API</strong><b data-service-uptime>Checking...</b></div><p class="service-detail" data-service-detail>Dashboard data and authentication services</p><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
+        <article class="service" data-service="database"><div class="service-heading"><strong>Database</strong><b data-service-uptime>Checking...</b></div><p class="service-detail" data-service-detail>Status and statistics storage</p><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
+      </section>
+      <section class="updates-grid" aria-label="Incidents and maintenance">
+        <article class="updates-panel"><div class="panel-heading"><div><p class="eyebrow">Past incidents</p><h2>No recent incidents</h2></div></div><p>There are no recorded incidents in the current monitoring window.</p></article>
+        <article class="updates-panel"><div class="panel-heading"><div><p class="eyebrow">Scheduled maintenance</p><h2>No maintenance planned</h2></div></div><p>There is no scheduled maintenance at this time.</p></article>
       </section>
     </main>
 
