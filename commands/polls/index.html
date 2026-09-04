@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Beacon Poll commands create live Discord Components V2 polls with voting and automatic expiry." />
+    <title>Beacon Poll Commands</title>
+    <link rel="icon" type="image/png" href="/assets/beacon-logo.png?v=92" />
+    <link rel="stylesheet" href="/commands.css?v=8" />
+    <link rel="stylesheet" href="/cmd-page.css?v=1" />
+  </head>
+  <body class="commands-page">
+    <nav class="commands-nav" aria-label="Beacon commands navigation">
+      <a class="commands-brand" href="https://beacon-bot.site/"><img src="/assets/beacon-logo.png?v=92" width="34" height="34" alt="" /><span>Beacon</span></a>
+      <a class="commands-back" href="https://beacon-bot.site/">Back to Beacon</a>
+    </nav>
+    <main class="commands-shell"><section class="commands-doc">
+      <nav class="commands-tabs" aria-label="Command pages">
+        <a href="/commands/tickets/">Tickets</a><a href="/commands/emoji-steal/">Emoji Steal</a><a href="/commands/purge/">Purge</a><a href="/commands/honeypot/">Honeypot</a><a class="is-active" href="/commands/polls/">Polls</a>
+      </nav>
+      <h1>Poll Commands</h1>
+      <p class="doc-lead">Create polished Components V2 polls with live vote totals, up to five choices, optional thumbnails, and an automatic closing time.</p>
+      <div class="doc-panel"><h2>How it works</h2><p>Use <code>/poll-create</code> to post a poll. Members vote with buttons, Beacon updates the totals, and the poll closes automatically when its duration ends.</p></div>
+      <section class="flow-grid" aria-label="Poll flow">
+        <article><span>1</span><h2>Create</h2><p>Set a title, duration, two to five options, and an optional description or thumbnail.</p></article>
+        <article><span>2</span><h2>Vote</h2><p>Each member selects an option and can change their vote while the poll is open.</p></article>
+        <article><span>3</span><h2>Manage</h2><p>Edit or delete a poll with its footer ID, then let Beacon close expired polls automatically.</p></article>
+      </section>
+      <div class="command-list">
+        <article class="command-card"><div><code>/poll-create</code><p>Post a live poll with two to five options and a duration.</p></div><span>Create</span></article>
+        <article class="command-card"><div><code>/poll-edit</code><p>Change the title, description, duration, options, or thumbnail of an open poll.</p></div><span>Edit</span></article>
+        <article class="command-card"><div><code>/poll-delete</code><p>Remove an existing poll using the poll ID shown in its footer.</p></div><span>Delete</span></article>
+      </div>
+      <section class="preview-block" aria-label="Poll screenshots">
+        <h2>Screenshots</h2><p>Polls stay readable in Discord while the buttons show live participation.</p>
+        <div class="screenshot-frame"><div class="screenshot-top"><span></span><strong>Live Components V2 poll</strong></div><div class="discord-preview">
+          <div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div>
+          <div class="preview-card poll-shot"><strong>Beacon <b class="app-badge">APP</b></strong><h3>Where should we go next?</h3><p>Pick the next community event. You can change your vote before the poll closes.</p><div class="poll-option"><span>🎮 Game night</span><b>12</b></div><div class="poll-option"><span>🎬 Movie night</span><b>8</b></div><div class="poll-option"><span>🏆 Tournament</span><b>5</b></div><div class="preview-actions"><button type="button">Game night</button><button type="button">Movie night</button><button type="button">Tournament</button></div><small>Closes in 2h · 25 votes</small></div>
+        </div></div>
+      </section>
+    </section></main>
+  </body>
+</html>

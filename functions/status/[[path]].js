@@ -41,6 +41,13 @@ function formatPercent(value) {
   return Number.isFinite(number) ? `${number.toFixed(2)}%` : "--";
 }
 
+function formatMonitoringDate(value) {
+  const timestamp = Date.parse(value || "");
+  return Number.isFinite(timestamp)
+    ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(timestamp)
+    : "the monitoring start date";
+}
+
 function hasNumericValue(value) {
   return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
 }
@@ -98,6 +105,7 @@ async function readStatus(env) {
     monitoringStartedAt,
     ageSeconds,
     uptimePercent: measuredUptime,
+    statusState: !Number.isFinite(updatedAt) ? "monitoring-unavailable" : online ? "operational" : "service-outage",
   };
 }
 
@@ -110,10 +118,13 @@ function replaceContent(html, selector, value) {
 
 function renderStatusHtml(html, stats) {
   const allOnline = Boolean(stats.online);
-  const summaryTitle = allOnline ? "All systems operational" : "Service disruption detected";
+  const monitoringUnavailable = stats.statusState === "monitoring-unavailable";
+  const summaryTitle = monitoringUnavailable ? "Monitoring unavailable" : allOnline ? "Operational" : "Service outage";
   const summaryCopy = allOnline
     ? "Beacon Bot and its public services are responding normally."
-    : "At least one Beacon service is not responding normally.";
+    : monitoringUnavailable
+      ? "The monitoring service could not provide a fresh report."
+      : "At least one Beacon service is not responding normally.";
   const uptimeText = hasNumericValue(stats.uptimePercent)
     ? `${Number(stats.uptimePercent).toFixed(2)}% uptime`
     : "Monitoring started";
@@ -123,7 +134,8 @@ function renderStatusHtml(html, stats) {
 
   let output = html
     .replace('<body>', `<body data-last-report-at="${escapeHtml(stats.updatedAt || "")}">`)
-    .replace('class="status-summary"', `class="status-summary${allOnline ? "" : " is-down"}"`)
+    .replace('class="status-summary"', `class="status-summary status-summary--${stats.statusState || "service-outage"}${allOnline ? "" : " is-down"}"`)
+    .replace('data-status-state>Checking monitoring...</', `data-status-state>${escapeHtml(summaryTitle)}<`)
     .replace("[data-summary-icon]>&#10003;", `[data-summary-icon]>${allOnline ? "&#10003;" : "!"}`)
     .replace("<strong data-service-uptime>Checking...</strong>", `<strong data-service-uptime>${escapeHtml(uptimeText)}</strong>`)
     .replace("<p class=\"service-detail\" data-service-detail>Discord gateway and command service</p>", `<p class="service-detail" data-service-detail>${escapeHtml(allOnline ? "Online" : "No fresh bot report received")}</p>`)
@@ -138,7 +150,8 @@ function renderStatusHtml(html, stats) {
   output = replaceContent(output, 'data-metric="ping"', Number(stats.ping) ? `${Math.round(stats.ping)} ms` : "--");
   output = replaceContent(output, 'data-metric="guilds"', formatNumber(stats.guilds));
   output = replaceContent(output, 'data-metric="users"', formatNumber(stats.users));
-  output = replaceContent(output, 'data-metric="uptime-percent"', formatPercent(stats.uptimePercent));
+  output = replaceContent(output, 'data-metric="uptime-percent"', hasNumericValue(stats.uptimePercent) ? formatPercent(stats.uptimePercent) : "Monitoring started");
+  output = replaceContent(output, "data-uptime-label", hasNumericValue(stats.uptimePercent) ? "30-Day Uptime" : `Uptime since ${formatMonitoringDate(stats.monitoringStartedAt)}`);
   output = replaceContent(output, "data-incident-title", allOnline ? "No active incidents" : "Active service interruption");
   output = replaceContent(output, "data-incident-copy", allOnline ? "Beacon is operating normally." : "The live monitor is waiting for a healthy Beacon report.");
   output = replaceContent(output, "data-last-updated", ageText);
@@ -169,6 +182,7 @@ function baseStatusHtml() {
         <div class="card-heading">
           <div><p class="eyebrow">Beacon Bot</p><h1>System Status</h1></div>
         </div>
+        <div class="status-state status-state--monitoring-unavailable" data-status-state>Checking monitoring...</div>
         <p class="card-copy" data-summary-copy>Live service information from Beacon Bot.</p>
         <div class="metric-list" aria-label="Live Beacon statistics">
           <div><span>Discord Gateway</span><strong data-metric="gateway-status">Connected</strong></div>
@@ -176,7 +190,7 @@ function baseStatusHtml() {
           <div><span>Community Members</span><strong data-metric="users">--</strong></div>
           <div><span>Bot Session Uptime</span><strong data-metric="uptime">--</strong></div>
           <div><span>Gateway Latency</span><strong data-metric="ping">--</strong></div>
-          <div><span>30-Day Uptime</span><strong data-metric="uptime-percent">--</strong></div>
+          <div><span data-uptime-label>Uptime since monitoring started</span><strong data-metric="uptime-percent">--</strong></div>
           <div><span>Hosting</span><strong><img class="hosting-logo" src="/assets/header-footer-logo.png" alt="NXTBYTE" /></strong></div>
         </div>
         <div class="card-footer"><span>Automatically updated</span><span data-last-updated>Last updated: waiting</span></div>

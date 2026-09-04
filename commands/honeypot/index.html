@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Beacon Honeypot commands protect a decoy Discord channel from spam and raid bots." />
+    <title>Beacon Honeypot Commands</title>
+    <link rel="icon" type="image/png" href="/assets/beacon-logo.png?v=92" />
+    <link rel="stylesheet" href="/commands.css?v=8" />
+    <link rel="stylesheet" href="/cmd-page.css?v=1" />
+  </head>
+  <body class="commands-page">
+    <nav class="commands-nav" aria-label="Beacon commands navigation">
+      <a class="commands-brand" href="https://beacon-bot.site/"><img src="/assets/beacon-logo.png?v=92" width="34" height="34" alt="" /><span>Beacon</span></a>
+      <a class="commands-back" href="https://beacon-bot.site/">Back to Beacon</a>
+    </nav>
+    <main class="commands-shell"><section class="commands-doc">
+      <nav class="commands-tabs" aria-label="Command pages">
+        <a href="/commands/tickets/">Tickets</a><a href="/commands/emoji-steal/">Emoji Steal</a><a href="/commands/purge/">Purge</a><a class="is-active" href="/commands/honeypot/">Honeypot</a><a href="/commands/polls/">Polls</a>
+      </nav>
+      <h1>Honeypot Commands</h1>
+      <p class="doc-lead">Turn one tempting channel into a quiet trap for spam and raid bots. Beacon deletes the trigger message and can ban, kick, or timeout the user.</p>
+      <div class="doc-panel"><h2>How it works</h2><p>Choose a decoy channel, configure the moderation action, and post the panel. Normal members can leave it alone; a bot that sends a message triggers Beacon immediately.</p></div>
+      <section class="flow-grid" aria-label="Honeypot flow">
+        <article><span>1</span><h2>Setup</h2><p>Run <code>/honeypot-setup</code> to choose the protected channel and default action.</p></article>
+        <article><span>2</span><h2>Configure</h2><p>Use <code>/honeypot-configure</code> to update protection, delete-message behavior, and moderation response.</p></article>
+        <article><span>3</span><h2>Protect</h2><p>Beacon watches the channel and records the current ban count in the panel.</p></article>
+      </section>
+      <div class="command-list">
+        <article class="command-card"><div><code>/honeypot-setup</code><p>Open the Components V2 setup flow and choose a protected channel.</p></div><span>Panel</span></article>
+        <article class="command-card"><div><code>/honeypot-configure</code><p>Update the channel, moderation action, enabled state, or message cleanup.</p></div><span>Manage</span></article>
+        <article class="command-card"><div><code>/honeypot-disable</code><p>Disable the trap while preserving the saved configuration for later.</p></div><span>Safe</span></article>
+      </div>
+      <section class="preview-block" aria-label="Honeypot screenshots">
+        <h2>Screenshots</h2><p>These mockups show the public trap and the private setup controls staff use.</p>
+        <div class="screenshot-frame"><div class="screenshot-top"><span></span><strong>Protected channel</strong></div><div class="discord-preview">
+          <div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div>
+          <div class="preview-card honeypot-shot"><strong>Beacon <b class="app-badge">APP</b></strong><h3>DO NOT SEND MESSAGES IN THIS CHANNEL</h3><p>This channel is used to catch spam bots. Any messages sent here will result in a ban.</p><small>Powered by Beacon Bot</small></div>
+        </div></div>
+        <div class="screenshot-frame"><div class="screenshot-top"><span></span><strong>Honeypot setup</strong></div><div class="discord-preview">
+          <div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div>
+          <div class="preview-card honeypot-shot"><strong>Beacon <b class="app-badge">APP</b></strong><h3>Honeypot Setup</h3><p>Choose the protected channel and how Beacon should react.</p><div class="select-mock"># 🪤・honeypot <span>×⌄</span></div><div class="select-mock">Enabled <span>⌄</span></div><div class="select-mock">Ban <span>⌄</span></div><div class="select-mock">Delete messages <span>⌄</span></div><div class="preview-actions"><button type="button">Save Changes</button><button type="button" class="danger">Cancel</button></div></div>
+        </div></div>
+      </section>
+    </section></main>
+  </body>
+</html>

@@ -2,6 +2,8 @@ const API_ENDPOINT = "https://beacon-bot.site/api/discord-stats";
 const summaryCopy = document.querySelector("[data-summary-copy]");
 const lastUpdated = document.querySelector("[data-last-updated]");
 const services = [...document.querySelectorAll("[data-service]")];
+const statusState = document.querySelector("[data-status-state]");
+const uptimeLabel = document.querySelector("[data-uptime-label]");
 
 const number = (value) => Number.isFinite(Number(value)) ? Number(value).toLocaleString() : "--";
 function duration(value) {
@@ -43,7 +45,7 @@ function renderHistory(service, days, name, online, percent) {
 async function checkWebsite() {
   const started = performance.now();
   try {
-    await fetch(`https://beacon-bot.site/?status-check=${Date.now()}`, { cache: "no-store", mode: "no-cors" });
+    await fetchWithTimeout(`https://beacon-bot.site/?status-check=${Date.now()}`, { cache: "no-store", mode: "no-cors" });
     return { online: true, latency: Math.round(performance.now() - started) };
   } catch {
     return { online: false, latency: null };
@@ -53,22 +55,44 @@ function updateTime(updatedAt) {
   const timestamp = Date.parse(updatedAt || "");
   lastUpdated.textContent = Number.isFinite(timestamp) ? `Last updated: ${Math.max(0, Math.floor((Date.now() - timestamp) / 1000))} seconds ago` : "Last updated: unavailable";
 }
+async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+function setStatusState(state, copy) {
+  if (!statusState) return;
+  const labels = { operational: "Operational", "monitoring-unavailable": "Monitoring unavailable", "service-outage": "Service outage" };
+  statusState.textContent = labels[state] || labels["monitoring-unavailable"];
+  statusState.className = `status-state status-state--${state}`;
+  if (copy) summaryCopy.textContent = copy;
+}
+function formatMonitoringDate(value) {
+  const timestamp = Date.parse(value || "");
+  return Number.isFinite(timestamp) ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(timestamp) : "monitoring start";
+}
 async function refreshStatus() {
   try {
     const [response, website] = await Promise.all([
-      fetch(`${API_ENDPOINT}?status-check=${Date.now()}`, { cache: "no-store" }),
+      fetchWithTimeout(`${API_ENDPOINT}?status-check=${Date.now()}`, { cache: "no-store" }),
       checkWebsite(),
     ]);
     if (!response.ok) throw new Error();
     const stats = await response.json(); const online = Boolean(stats.online && website.online); const days = buildDays(stats);
     const uptime = Number(stats.uptimePercent); const measured = Number.isFinite(uptime) ? uptime : null;
-    summaryCopy.textContent = online ? "All systems operational. Beacon Bot and its Discord services are responding normally." : "Beacon Bot is not currently reporting a healthy connection.";
-    document.querySelector('[data-metric="gateway-status"]').textContent = online ? "Connected" : "Unavailable";
+    const state = !stats.updatedAt ? "monitoring-unavailable" : online ? "operational" : "service-outage";
+    setStatusState(state, state === "operational" ? "All systems operational. Beacon Bot and its Discord services are responding normally." : state === "monitoring-unavailable" ? "The monitoring service could not provide a fresh report." : "Beacon Bot or one of its public services is currently unavailable.");
+    document.querySelector('[data-metric="gateway-status"]').textContent = state === "operational" ? "Connected" : state === "monitoring-unavailable" ? "Monitoring unavailable" : "Service outage";
     document.querySelector('[data-metric="guilds"]').textContent = number(stats.guilds);
     document.querySelector('[data-metric="users"]').textContent = number(stats.users);
     document.querySelector('[data-metric="uptime"]').textContent = duration(stats.uptime);
     document.querySelector('[data-metric="ping"]').textContent = Number.isFinite(Number(stats.ping)) ? `${Math.round(stats.ping)} ms` : "--";
-    document.querySelector('[data-metric="uptime-percent"]').textContent = measured == null ? "--" : `${measured.toFixed(2)}%`;
+    document.querySelector('[data-metric="uptime-percent"]').textContent = measured == null ? "Monitoring started" : `${measured.toFixed(2)}%`;
+    if (uptimeLabel) uptimeLabel.textContent = measured == null ? `Uptime since ${formatMonitoringDate(stats.monitoringStartedAt)}` : "30-Day Uptime";
     renderHistory(services[0], days, "Primary Bot", online, measured);
     renderHistory(services[1], days, "Discord Gateway", online, measured);
     const websiteDegraded = website.online && Number(website.latency) > 1200;
@@ -83,9 +107,9 @@ async function refreshStatus() {
     renderHistory(services[2], websiteDays, "Beacon Website", website.online, website.online ? (websiteDegraded ? 95 : 100) : 0);
     document.body.dataset.lastReportAt = stats.updatedAt || ""; updateTime(stats.updatedAt);
   } catch {
-    summaryCopy.textContent = "The live status service could not be reached.";
+    setStatusState("monitoring-unavailable", "The monitoring service could not be reached.");
     document.querySelector('[data-metric="gateway-status"]').textContent = "Unavailable";
-    const days = buildDays({ history: [] }); services.forEach((service, index) => renderHistory(service, days, service.querySelector(".service-heading strong").textContent, index === 2, index === 2 ? 100 : null));
+    const days = buildDays({ history: [] }); services.forEach((service) => renderHistory(service, days, service.querySelector(".service-heading strong").textContent, false, null));
     updateTime(null);
   }
 }

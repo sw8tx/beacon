@@ -28,6 +28,10 @@ h1 { margin: 0; font-size: clamp(1.55rem, 4vw, 2rem); font-weight: 700; }
 .status-pill { display: inline-flex; align-items: center; gap: 8px; color: var(--green); font-size: .9rem; white-space: nowrap; }
 .status-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--green); }
 .card-copy { margin: 0; padding: 0 28px 22px; color: #c2c4c9; line-height: 1.5; }
+.status-state { margin: 0 28px 14px; width: max-content; max-width: calc(100% - 56px); padding: 6px 10px; border-radius: 999px; font-size: .72rem; font-weight: 800; }
+.status-state--operational { color: #baf8ce; background: rgba(45,204,104,.15); }
+.status-state--monitoring-unavailable { color: #ffe2a0; background: rgba(225,170,50,.16); }
+.status-state--service-outage { color: #ffd0d0; background: rgba(224,91,91,.16); }
 .metric-list { border-top: 1px solid var(--line); }
 .metric-list > div { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 62px; padding: 15px 28px; border-bottom: 1px solid var(--line); }
 .metric-list span { color: #c0c2c8; font-size: .95rem; }

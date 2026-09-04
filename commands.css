@@ -484,6 +484,13 @@ code {
 .preview-actions .danger {
   background: #e43f55;
 }
+.app-badge { display: inline-block; margin-left: 5px; border-radius: 3px; padding: 2px 4px; color: #fff; background: #5865f2; font-size: .58rem; vertical-align: 2px; }
+.honeypot-shot h3 { font-size: 1.2rem; }
+.honeypot-shot small, .poll-shot small { display: block; margin-top: 13px; color: #9ba2b0; }
+.select-mock { display: flex; min-height: 40px; align-items: center; justify-content: space-between; margin-top: 9px; padding: 0 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 7px; color: #e5e7eb; background: #25262b; font-size: .82rem; }
+.select-mock span { color: #bfc5ce; font-size: 1.1rem; }
+.poll-option { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 9px 11px; border-radius: 6px; color: #e6e9ef; background: #2b2d33; font-size: .82rem; }
+.poll-option b { min-width: 25px; color: #42d7ff; text-align: right; }
 
 .emoji-command-ui,
 .emoji-result-line {
