@@ -135,6 +135,43 @@ function incidentMarkup(incidents) {
   }).join("");
 }
 
+function dailyStatsMarkup(history) {
+  const today = new Date().toISOString().slice(0, 10);
+  const days = (history || []).filter((entry) => entry?.date).sort((a, b) => String(a.date).localeCompare(String(b.date))).slice(-3);
+  if (!days.length) return '<p class="daily-stats-empty">No daily monitoring data recorded yet.</p>';
+  return days.map((entry) => {
+    const reports = Math.max(0, Number(entry.reports) || 0);
+    const expected = entry.date === today ? Math.max(1, Math.floor((Date.now() - Date.parse(`${today}T00:00:00.000Z`)) / 60000) + 1) : 1440;
+    const percent = Math.min(100, reports / expected * 100);
+    const state = percent >= 99 ? "up" : percent >= 95 ? "degraded" : "down";
+    const date = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }).format(Date.parse(`${entry.date}T12:00:00.000Z`));
+    const ping = reports && Number(entry.pingTotal) ? `${Math.round(Number(entry.pingTotal) / reports)} ms` : "--";
+    const stateLabel = state === "up" ? "Operational" : state === "degraded" ? "Degraded" : "Outage";
+    return `<article class="daily-stat-tile daily-stat-tile--${state}"><div class="daily-stat-heading"><strong>${escapeHtml(date)}</strong><b>${stateLabel}</b></div><div class="daily-stat-metrics"><span><b>${percent.toFixed(2)}%</b><small>Uptime</small></span><span><b>${ping}</b><small>Avg. ping</small></span><span><b>${formatNumber(reports)}</b><small>Checks</small></span></div></article>`;
+  }).join("");
+}
+
+function historyMarkup(history) {
+  const byDate = new Map((history || []).map((entry) => [entry.date, entry]));
+  const now = new Date();
+  now.setUTCHours(0, 0, 0, 0);
+  return Array.from({ length: 30 }, (_, index) => {
+    const date = new Date(now);
+    date.setUTCDate(now.getUTCDate() - (29 - index));
+    const key = date.toISOString().slice(0, 10);
+    const entry = byDate.get(key);
+    const reports = Math.max(0, Number(entry?.reports) || 0);
+    const expected = key === now.toISOString().slice(0, 10)
+      ? Math.max(1, Math.floor((Date.now() - date.getTime()) / 60000) + 1)
+      : 1440;
+    const percent = reports ? Math.min(100, reports / expected * 100) : null;
+    const state = percent === null ? "" : percent >= 99 ? "is-up" : percent >= 95 ? "is-degraded" : "is-down";
+    const today = key === now.toISOString().slice(0, 10) ? " is-today" : "";
+    const tooltip = percent === null ? `${key}\nNo monitoring data` : `${key}\n${percent.toFixed(2)}% uptime\n${reports}/${expected} checks received`;
+    return `<span class="${state}${today}" data-tooltip="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip.replaceAll("\n", ", "))}"></span>`;
+  }).join("");
+}
+
 function renderStatusHtml(html, stats) {
   const allOnline = Boolean(stats.online);
   const monitoringUnavailable = stats.statusState === "monitoring-unavailable";
@@ -150,6 +187,8 @@ function renderStatusHtml(html, stats) {
   const ageText = Number.isFinite(stats.ageSeconds)
     ? `Last updated: ${stats.ageSeconds} seconds ago`
     : "Last updated: unavailable";
+  const apiOnlineText = stats.online ? "Operational" : "Unavailable";
+  const databaseOnlineText = stats.online ? "Operational" : "Unavailable";
 
   let output = html
     .replace('<body>', `<body data-last-report-at="${escapeHtml(stats.updatedAt || "")}">`)
@@ -161,7 +200,11 @@ function renderStatusHtml(html, stats) {
     .replace("<strong data-service-uptime>Checking...</strong>", `<strong data-service-uptime>${escapeHtml(uptimeText)}</strong>`)
     .replace("<p class=\"service-detail\" data-service-detail>Realtime connection to Discord</p>", `<p class="service-detail" data-service-detail>${escapeHtml(allOnline ? `Connected - ${Math.round(Number(stats.ping) || 0)} ms gateway ping` : "Discord gateway connection unavailable")}</p>`)
     .replace("<strong data-service-uptime>Checking...</strong>", "<strong data-service-uptime>Operational</strong>")
-    .replace("<p class=\"service-detail\" data-service-detail>Public Beacon website</p>", '<p class="service-detail" data-service-detail>Public Beacon website is reachable</p>');
+    .replace("<p class=\"service-detail\" data-service-detail>Public Beacon website</p>", '<p class="service-detail" data-service-detail>Public Beacon website is reachable</p>')
+    .replace("<strong data-service-uptime>Checking...</strong>", `<strong data-service-uptime>${escapeHtml(apiOnlineText)}</strong>`)
+    .replace("<p class=\"service-detail\" data-service-detail>Dashboard data and authentication services</p>", `<p class="service-detail" data-service-detail>${escapeHtml(apiOnlineText === "Operational" ? "Statistics API is responding" : "Statistics API is unavailable")}</p>`)
+    .replace("<strong data-service-uptime>Checking...</strong>", `<strong data-service-uptime>${escapeHtml(databaseOnlineText)}</strong>`)
+    .replace("<p class=\"service-detail\" data-service-detail>Status and statistics storage</p>", `<p class="service-detail" data-service-detail>${escapeHtml(databaseOnlineText === "Operational" ? "Status data was read successfully" : "No fresh status data is available")}</p>`);
 
   output = replaceContent(output, "data-summary-title", summaryTitle);
   output = replaceContent(output, "data-summary-copy", summaryCopy);
@@ -175,6 +218,8 @@ function renderStatusHtml(html, stats) {
   output = replaceContent(output, "data-incident-copy", allOnline ? "Beacon is operating normally." : "The live monitor is waiting for a healthy Beacon report.");
   output = replaceContent(output, "data-last-updated", ageText);
   output = output.replace(/<div class="updates-list" data-incidents>[\s\S]*?<\/div>/, `<div class="updates-list" data-incidents>${incidentMarkup(stats.incidents)}</div>`);
+  output = output.replace(/<div class="daily-stats" data-daily-stats>[\s\S]*?<\/div>/, `<div class="daily-stats" data-daily-stats>${dailyStatsMarkup(stats.history)}</div>`);
+  output = output.replaceAll('<div class="history" data-history></div>', `<div class="history" data-history>${historyMarkup(stats.history)}</div>`);
   return output;
 }
 
@@ -191,7 +236,7 @@ function baseStatusHtml() {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/status/status.css?v=10" />
+    <link rel="stylesheet" href="/status/status.css?v=11" />
   </head>
   <body>
     <a class="return-link" href="https://beacon-bot.site/" aria-label="Back to Beacon">
@@ -223,6 +268,7 @@ function baseStatusHtml() {
         <article class="service" data-service="dashboard"><div class="service-heading"><strong>Dashboard / API</strong><b data-service-uptime>Checking...</b></div><p class="service-detail" data-service-detail>Dashboard data and authentication services</p><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
         <article class="service" data-service="database"><div class="service-heading"><strong>Database</strong><b data-service-uptime>Checking...</b></div><p class="service-detail" data-service-detail>Status and statistics storage</p><div class="history" data-history></div><div class="history-labels"><span>30 days ago</span><span data-service-percent>--</span><span>Today</span></div></article>
       </section>
+      <section class="daily-panel" aria-labelledby="daily-title"><div class="panel-heading"><div><p class="eyebrow">Real monitoring data</p><h2 id="daily-title">Last 3 days</h2></div><span>Uptime, average ping and received checks</span></div><div class="daily-stats" data-daily-stats><p class="daily-stats-empty">Loading daily monitoring data...</p></div></section>
       <section class="updates-grid" aria-label="Incidents and maintenance">
         <article class="updates-panel"><div class="panel-heading"><div><p class="eyebrow">Past incidents</p><h2>Past incidents</h2></div></div><div class="updates-list" data-incidents><p>No recent incidents.</p></div></article>
         <article class="updates-panel"><div class="panel-heading"><div><p class="eyebrow">Scheduled maintenance</p><h2>Scheduled maintenance</h2></div></div><div class="updates-list" data-maintenance><p>No maintenance is currently scheduled.</p></div></article>
@@ -231,7 +277,7 @@ function baseStatusHtml() {
 
     <footer class="status-footer"><span class="footer-brand"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" />Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
     <footer class="normal-footer"><a href="https://beacon-bot.site/tos/">Terms of Use</a><a href="https://beacon-bot.site/privacy/">Privacy Policy</a><a href="https://beacon-bot.site/copyright/">Copyright Dispute</a><a href="https://beacon-bot.site/gdpr/">GDPR Notice</a><a href="https://beacon-bot.site/cookies/">Cookie Policy</a><a href="https://beacon-bot.site/eula/">EULA</a><a href="https://beacon-bot.site/imprint/">Imprint</a></footer>
-    <script src="/status/status-runtime-v2.js?v=12" defer></script>
+    <script src="/status/status-runtime-v2.js?v=14" defer></script>
   </body>
 </html>`;
 }

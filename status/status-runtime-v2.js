@@ -26,8 +26,48 @@ function buildDays(stats) {
   }
   return days;
 }
+function buildDailyStats(stats) {
+  const entries = [...(stats.history || [])]
+    .filter((entry) => entry?.date)
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+    .slice(-3);
+  const today = dayKey(new Date());
+  return entries.map((entry) => {
+    const reports = Math.max(0, Number(entry.reports) || 0);
+    const expected = entry.date === today
+      ? Math.max(1, Math.floor((Date.now() - new Date(`${today}T00:00:00Z`).getTime()) / 60000) + 1)
+      : 1440;
+    const percent = Math.min(100, reports / expected * 100);
+    return {
+      date: entry.date,
+      reports,
+      expected,
+      percent,
+      ping: reports && Number(entry.pingTotal) ? Math.round(Number(entry.pingTotal) / reports) : null,
+      state: percent >= 99 ? "up" : percent >= 95 ? "degraded" : "down",
+    };
+  });
+}
+function renderDailyStats(stats) {
+  const target = document.querySelector("[data-daily-stats]");
+  if (!target) return;
+  const days = buildDailyStats(stats);
+  if (!days.length) {
+    target.innerHTML = "<p class=\"daily-stats-empty\">No daily monitoring data recorded yet.</p>";
+    return;
+  }
+  target.replaceChildren(...days.map((day) => {
+    const tile = document.createElement("article");
+    tile.className = `daily-stat-tile daily-stat-tile--${day.state}`;
+    const date = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${day.date}T12:00:00Z`));
+    tile.innerHTML = `<div class="daily-stat-heading"><strong>${date}</strong><b>${day.state === "up" ? "Operational" : day.state === "degraded" ? "Degraded" : "Outage"}</b></div><div class="daily-stat-metrics"><span><b>${day.percent.toFixed(2)}%</b><small>Uptime</small></span><span><b>${day.ping == null ? "--" : `${day.ping} ms`}</b><small>Avg. ping</small></span><span><b>${number(day.reports)}</b><small>Checks</small></span></div>`;
+    return tile;
+  }));
+}
 function renderHistory(service, days, name, online, percent, detail) {
+  if (!service) return;
   const history = service.querySelector("[data-history]");
+  if (!history) return;
   history.replaceChildren(...days.map((day) => {
     const bar = document.createElement("span");
     if (day.state !== "unknown") bar.classList.add(`is-${day.state}`);
@@ -37,10 +77,12 @@ function renderHistory(service, days, name, online, percent, detail) {
     bar.setAttribute("aria-label", bar.dataset.tooltip.replace(/\n/g, ", "));
     return bar;
   }));
-  service.querySelector("[data-service-uptime]").textContent = online ? "Operational" : "Unavailable";
-  service.querySelector("[data-service-uptime]").style.color = online ? "var(--green)" : "var(--red)";
-  service.querySelector("[data-service-detail]").textContent = detail;
-  service.querySelector("[data-service-percent]").textContent = percent == null ? "Monitoring started" : `${percent.toFixed(2)}% uptime`;
+  const uptimeElement = service.querySelector("[data-service-uptime]");
+  if (uptimeElement) { uptimeElement.textContent = online ? "Operational" : "Unavailable"; uptimeElement.style.color = online ? "var(--green)" : "var(--red)"; }
+  const detailElement = service.querySelector("[data-service-detail]");
+  if (detailElement) detailElement.textContent = detail;
+  const percentElement = service.querySelector("[data-service-percent]");
+  if (percentElement) percentElement.textContent = percent == null ? "Monitoring started" : `${percent.toFixed(2)}% uptime`;
   service.classList.toggle("is-down", !online);
 }
 async function checkWebsite() {
@@ -71,7 +113,7 @@ function setStatusState(state, copy) {
     statusState.textContent = labels[state] || labels["monitoring-unavailable"];
     statusState.className = `status-state status-state--${state}`;
   }
-  if (copy) summaryCopy.textContent = copy;
+  if (copy && summaryCopy) summaryCopy.textContent = copy;
 }
 function formatMonitoringDate(value) {
   const timestamp = Date.parse(value || "");
@@ -109,12 +151,13 @@ async function refreshStatus() {
     const uptime = Number(stats.uptimePercent); const measured = Number.isFinite(uptime) ? uptime : null;
     const state = !stats.updatedAt ? "monitoring-unavailable" : online ? "operational" : "service-outage";
     setStatusState(state, state === "operational" ? "All systems operational. Beacon Bot and its Discord services are responding normally." : state === "monitoring-unavailable" ? "The monitoring service could not provide a fresh report." : "Beacon Bot or one of its public services is currently unavailable.");
-    document.querySelector('[data-metric="gateway-status"]').textContent = state === "operational" ? "Connected" : state === "monitoring-unavailable" ? "Monitoring unavailable" : "Service outage";
-    document.querySelector('[data-metric="guilds"]').textContent = number(stats.guilds);
-    document.querySelector('[data-metric="users"]').textContent = number(stats.users);
-    document.querySelector('[data-metric="uptime"]').textContent = duration(stats.uptime);
-    document.querySelector('[data-metric="ping"]').textContent = Number.isFinite(Number(stats.ping)) ? `${Math.round(stats.ping)} ms` : "--";
-    document.querySelector('[data-metric="uptime-percent"]').textContent = measured == null ? "Monitoring started" : `${measured.toFixed(2)}%`;
+    const metric = (name) => document.querySelector(`[data-metric="${name}"]`);
+    if (metric("gateway-status")) metric("gateway-status").textContent = state === "operational" ? "Connected" : state === "monitoring-unavailable" ? "Monitoring unavailable" : "Service outage";
+    if (metric("guilds")) metric("guilds").textContent = number(stats.guilds);
+    if (metric("users")) metric("users").textContent = number(stats.users);
+    if (metric("uptime")) metric("uptime").textContent = duration(stats.uptime);
+    if (metric("ping")) metric("ping").textContent = Number.isFinite(Number(stats.ping)) ? `${Math.round(stats.ping)} ms` : "--";
+    if (metric("uptime-percent")) metric("uptime-percent").textContent = measured == null ? "Monitoring started" : `${measured.toFixed(2)}%`;
     if (uptimeLabel) uptimeLabel.textContent = measured == null ? `Uptime since ${formatMonitoringDate(stats.monitoringStartedAt)}` : "30-Day Uptime";
     const apiOnline = Boolean(response.ok);
     const databaseOnline = Boolean(stats.updatedAt);
@@ -134,12 +177,15 @@ async function refreshStatus() {
     renderHistory(services[4], days, "Database", databaseOnline, measured, databaseOnline ? "Status data was read successfully" : "No stored status data is available");
     document.body.dataset.lastReportAt = stats.updatedAt || ""; updateTime(stats.updatedAt);
     renderIncidents(stats);
+    renderDailyStats(stats);
   } catch {
     setStatusState("monitoring-unavailable", "The monitoring service could not be reached.");
-    document.querySelector('[data-metric="gateway-status"]').textContent = "Unavailable";
+    const gatewayMetric = document.querySelector('[data-metric="gateway-status"]');
+    if (gatewayMetric) gatewayMetric.textContent = "Unavailable";
     const days = buildDays({ history: [] }); services.forEach((service) => renderHistory(service, days, service.querySelector(".service-heading strong").textContent, false, null, "Monitoring unavailable"));
     updateTime(null);
     renderIncidents({ incidents: [] });
+    renderDailyStats({ history: [] });
   }
 }
 refreshStatus();
