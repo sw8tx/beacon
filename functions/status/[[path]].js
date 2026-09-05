@@ -221,7 +221,7 @@ function renderStatusHtml(html, stats) {
   output = output.replace(/<div class="updates-list" data-incidents>[\s\S]*?<\/div>/, `<div class="updates-list" data-incidents>${incidentMarkup(stats.incidents)}</div>`);
   output = output.replace(/<div class="daily-stats" data-daily-stats>[\s\S]*?<\/div>/, `<div class="daily-stats" data-daily-stats>${dailyStatsMarkup(stats.history)}</div>`);
   output = output.replace(/(<article class="service" data-service="([^"]+)">)([\s\S]*?)(<\/article>)/g, (_, start, id, content, end) => {
-    const hasHistory = id === "bot" || id === "gateway";
+    const hasHistory = id !== "website";
     content = content.replace('<div class="history" data-history></div>', `<div class="history" data-history>${historyMarkup(hasHistory ? stats.history : [])}</div>`);
     if (!hasHistory) content = content.replace('data-service-percent>--', 'data-service-percent>No recorded uptime history');
     return start + content + end;
@@ -283,7 +283,7 @@ function baseStatusHtml() {
 
     <footer class="status-footer"><span class="footer-brand"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" />Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
     <footer class="normal-footer"><a href="https://beacon-bot.site/tos/">Terms of Use</a><a href="https://beacon-bot.site/privacy/">Privacy Policy</a><a href="https://beacon-bot.site/copyright/">Copyright Dispute</a><a href="https://beacon-bot.site/gdpr/">GDPR Notice</a><a href="https://beacon-bot.site/cookies/">Cookie Policy</a><a href="https://beacon-bot.site/eula/">EULA</a><a href="https://beacon-bot.site/imprint/">Imprint</a></footer>
-    <script src="/status/status-runtime-v2.js?v=15" defer></script>
+    <script src="/status/status-runtime-v2.js?v=16" defer></script>
   </body>
 </html>`;
 }

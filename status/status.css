@@ -48,7 +48,7 @@ h1 { margin: 0; font-size: clamp(1.55rem, 4vw, 2rem); font-weight: 700; }
 .service.is-down .service-heading b { color: var(--red); }
 .service-detail { margin: -7px 0 15px; color: #a1a4aa; font-size: .8rem; }
 .history { display: grid; grid-template-columns: repeat(30, minmax(3px, 1fr)); gap: 3px; height: 34px; }
-.history span { position: relative; min-width: 0; border-radius: 1px; background: #464b54; cursor: help; transition: transform .15s ease, filter .15s ease; }
+.history span { position: relative; min-width: 0; border-radius: 1px; background: #59616d; cursor: help; transition: transform .15s ease, filter .15s ease; }
 .history span:hover { z-index: 3; transform: translateY(-3px); filter: brightness(1.15); }
 .history span::after { content: attr(data-tooltip); pointer-events: none; position: absolute; left: 50%; bottom: calc(100% + 10px); z-index: 5; width: max-content; max-width: 250px; padding: 9px 11px; transform: translateX(-50%); opacity: 0; border: 1px solid rgba(255,255,255,.15); border-radius: 3px; color: #fff; background: #1a1c20; box-shadow: 0 10px 25px rgba(0,0,0,.35); font-size: .72rem; line-height: 1.4; white-space: pre-line; }
 .history span:hover::after { opacity: 1; }

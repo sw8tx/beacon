@@ -165,10 +165,10 @@ async function refreshStatus() {
     renderHistory(services[1], days, "Discord Gateway", Boolean(stats.online), measured, stats.online ? `Connected - ${Math.round(Number(stats.ping) || 0)} ms gateway ping` : "Discord gateway connection unavailable");
     const unmeasuredDays = buildDays({ history: [] });
     renderHistory(services[2], unmeasuredDays, "Beacon Website", website.online, null, website.online ? `Public website reachable - ${website.latency} ms response` : "Public website is unreachable");
-    renderHistory(services[3], unmeasuredDays, "Dashboard / API", apiOnline, null, "Statistics API is responding. Login and dashboard functions are not independently monitored.");
-    renderHistory(services[4], unmeasuredDays, "Database", databaseOnline, null, "Stored statistics available; database availability is not independently monitored.");
-    for (const service of services.slice(2)) service.querySelector('[data-service-percent]').textContent = "No recorded uptime history";
-    services[4].querySelector('[data-service-uptime]').textContent = databaseOnline ? "Stored data available" : "Unknown";
+    renderHistory(services[3], days, "Dashboard / API", apiOnline, measured, "Statistics API is responding; its history follows successful monitor syncs.");
+    renderHistory(services[4], days, "Database", databaseOnline, measured, "Stored status data is available; its history follows successful monitor writes.");
+    services[2].querySelector('[data-service-percent]').textContent = "No recorded uptime history";
+    services[4].querySelector('[data-service-uptime]').textContent = databaseOnline ? "Operational" : "Unavailable";
     document.body.dataset.lastReportAt = stats.updatedAt || ""; updateTime(stats.updatedAt);
     renderIncidents(stats);
     renderDailyStats(stats);
