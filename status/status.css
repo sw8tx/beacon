@@ -33,6 +33,10 @@ h1 { margin: 0; font-size: clamp(1.55rem, 4vw, 2rem); font-weight: 700; }
 .metric-list > div { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 62px; padding: 15px 28px; border-bottom: 1px solid var(--line); }
 .metric-list span { color: #c0c2c8; font-size: .95rem; }
 .metric-list strong { color: #f0f0f2; font-size: .95rem; text-align: right; }
+.metric-list .sponsor-row { align-items: flex-start; flex-direction: column; gap: 10px; }
+.sponsor-row strong { text-align: left; }
+.sponsor-link { display: inline-flex; align-items: center; }
+.sponsor-link:hover { opacity: .82; }
 .metric-list strong b { color: var(--blue); font-size: 1.05rem; }
 .hosting-logo { display: block; width: 135px; height: auto; max-height: 30px; object-fit: contain; }
 .card-footer { display: flex; justify-content: space-between; gap: 20px; padding: 17px 28px; color: #a1a4aa; font-size: .75rem; background: var(--panel-dark); }
