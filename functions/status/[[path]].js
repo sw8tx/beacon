@@ -190,8 +190,8 @@ function renderStatusHtml(html, stats) {
   const ageText = Number.isFinite(stats.ageSeconds)
     ? `Last updated: ${stats.ageSeconds} seconds ago`
     : "Last updated: unavailable";
-  const apiOnlineText = "Checking...";
-  const databaseOnlineText = stats.updatedAt ? "Stored data available" : "Unknown";
+  const apiOnlineText = stats.online ? "Operational" : "Unavailable";
+  const databaseOnlineText = stats.online ? "Operational" : "Unavailable";
 
   let output = html
     .replace('<body>', `<body data-last-report-at="${escapeHtml(stats.updatedAt || "")}">`)
@@ -284,7 +284,7 @@ function baseStatusHtml() {
 
     <footer class="status-footer"><span class="footer-brand"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" />Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
     <footer class="normal-footer"><a href="https://beacon-bot.site/tos/">Terms of Use</a><a href="https://beacon-bot.site/privacy/">Privacy Policy</a><a href="https://beacon-bot.site/copyright/">Copyright Dispute</a><a href="https://beacon-bot.site/gdpr/">GDPR Notice</a><a href="https://beacon-bot.site/cookies/">Cookie Policy</a><a href="https://beacon-bot.site/eula/">EULA</a><a href="https://beacon-bot.site/imprint/">Imprint</a></footer>
-    <script src="/status/status-runtime-v2.js?v=18" defer></script>
+    <script src="/status/status-runtime-v2.js?v=19" defer></script>
   </body>
 </html>`;
 }
