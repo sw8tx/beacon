@@ -1,3 +1,4 @@
+import { statusEvents } from "../../status/events.mjs";
 const STALE_AFTER_MS = 3 * 60 * 1000;
 const FALLBACK_STATS = {
   guilds: 0,
@@ -108,7 +109,7 @@ async function readStatus(env) {
     monitoringStartedAt,
     ageSeconds,
     uptimePercent: measuredUptime,
-    incidents: Array.isArray(incidents) ? incidents : [],
+    incidents: [...(Array.isArray(incidents) ? incidents : []), ...statusEvents].sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt)),
     statusState: !Number.isFinite(updatedAt) ? "monitoring-unavailable" : online ? "operational" : "service-outage",
   };
 }
@@ -187,23 +188,23 @@ function renderStatusHtml(html, stats) {
   const ageText = Number.isFinite(stats.ageSeconds)
     ? `Last updated: ${stats.ageSeconds} seconds ago`
     : "Last updated: unavailable";
-  const apiOnlineText = stats.online ? "Operational" : "Unavailable";
-  const databaseOnlineText = stats.online ? "Operational" : "Unavailable";
+  const apiOnlineText = "Checking...";
+  const databaseOnlineText = stats.updatedAt ? "Stored data available" : "Unknown";
 
   let output = html
     .replace('<body>', `<body data-last-report-at="${escapeHtml(stats.updatedAt || "")}">`)
     .replace('class="status-summary"', `class="status-summary status-summary--${stats.statusState || "service-outage"}${allOnline ? "" : " is-down"}"`)
     .replace('data-status-state>Checking monitoring...</', `data-status-state>${escapeHtml(summaryTitle)}<`)
     .replace("[data-summary-icon]>&#10003;", `[data-summary-icon]>${allOnline ? "&#10003;" : "!"}`)
-    .replace("<strong data-service-uptime>Checking...</strong>", `<strong data-service-uptime>${escapeHtml(uptimeText)}</strong>`)
+    .replace("<b data-service-uptime>Checking...</b>", `<b data-service-uptime>${escapeHtml(uptimeText)}</b>`)
     .replace("<p class=\"service-detail\" data-service-detail>Discord gateway and command service</p>", `<p class="service-detail" data-service-detail>${escapeHtml(allOnline ? "Online" : "No fresh bot report received")}</p>`)
-    .replace("<strong data-service-uptime>Checking...</strong>", `<strong data-service-uptime>${escapeHtml(uptimeText)}</strong>`)
+    .replace("<b data-service-uptime>Checking...</b>", `<b data-service-uptime>${escapeHtml(uptimeText)}</b>`)
     .replace("<p class=\"service-detail\" data-service-detail>Realtime connection to Discord</p>", `<p class="service-detail" data-service-detail>${escapeHtml(allOnline ? `Connected - ${Math.round(Number(stats.ping) || 0)} ms gateway ping` : "Discord gateway connection unavailable")}</p>`)
-    .replace("<strong data-service-uptime>Checking...</strong>", "<strong data-service-uptime>Operational</strong>")
+    .replace("<b data-service-uptime>Checking...</b>", "<b data-service-uptime>Operational</b>")
     .replace("<p class=\"service-detail\" data-service-detail>Public Beacon website</p>", '<p class="service-detail" data-service-detail>Public Beacon website is reachable</p>')
-    .replace("<strong data-service-uptime>Checking...</strong>", `<strong data-service-uptime>${escapeHtml(apiOnlineText)}</strong>`)
+    .replace("<b data-service-uptime>Checking...</b>", `<b data-service-uptime>${escapeHtml(apiOnlineText)}</b>`)
     .replace("<p class=\"service-detail\" data-service-detail>Dashboard data and authentication services</p>", `<p class="service-detail" data-service-detail>${escapeHtml(apiOnlineText === "Operational" ? "Statistics API is responding" : "Statistics API is unavailable")}</p>`)
-    .replace("<strong data-service-uptime>Checking...</strong>", `<strong data-service-uptime>${escapeHtml(databaseOnlineText)}</strong>`)
+    .replace("<b data-service-uptime>Checking...</b>", `<b data-service-uptime>${escapeHtml(databaseOnlineText)}</b>`)
     .replace("<p class=\"service-detail\" data-service-detail>Status and statistics storage</p>", `<p class="service-detail" data-service-detail>${escapeHtml(databaseOnlineText === "Operational" ? "Status data was read successfully" : "No fresh status data is available")}</p>`);
 
   output = replaceContent(output, "data-summary-title", summaryTitle);
@@ -219,7 +220,12 @@ function renderStatusHtml(html, stats) {
   output = replaceContent(output, "data-last-updated", ageText);
   output = output.replace(/<div class="updates-list" data-incidents>[\s\S]*?<\/div>/, `<div class="updates-list" data-incidents>${incidentMarkup(stats.incidents)}</div>`);
   output = output.replace(/<div class="daily-stats" data-daily-stats>[\s\S]*?<\/div>/, `<div class="daily-stats" data-daily-stats>${dailyStatsMarkup(stats.history)}</div>`);
-  output = output.replaceAll('<div class="history" data-history></div>', `<div class="history" data-history>${historyMarkup(stats.history)}</div>`);
+  output = output.replace(/(<article class="service" data-service="([^"]+)">)([\s\S]*?)(<\/article>)/g, (_, start, id, content, end) => {
+    const hasHistory = id === "bot" || id === "gateway";
+    content = content.replace('<div class="history" data-history></div>', `<div class="history" data-history>${historyMarkup(hasHistory ? stats.history : [])}</div>`);
+    if (!hasHistory) content = content.replace('data-service-percent>--', 'data-service-percent>No recorded uptime history');
+    return start + content + end;
+  });
   return output;
 }
 
@@ -277,7 +283,7 @@ function baseStatusHtml() {
 
     <footer class="status-footer"><span class="footer-brand"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" />Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
     <footer class="normal-footer"><a href="https://beacon-bot.site/tos/">Terms of Use</a><a href="https://beacon-bot.site/privacy/">Privacy Policy</a><a href="https://beacon-bot.site/copyright/">Copyright Dispute</a><a href="https://beacon-bot.site/gdpr/">GDPR Notice</a><a href="https://beacon-bot.site/cookies/">Cookie Policy</a><a href="https://beacon-bot.site/eula/">EULA</a><a href="https://beacon-bot.site/imprint/">Imprint</a></footer>
-    <script src="/status/status-runtime-v2.js?v=14" defer></script>
+    <script src="/status/status-runtime-v2.js?v=15" defer></script>
   </body>
 </html>`;
 }

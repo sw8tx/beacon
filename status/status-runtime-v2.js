@@ -163,18 +163,12 @@ async function refreshStatus() {
     const databaseOnline = Boolean(stats.updatedAt);
     renderHistory(services[0], days, "Beacon Bot", Boolean(stats.online), measured, stats.online ? "Discord gateway and command service responding" : "No fresh bot report received");
     renderHistory(services[1], days, "Discord Gateway", Boolean(stats.online), measured, stats.online ? `Connected - ${Math.round(Number(stats.ping) || 0)} ms gateway ping` : "Discord gateway connection unavailable");
-    const websiteDegraded = website.online && Number(website.latency) > 1200;
-    const websiteDays = days.map((day) => ({
-      ...day,
-      state: !website.online ? "down" : websiteDegraded ? "degraded" : "up",
-      percent: website.online ? (websiteDegraded ? 95 : 100) : 0,
-      reports: website.online ? (websiteDegraded ? 95 : 100) : 0,
-      expected: 100,
-      ping: website.latency,
-    }));
-    renderHistory(services[2], websiteDays, "Beacon Website", website.online, website.online ? (websiteDegraded ? 95 : 100) : 0, website.online ? `Public website reachable - ${website.latency} ms response` : "Public website is unreachable");
-    renderHistory(services[3], days, "Dashboard / API", apiOnline, measured, apiOnline ? "Statistics API is responding" : "Statistics API is unavailable");
-    renderHistory(services[4], days, "Database", databaseOnline, measured, databaseOnline ? "Status data was read successfully" : "No stored status data is available");
+    const unmeasuredDays = buildDays({ history: [] });
+    renderHistory(services[2], unmeasuredDays, "Beacon Website", website.online, null, website.online ? `Public website reachable - ${website.latency} ms response` : "Public website is unreachable");
+    renderHistory(services[3], unmeasuredDays, "Dashboard / API", apiOnline, null, "Statistics API is responding. Login and dashboard functions are not independently monitored.");
+    renderHistory(services[4], unmeasuredDays, "Database", databaseOnline, null, "Stored statistics available; database availability is not independently monitored.");
+    for (const service of services.slice(2)) service.querySelector('[data-service-percent]').textContent = "No recorded uptime history";
+    services[4].querySelector('[data-service-uptime]').textContent = databaseOnline ? "Stored data available" : "Unknown";
     document.body.dataset.lastReportAt = stats.updatedAt || ""; updateTime(stats.updatedAt);
     renderIncidents(stats);
     renderDailyStats(stats);

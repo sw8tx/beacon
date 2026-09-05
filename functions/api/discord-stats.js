@@ -1,3 +1,4 @@
+import { statusEvents } from "../../status/events.mjs";
 const FALLBACK_STATS = {
   guilds: 0,
   users: 0,
@@ -437,7 +438,7 @@ async function handleGet(env) {
     monitoringStartedAt,
     uptimePercent: uptimePercent(history, monitoringStartedAt),
     ageSeconds,
-    incidents: [...currentIncident, ...incidents].slice(0, 20),
+    incidents: [...currentIncident, ...incidents, ...statusEvents].sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt)).slice(0, 20),
   });
 }
 
