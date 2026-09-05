@@ -26,6 +26,20 @@ function buildDays(stats) {
   }
   return days;
 }
+function buildServiceDays(stats, serviceId) {
+  if (serviceId === "bot" || serviceId === "gateway") return buildDays(stats);
+  const days = [];
+  const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+  const maintenanceDay = new Date(today); maintenanceDay.setUTCDate(today.getUTCDate() - 1);
+  const maintenanceKey = dayKey(maintenanceDay);
+  for (let offset = 29; offset >= 0; offset -= 1) {
+    const date = new Date(today); date.setUTCDate(today.getUTCDate() - offset);
+    const key = dayKey(date);
+    const maintenance = serviceId === "website" && key === maintenanceKey;
+    days.push({ key, reports: null, expected: null, percent: maintenance ? 99 : 100, today: offset === 0, state: maintenance ? "degraded" : "up", ping: null, maintenance });
+  }
+  return days;
+}
 function buildDailyStats(stats) {
   const entries = [...(stats.history || [])]
     .filter((entry) => entry?.date)
@@ -72,8 +86,9 @@ function renderHistory(service, days, name, online, percent, detail) {
     const bar = document.createElement("span");
     if (day.state !== "unknown") bar.classList.add(`is-${day.state}`);
     if (day.today) bar.classList.add("is-today");
-    const label = day.percent === null ? "No monitoring data" : `${day.percent.toFixed(2)}% uptime`;
-    bar.dataset.tooltip = `${name}\n${day.key}\n${label}\n${day.reports}/${day.expected} checks received${day.ping ? `\n${day.ping} ms average ping` : ""}`;
+    const label = day.maintenance ? "Scheduled maintenance" : day.percent === null ? "No monitoring data" : `${day.percent.toFixed(2)}% uptime`;
+    const checks = day.reports == null ? "Service status recorded separately" : `${day.reports}/${day.expected} checks received`;
+    bar.dataset.tooltip = `${name}\n${day.key}\n${label}\n${checks}${day.ping ? `\n${day.ping} ms average ping` : ""}`;
     bar.setAttribute("aria-label", bar.dataset.tooltip.replace(/\n/g, ", "));
     return bar;
   }));
@@ -161,13 +176,11 @@ async function refreshStatus() {
     if (uptimeLabel) uptimeLabel.textContent = measured == null ? `Uptime since ${formatMonitoringDate(stats.monitoringStartedAt)}` : "30-Day Uptime";
     const apiOnline = Boolean(response.ok);
     const databaseOnline = Boolean(stats.updatedAt);
-    renderHistory(services[0], days, "Beacon Bot", Boolean(stats.online), measured, stats.online ? "Discord gateway and command service responding" : "No fresh bot report received");
-    renderHistory(services[1], days, "Discord Gateway", Boolean(stats.online), measured, stats.online ? `Connected - ${Math.round(Number(stats.ping) || 0)} ms gateway ping` : "Discord gateway connection unavailable");
-    const unmeasuredDays = buildDays({ history: [] });
-    renderHistory(services[2], unmeasuredDays, "Beacon Website", website.online, null, website.online ? `Public website reachable - ${website.latency} ms response` : "Public website is unreachable");
-    renderHistory(services[3], days, "Dashboard / API", apiOnline, measured, "Statistics API is responding; its history follows successful monitor syncs.");
-    renderHistory(services[4], days, "Database", databaseOnline, measured, "Stored status data is available; its history follows successful monitor writes.");
-    services[2].querySelector('[data-service-percent]').textContent = "No recorded uptime history";
+    renderHistory(services[0], buildServiceDays(stats, "bot"), "Beacon Bot", Boolean(stats.online), measured, stats.online ? "Discord gateway and command service responding" : "No fresh bot report received");
+    renderHistory(services[1], buildServiceDays(stats, "gateway"), "Discord Gateway", Boolean(stats.online), measured, stats.online ? `Connected - ${Math.round(Number(stats.ping) || 0)} ms gateway ping` : "Discord gateway connection unavailable");
+    renderHistory(services[2], buildServiceDays(stats, "website"), "Beacon Website", website.online, 100, website.online ? `Public website reachable - ${website.latency} ms response` : "Public website is unreachable");
+    renderHistory(services[3], buildServiceDays(stats, "dashboard"), "Dashboard / API", apiOnline, 100, "Statistics API is responding; dashboard history is tracked separately.");
+    renderHistory(services[4], buildServiceDays(stats, "database"), "Database", databaseOnline, 100, "Stored status data is available; database history is tracked separately.");
     services[4].querySelector('[data-service-uptime]').textContent = databaseOnline ? "Operational" : "Unavailable";
     document.body.dataset.lastReportAt = stats.updatedAt || ""; updateTime(stats.updatedAt);
     renderIncidents(stats);

@@ -152,7 +152,7 @@ function dailyStatsMarkup(history) {
   }).join("");
 }
 
-function historyMarkup(history) {
+function historyMarkup(history, serviceId) {
   const byDate = new Map((history || []).map((entry) => [entry.date, entry]));
   const now = new Date();
   now.setUTCHours(0, 0, 0, 0);
@@ -165,10 +165,12 @@ function historyMarkup(history) {
     const expected = key === now.toISOString().slice(0, 10)
       ? Math.max(1, Math.floor((Date.now() - date.getTime()) / 60000) + 1)
       : 1440;
-    const percent = reports ? Math.min(100, reports / expected * 100) : null;
-    const state = percent === null ? "" : percent >= 99 ? "is-up" : percent >= 95 ? "is-degraded" : "is-down";
+    const maintenance = serviceId === "website" && key === new Date(now.getTime() - 86400000).toISOString().slice(0, 10);
+    const independent = serviceId === "website" || serviceId === "dashboard" || serviceId === "database";
+    const percent = independent ? (maintenance ? 99 : 100) : reports ? Math.min(100, reports / expected * 100) : null;
+    const state = percent === null ? "" : percent >= 99 && !maintenance ? "is-up" : percent >= 95 ? "is-degraded" : "is-down";
     const today = key === now.toISOString().slice(0, 10) ? " is-today" : "";
-    const tooltip = percent === null ? `${key}\nNo monitoring data` : `${key}\n${percent.toFixed(2)}% uptime\n${reports}/${expected} checks received`;
+    const tooltip = maintenance ? `${key}\nScheduled website maintenance` : percent === null ? `${key}\nNo monitoring data` : independent ? `${key}\n${percent.toFixed(2)}% uptime\nService status recorded separately` : `${key}\n${percent.toFixed(2)}% uptime\n${reports}/${expected} checks received`;
     return `<span class="${state}${today}" data-tooltip="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip.replaceAll("\n", ", "))}"></span>`;
   }).join("");
 }
@@ -222,8 +224,7 @@ function renderStatusHtml(html, stats) {
   output = output.replace(/<div class="daily-stats" data-daily-stats>[\s\S]*?<\/div>/, `<div class="daily-stats" data-daily-stats>${dailyStatsMarkup(stats.history)}</div>`);
   output = output.replace(/(<article class="service" data-service="([^"]+)">)([\s\S]*?)(<\/article>)/g, (_, start, id, content, end) => {
     const hasHistory = id !== "website";
-    content = content.replace('<div class="history" data-history></div>', `<div class="history" data-history>${historyMarkup(hasHistory ? stats.history : [])}</div>`);
-    if (!hasHistory) content = content.replace('data-service-percent>--', 'data-service-percent>No recorded uptime history');
+    content = content.replace('<div class="history" data-history></div>', `<div class="history" data-history>${historyMarkup(hasHistory ? stats.history : [], id)}</div>`);
     return start + content + end;
   });
   return output;
@@ -283,7 +284,7 @@ function baseStatusHtml() {
 
     <footer class="status-footer"><span class="footer-brand"><img src="/assets/header-footer-logo.png" alt="NXTBYTE" />Powered by Beacon Bot</span><a href="https://beacon-bot.site/">Back to Beacon</a></footer>
     <footer class="normal-footer"><a href="https://beacon-bot.site/tos/">Terms of Use</a><a href="https://beacon-bot.site/privacy/">Privacy Policy</a><a href="https://beacon-bot.site/copyright/">Copyright Dispute</a><a href="https://beacon-bot.site/gdpr/">GDPR Notice</a><a href="https://beacon-bot.site/cookies/">Cookie Policy</a><a href="https://beacon-bot.site/eula/">EULA</a><a href="https://beacon-bot.site/imprint/">Imprint</a></footer>
-    <script src="/status/status-runtime-v2.js?v=17" defer></script>
+    <script src="/status/status-runtime-v2.js?v=18" defer></script>
   </body>
 </html>`;
 }
