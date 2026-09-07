@@ -12,10 +12,11 @@ const LANGUAGES = {
 };
 
 export async function onRequest(context) {
+  const pathname = new URL(context.request.url).pathname;
+  if (pathname.startsWith("/api/")) return context.next();
   const key = context.params.lang;
   const language = LANGUAGES[key];
   if (!language) return context.env.ASSETS.fetch(context.request);
-  const pathname = new URL(context.request.url).pathname;
   if (pathname !== `/${key}` && pathname !== `/${key}/`) {
     return context.env.ASSETS.fetch(context.request);
   }
