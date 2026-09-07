@@ -18,7 +18,7 @@ async function getDashboardServers(env, discordAccessToken, request) {
   let beaconServerIds = new Set();
   let syncedServers = new Map();
   try {
-    const statsResponse = await fetch(new URL("/api/discord-stats", request.url), { headers: { accept: "application/json" } });
+    const statsResponse = await fetch(new URL("/api/discord-stats", request.url), { headers: { accept: "application/json", authorization: botToken ? `Bot ${botToken}` : "" } });
     if (statsResponse.ok) {
       const stats = await statsResponse.json();
       if (Array.isArray(stats.servers)) {

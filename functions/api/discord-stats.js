@@ -283,6 +283,32 @@ async function updateD1History(env, stats) {
   ]);
 }
 
+function trustedStatsRequest(request, env) {
+  const tokens = [env.STATS_SECRET, getBotToken(env)].filter(Boolean).map(String);
+  const authorization = request.headers.get("authorization");
+  const statsSecret = request.headers.get("x-stats-secret");
+  return tokens.some((token) => authorization === `Bearer ${token}` || authorization === `Bot ${token}` || statsSecret === token);
+}
+
+function publicStats(stats) {
+  return {
+    guilds: stats.guilds,
+    users: stats.users,
+    commands: stats.commands,
+    ping: stats.ping,
+    uptime: stats.uptime,
+    status: stats.status,
+    online: stats.online,
+    startedAt: stats.startedAt,
+    updatedAt: stats.updatedAt,
+    servers: (Array.isArray(stats.servers) ? stats.servers : []).map((server) => ({
+      name: server.name,
+      members: server.members,
+      iconUrl: server.iconUrl,
+    })),
+  };
+}
+
 async function readIncidents(env) {
   try {
     if (env.STATUS_DB) {
@@ -379,7 +405,7 @@ async function writeStats(env, stats) {
   return storage;
 }
 
-async function handleGet(env) {
+async function handleGet(request, env) {
   const stats = await readStats(env);
   const missingServerIds = !Array.isArray(stats.servers) || !stats.servers.length || stats.servers.some((server) => !server.id);
   if (missingServerIds) {
@@ -431,8 +457,9 @@ async function handleGet(env) {
     ? [{ id: "active_monitoring", startedAt: new Date(updatedAt).toISOString(), resolvedAt: null, title: "Beacon monitoring interruption" }]
     : [];
 
+  const responseStats = trustedStatsRequest(request, env) ? stats : publicStats(stats);
   return json({
-    ...stats,
+    ...responseStats,
     online,
     history,
     monitoringStartedAt,
@@ -485,7 +512,7 @@ export async function onRequest({ request, env }) {
       },
     });
   }
-  if (request.method === "GET" || request.method === "HEAD") return handleGet(env);
+  if (request.method === "GET" || request.method === "HEAD") return handleGet(request, env);
   if (request.method === "POST") return handlePost(request, env);
   return json({ ok: false, error: "Method not allowed" }, {
     status: 405,
