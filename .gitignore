@@ -4,6 +4,7 @@ node_modules/
 beacon-data.json
 /beacon-logo.png
 .deploy-web-*/
+.deploy-functions-debug/
 .last-deploy-dir.txt
 mein-projekt.zip
 _worker.bundle
