@@ -1,3 +1,6 @@
+import { onRequest as discordStatsRequest } from "./api/discord-stats.js";
+import { onRequest as publicStatsRequest } from "./api/public-stats.js";
+
 const LANGUAGES = {
   en: ["en", "Beacon – Discord Bot for Tickets, Moderation & Community", "Beacon is a Discord bot for tickets, moderation, automation and community management."],
   de: ["de", "Beacon – Discord Bot für Tickets, Moderation & Community", "Beacon ist ein Discord-Bot für Tickets, Moderation, Automatisierung und Community-Management."],
@@ -13,6 +16,8 @@ const LANGUAGES = {
 
 export async function onRequest(context) {
   const pathname = new URL(context.request.url).pathname;
+  if (pathname === "/api/discord-stats") return discordStatsRequest(context);
+  if (pathname === "/api/public-stats") return publicStatsRequest(context);
   if (pathname.startsWith("/api/")) return context.next();
   const key = context.params.lang;
   const language = LANGUAGES[key];
