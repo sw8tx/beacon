@@ -1,4 +1,4 @@
-const API_ENDPOINT = "https://beacon-bot.site/api/discord-stats";
+const API_ENDPOINT = "https://beacon-bot.site/api/public-stats";
 const summaryCopy = document.querySelector("[data-summary-copy]");
 const lastUpdated = document.querySelector("[data-last-updated]");
 const services = [...document.querySelectorAll("[data-service]")];

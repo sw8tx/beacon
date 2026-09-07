@@ -306,7 +306,7 @@ function formatStatusNumber(value) {
 async function fetchLiveStats() {
   if (!window.fetch) return null;
   if (!statsRequest) {
-    statsRequest = fetch("/api/discord-stats", { cache: "no-store" })
+    statsRequest = fetch("/api/public-stats", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
       .catch(() => null)
       .finally(() => {

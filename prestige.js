@@ -76,7 +76,7 @@ function fillTrack(track, servers, stats) {
 
 async function loadServers() {
   try {
-    const response = await fetch("/api/discord-stats", { cache: "no-store" });
+    const response = await fetch("/api/public-stats", { cache: "no-store" });
     const stats = await response.json();
     const servers = Array.isArray(stats.servers) ? stats.servers : [];
 

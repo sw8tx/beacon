@@ -728,7 +728,7 @@ function startTicketConfigSync() {
 async function fetchPublicStatusStats() {
   try {
     const fetchImpl = await getFetch();
-    const response = await fetchImpl(`${STATS_SYNC_ENDPOINT}?status-embed=${Date.now()}`, { headers: { accept: "application/json" } });
+    const response = await fetchImpl(`${STATS_SYNC_ENDPOINT}?status-embed=${Date.now()}`, { headers: { accept: "application/json", Authorization: `Bearer ${STATS_AUTH_TOKEN}`, "X-Stats-Secret": STATS_AUTH_TOKEN } });
     return response.ok ? await response.json().catch(() => null) : null;
   } catch (_) {
     return null;

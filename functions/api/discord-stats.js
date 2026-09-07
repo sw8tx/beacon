@@ -406,6 +406,7 @@ async function writeStats(env, stats) {
 }
 
 async function handleGet(request, env) {
+  if (!trustedStatsRequest(request, env)) return json({ error: "Unauthorized" }, { status: 401 });
   const stats = await readStats(env);
   const missingServerIds = !Array.isArray(stats.servers) || !stats.servers.length || stats.servers.some((server) => !server.id);
   if (missingServerIds) {
