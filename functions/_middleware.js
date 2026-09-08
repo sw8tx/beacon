@@ -1,7 +1,8 @@
 const PUBLIC_SCRIPTS = new Set([
   "/prestige.js", "/badges/badge-data.js", "/badges/badge-icons.js", "/site-runtime.js",
-  "/badges/badges.js", "/status/status-runtime-v2.js",
+  "/badges/runtime.js", "/status/status-runtime-v2.js",
 ]);
+const BLOCKED_SOURCE_MESSAGE = "Nice try! We are Beacon. We are better.";
 
 const CUSTOM_404_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>404 | Beacon</title><link rel="stylesheet" href="/404.css?v=2"></head><body><header class="error-nav"><a class="error-brand" href="/"><img src="/assets/beacon-logo.png?v=92" width="34" height="34" alt=""><strong>Beacon</strong></a><nav><a href="/commands/">Commands</a><a href="/dashboard">Dashboard</a><a href="/status/">Status</a><a href="/prestige/">Prestige</a><a href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&amp;scope=bot%20applications.commands">Invite</a></nav><a class="error-login" href="/api/auth/discord/login">Login with Discord</a></header><main class="error-main"><div class="error-glow"></div><p class="error-code">404</p><h1>Signal not found.</h1><p class="error-copy">The page you are looking for has moved, faded out, or never existed.</p><a class="error-home" href="/">Return to Beacon</a></main><footer class="error-footer"><div class="error-footer-brand"><a class="error-brand" href="/"><img src="/assets/beacon-logo.png?v=92" width="30" height="30" alt=""><strong>Beacon</strong></a><span>Built for communities with ambition.</span></div><div class="error-links"><div><b>Beacon</b><a href="/">Home</a><a href="/dashboard">Dashboard</a><a href="/prestige/">Prestige</a><a href="/status/">Status</a><a href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&amp;scope=bot%20applications.commands">Invite</a></div><div><b>Legal</b><a href="/tos/">Terms</a><a href="/privacy/">Privacy</a><a href="/cookies/">Cookies</a><a href="/eula/">EULA</a><a href="/gdpr/">GDPR</a><a href="/copyright/">Copyright</a><a href="/imprint/">Imprint</a></div></div></footer></body></html>`;
 
@@ -19,7 +20,7 @@ function privatePath(pathname) {
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   if (privatePath(url.pathname)) {
-    return new Response("Not found", { status: 404, headers: { "cache-control": "no-store", "content-type": "text/plain; charset=utf-8", "x-content-type-options": "nosniff" } });
+    return new Response(BLOCKED_SOURCE_MESSAGE, { status: 404, headers: { "cache-control": "no-store", "content-type": "text/plain; charset=utf-8", "x-content-type-options": "nosniff" } });
   }
   const response = await route(context, url);
   const secured = new Response(response.body, response);

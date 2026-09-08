@@ -32,6 +32,13 @@ function copyPublic(relative, types) {
 
 for (const file of files) copyPublic(file, publicTypes);
 for (const directory of directories) copyPublic(directory, directory === 'assets' ? assetTypes : publicTypes);
+const badgeRuntime = transformSync(fs.readFileSync(path.join(root, 'badges', 'badges.js'), 'utf8'), {
+  minify: true,
+  legalComments: 'none',
+  sourcemap: false,
+}).code;
+fs.writeFileSync(path.join(output, 'badges', 'runtime.js'), badgeRuntime);
+fs.rmSync(path.join(output, 'badges', 'badges.js'), { force: true });
 const runtime = transformSync(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), {
   minify: true,
   legalComments: 'none',
