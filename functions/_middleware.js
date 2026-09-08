@@ -31,6 +31,9 @@ function isDirectRuntimeRequest(request, url) {
 
 export async function onRequest(context) {
   const url = new URL(context.request.url);
+  if (url.pathname === "/imprint") {
+    return Response.redirect(new URL("/imprint/", url).toString(), 301);
+  }
   if (privatePath(url.pathname) || isDirectRuntimeRequest(context.request, url)) {
     return new Response(BLOCKED_SOURCE_MESSAGE, { status: 404, headers: { "cache-control": "no-store", "content-type": "text/plain; charset=utf-8", "x-content-type-options": "nosniff" } });
   }
