@@ -3,6 +3,8 @@ const PUBLIC_SCRIPTS = new Set([
   "/badges/badges.js", "/status/status-runtime-v2.js",
 ]);
 
+const CUSTOM_404_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>404 | Beacon</title><link rel="stylesheet" href="/404.css?v=1"></head><body><header class="error-nav"><a class="error-brand" href="/"><img src="/assets/beacon-logo.png?v=92" width="34" height="34" alt=""><strong>Beacon</strong></a><nav><a href="/commands/">Commands</a><a href="/dashboard">Dashboard</a><a href="/status/">Status</a><a href="/prestige/">Prestige</a><a href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&amp;scope=bot%20applications.commands">Invite</a></nav><a class="error-login" href="/api/auth/discord/login">Login with Discord</a></header><main class="error-main"><div class="error-glow"></div><p class="error-code">404</p><h1>Signal not found.</h1><p class="error-copy">The page you are looking for has moved, faded out, or never existed.</p><a class="error-home" href="/">Return to Beacon</a></main><footer class="error-footer"><div class="error-footer-brand"><a class="error-brand" href="/"><img src="/assets/beacon-logo.png?v=92" width="30" height="30" alt=""><strong>Beacon</strong></a><span>Built for communities with ambition.</span></div><div class="error-links"><div><b>Beacon</b><a href="/">Home</a><a href="/dashboard">Dashboard</a><a href="/prestige/">Prestige</a><a href="/status/">Status</a><a href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&amp;scope=bot%20applications.commands">Invite</a></div><div><b>Legal</b><a href="/tos/">Terms</a><a href="/privacy/">Privacy</a><a href="/cookies/">Cookies</a><a href="/eula/">EULA</a><a href="/gdpr/">GDPR</a><a href="/copyright/">Copyright</a><a href="/imprint/">Imprint</a></div></div></footer></body></html>`;
+
 function privatePath(pathname) {
   let decoded;
   try { decoded = decodeURIComponent(pathname).toLowerCase(); } catch { return true; }
@@ -27,8 +29,7 @@ export async function onRequest(context) {
     secured.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
   }
   if (response.status === 404 && !url.pathname.endsWith("/404.html")) {
-    const fallback = await context.env.ASSETS.fetch(new Request(new URL("/404.html", url), context.request));
-    return new Response(fallback.body, {
+    return new Response(CUSTOM_404_HTML, {
       status: 404,
       headers: {
         "content-type": "text/html; charset=utf-8",
