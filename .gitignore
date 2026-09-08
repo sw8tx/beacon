@@ -8,3 +8,4 @@ beacon-data.json
 .last-deploy-dir.txt
 mein-projekt.zip
 _worker.bundle
+dist/

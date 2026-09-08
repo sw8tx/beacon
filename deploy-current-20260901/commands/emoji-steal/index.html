@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <title>Beacon Emoji Steal Commands</title>
+    <link rel="icon" type="image/png" href="/assets/beacon-logo.png?v=92" />
+    <link rel="stylesheet" href="/commands.css?v=7" />
+    <link rel="stylesheet" href="/cmd-page.css?v=1" />
+  </head>
+  <body class="commands-page">
+    <nav class="commands-nav" aria-label="Beacon commands navigation">
+      <a class="commands-brand" href="https://beacon-bot.site/">
+        <img src="/assets/beacon-logo.png?v=92" width="34" height="34" alt="" />
+        <span>Beacon</span>
+      </a>
+      <a class="commands-back" href="https://beacon-bot.site/">Back to Beacon</a>
+    </nav>
+
+    <main class="commands-shell">
+      <section class="commands-doc" id="emoji-steal">
+        <nav class="commands-tabs" aria-label="Command pages">
+          <a href="/commands/tickets/">Tickets</a>
+          <a class="is-active" href="/commands/emoji-steal/">Emoji Steal</a>
+          <a href="/commands/purge/">Purge</a>
+        </nav>
+        <h1>Emoji Steal Commands</h1>
+        <p class="doc-lead">Copy custom Discord emojis into your server without guessing names or pasting weird links. Paste the emoji, choose if Beacon should keep the original name, confirm it, and Beacon posts the result back into the channel.</p>
+
+        <div class="doc-panel">
+          <h2>How it works</h2>
+          <p>Run one of the commands, paste a custom emoji into the command field, then set <code>keep_name</code> to <code>true</code> or <code>false</code>. Beacon shows the source emoji, the final server name, and a confirm step before anything gets added.</p>
+        </div>
+
+        <div class="command-list">
+          <article class="command-card"><div><code>/emoji-steal</code><p>Steal one emoji. Best for quick single adds when staff only needs one reaction, badge, or server icon emoji.</p></div><span>Single</span></article>
+          <article class="command-card"><div><code>/emoji-steal-bulk</code><p>Steal multiple emojis in one run. Paste the emojis together, review the list, then confirm the whole batch.</p></div><span>Bulk</span></article>
+        </div>
+
+        <section class="flow-grid" aria-label="Emoji steal flow">
+          <article><span>1</span><h2>Paste</h2><p>Paste the emoji into the slash command field. Beacon reads normal custom emoji and animated custom emoji.</p></article>
+          <article><span>2</span><h2>Confirm</h2><p>Beacon shows a Components V2 confirmation with the emoji preview, amount, and name mode.</p></article>
+          <article><span>3</span><h2>Post</h2><p>After Confirm, Beacon adds the emoji and posts a clean success message with the final name.</p></article>
+        </section>
+
+        <section class="preview-block" aria-label="Emoji steal screenshots">
+          <h2>Screenshots</h2>
+          <p>This is the full flow members with permission see in Discord.</p>
+          <div class="screenshot-frame">
+            <div class="screenshot-top"><span></span><strong>Command picker</strong></div>
+            <div class="emoji-command-ui"><div class="emoji-command-list">
+              <div class="emoji-command-row"><div class="mini-beacon"><img src="/assets/beacon-logo.png?v=92" width="24" height="24" alt="" /></div><div><div class="emoji-command-name">/emoji-steal</div><p class="emoji-command-desc">Steal one custom emoji into this server.</p></div></div>
+              <div class="emoji-command-row"><div class="mini-beacon"><img src="/assets/beacon-logo.png?v=92" width="24" height="24" alt="" /></div><div><div class="emoji-command-name">/emoji-steal-bulk</div><p class="emoji-command-desc">Steal multiple custom emojis into this server.</p></div></div>
+            </div></div>
+          </div>
+
+          <div class="screenshot-frame">
+            <div class="screenshot-top"><span></span><strong>Options</strong></div>
+            <div class="emoji-command-ui">
+              <div class="emoji-input-preview">
+                <div class="emoji-input-label">Option with true</div>
+                <div class="emoji-input-box">True</div>
+                <div class="emoji-typed-command"><img src="/assets/beacon-logo.png?v=92" width="25" height="25" alt="" /><span>/emoji-steal</span><span class="emoji-pill">emoji <img src="https://cdn.discordapp.com/emojis/1120029938302959677.png?quality=lossless" alt="" /></span><span class="emoji-pill">keep_name True</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="screenshot-frame">
+            <div class="screenshot-top"><span></span><strong>Confirm</strong></div>
+            <div class="discord-preview">
+              <div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div>
+              <div class="preview-card emoji-confirm-card">
+                <h3>Are you sure you want to steal these emojis?</h3>
+                <p>Review the source emojis and their new server names before continuing.</p>
+                <div class="emoji-confirm-list">1. FlushedBanana: <b>FlushedBanana</b> -> <code>flushedbanana</code></div>
+                <img class="emoji-large" src="https://cdn.discordapp.com/emojis/1120029938302959677.png?quality=lossless" alt="" />
+                <div class="emoji-confirm-meta"><div><b>Amount</b><span>1</span></div><div><b>Keep original names</b><span>Yes</span></div></div>
+                <div class="preview-actions"><button class="confirm" type="button">Confirm</button><button class="danger" type="button">Cancel</button></div>
+                <p class="emoji-note">This confirmation expires in 10 minutes. Nothing is added until you confirm.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="screenshot-frame">
+            <div class="screenshot-top"><span></span><strong>Result</strong></div>
+            <div class="discord-preview">
+              <div class="preview-logo"><img src="/assets/beacon-logo.png?v=92" width="36" height="36" alt="" /></div>
+              <div class="preview-card">
+                <strong>Beacon</strong>
+                <h3>Emoji stolen</h3>
+                <p>Successfully Stole Emoji: <img src="https://cdn.discordapp.com/emojis/1120029938302959677.png?quality=lossless" width="24" height="24" alt="" /> - name: <code>flushedbanana</code></p>
+                <b>Beacon - Community OS</b>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

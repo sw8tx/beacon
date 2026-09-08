@@ -1,0 +1,9 @@
+.env
+node_modules/
+.wrangler/
+beacon-data.json
+/beacon-logo.png
+.deploy-web-*/
+.last-deploy-dir.txt
+mein-projekt.zip
+_worker.bundle

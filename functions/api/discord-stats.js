@@ -97,6 +97,13 @@ function normalizeServers(input) {
       categories: cleanNumber(server?.categories),
       shardId: cleanNumber(server?.shardId),
       iconUrl: cleanUrl(server?.iconUrl),
+      botLogs: Array.isArray(server?.botLogs)
+        ? server.botLogs.slice(0, 100).map((entry) => ({
+          title: cleanText(entry?.title, 100),
+          description: cleanText(entry?.description, 300),
+          at: cleanText(entry?.at, 40),
+        })).filter((entry) => entry.title)
+        : [],
     }))
     .filter((server) => server.name)
     .sort((left, right) => right.members - left.members)

@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#050505" />
+    <meta name="description" content="Beacon is the Discord community operating system for ambitious servers." />
+    <title>Beacon | Discord Community OS</title>
+    <link rel="icon" type="image/png" href="assets/beacon-logo.png?v=92" />
+    <link rel="shortcut icon" href="assets/beacon-logo.png?v=92" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=122" />
+  </head>
+  <body>
+    <nav class="site-navbar" aria-label="Beacon navigation">
+      <a class="navbar-brand" href="#top" aria-label="Beacon home">
+        <span class="navbar-logo"><img src="assets/beacon-logo.png?v=92" width="34" height="34" alt="" /></span>
+        <span class="navbar-name">Beacon</span>
+      </a>
+
+      <div class="navbar-links">
+        <a class="navbar-link" href="https://badges.beacon-bot.site/" data-i18n="navBadges">Badges</a>
+        <a class="navbar-link navbar-link--primary" href="/commands" data-i18n="navCommands">Commands</a>
+        <a class="navbar-link navbar-link--primary" href="/dashboard" data-requires-auth="true" data-i18n="navDashboard">Dashboard</a>
+        <a class="navbar-link" href="https://status.beacon-bot.site/" data-i18n="navStatus">Status</a>
+        <a class="navbar-link" href="/api/auth/discord/login" data-i18n="navSupport">Support</a>
+      </div>
+
+      <div class="navbar-actions">
+        <details class="language-menu">
+          <summary>
+            <span class="language-current-code">DE</span>
+            <span class="language-current-label">Deutsch</span>
+          </summary>
+          <div class="language-options">
+            <a href="#" data-lang="en"><span>US</span>English</a>
+            <a href="#" data-lang="fr"><span>FR</span>Francais</a>
+            <a href="#" data-lang="es"><span>ES</span>Espanol</a>
+            <a class="is-selected" href="#" data-lang="de"><span>DE</span>Deutsch</a>
+            <a href="#" data-lang="tr"><span>TR</span>Turkce</a>
+            <a href="#" data-lang="ar"><span>SA</span>Arabic</a>
+            <a href="#" data-lang="pt"><span>PT</span>Portugues</a>
+            <a href="#" data-lang="pt-BR"><span>BR</span>Portugues (BR)</a>
+            <a href="#" data-lang="it"><span>IT</span>Italiano</a>
+            <a href="#" data-lang="nl"><span>NL</span>Nederlands</a>
+          </div>
+        </details>
+        <a class="navbar-button navbar-button--prestige" href="https://prestige.beacon-bot.site/"><span data-i18n="navPrestige">Prestige</span></a>
+        <a class="navbar-button navbar-button--login login-float" id="discord-login" href="/api/auth/discord/login"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="login">Login with Discord</span></a>
+        <details class="account-menu" id="discord-account" hidden>
+          <summary><img class="account-avatar" id="discord-avatar" src="assets/beacon-logo.png?v=92" alt="" /><span id="discord-username">Discord user</span></summary>
+          <div class="account-menu-panel">
+            <a class="account-menu-action" href="/dashboard">Dashboard</a>
+            <a class="account-menu-action" href="https://status.beacon-bot.site/">Status</a>
+            <button class="account-menu-action" type="button" id="discord-logout">Log out</button>
+          </div>
+        </details>
+      </div>
+    </nav>
+
+    <div class="auth-toast" id="auth-toast" role="status" aria-live="polite">Need to login first</div>
+
+    <main id="top">
+      <section class="hero-section">
+        <div class="hero-copy" data-reveal>
+          <h1><span data-i18n="heroLineOne" data-typewriter-lines="Build a Server worth staying for.|Turn Members into a Community.|Give People a reason to stay.">Build a Server worth staying for.</span></h1>
+          <p class="hero-description" data-i18n="heroDescription">Beacon is an all-in-one Discord bot built to help you grow, manage, and engage your server with powerful tools and an easy-to-use dashboard.</p>
+
+          <div class="hero-checks" id="features">
+            <span><i>✓</i><span data-i18n="checkOne">Ticket System</span></span>
+            <span><i>✓</i><span data-i18n="checkTwo">Auto Responder</span></span>
+            <span><i>✓</i><span data-i18n="checkThree">Sticky Notes</span></span>
+            <span><i>✓</i><span data-i18n="checkFour">Server Statistics</span></span>
+            <span><i>✓</i><span data-i18n="checkFive">Welcome Messages</span></span>
+            <span><i>✓</i><span data-i18n="checkSix">Community Health Score</span></span>
+          </div>
+
+          <div class="hero-actions">
+            <a class="hero-button hero-button--primary" href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&scope=bot%20applications.commands"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="heroAdd">Add to Server</span><span class="button-arrow">↗</span></a>
+            <a class="hero-button hero-button--dark login-float login-float--hero" href="/api/auth/discord/login"><span class="discord-icon-wrap"><img class="discord-logo" src="https://cdn.simpleicons.org/discord/5865F2" alt="" /></span><span data-i18n="heroLogin">Login with Discord</span></a>
+          </div>
+        </div>
+
+      </section>
+
+      <section class="stats-section" id="status">
+        <div class="status-metrics" aria-live="polite">
+          <div class="status-metric"><strong data-stat="commands">--</strong><span data-i18n="commands">Commands</span></div>
+          <div class="status-metric"><strong data-stat="ping">--</strong><span data-i18n="ping">Ping</span></div>
+          <div class="status-metric"><strong data-stat="guilds">--</strong><span data-i18n="statServers">Servers</span></div>
+          <div class="status-metric"><strong data-stat="users">--</strong><span data-i18n="statUsers">Users</span></div>
+        </div>
+      </section>
+
+      <section class="server-strip server-strip--home" aria-label="Largest servers using Beacon">
+        <p data-i18n="serverStrip">Professional servers running Beacon</p>
+        <div class="marquee marquee--left">
+          <div class="marquee__track" data-server-track="primary"></div>
+        </div>
+        <div class="marquee marquee--right">
+          <div class="marquee__track" data-server-track="secondary"></div>
+        </div>
+      </section>
+
+      <section class="insights-section" aria-label="Beacon live community tools">
+        <article class="insight-card insight-card--giveaway" data-reveal>
+          <div class="giveaway-confetti" aria-hidden="true"></div>
+          <span class="insight-overline" data-i18n="giveawaysOverline">Giveaways</span>
+          <h2 data-i18n="giveawaysTitle">Reward your community</h2>
+          <p data-i18n="giveawaysCopy">Entry requirements, bonus entries, automatic winner DMs and clean anti-spam controls.</p>
+          <div class="giveaway-panel">
+            <div>
+              <strong data-i18n="nitroDrop">Nitro drop</strong>
+              <span data-i18n="endsIn">Ends in</span>
+            </div>
+            <div class="giveaway-status">
+              <span data-i18n="running">Running</span>
+              <strong>02:14:09</strong>
+            </div>
+            <dl>
+              <div><dt data-i18n="entries">Entries</dt><dd data-live-field="entries">1,284</dd></div>
+              <div><dt data-i18n="winners">Winners</dt><dd>2</dd></div>
+            </dl>
+            <a class="giveaway-button" href="https://beacon-bot.site/secret-badge" data-claim-badge="easter-2026" aria-describedby="giveaway-claim-note" data-i18n="enterGiveaway">Enter giveaway</a>
+            <span class="giveaway-claim-note" id="giveaway-claim-note" aria-live="polite"></span>
+          </div>
+        </article>
+
+        <article class="insight-card" data-reveal>
+          <span class="insight-overline" data-i18n="messagesOverline">Message counting</span>
+          <h2 data-i18n="messagesTitle">Measure real activity</h2>
+          <p data-i18n="messagesCopy">Per-member counts, live role rewards and readable growth over the last seven days.</p>
+          <div class="activity-panel">
+            <div class="panel-head"><span>Messages · 7 days</span><strong data-live-field="messages">12,408</strong></div>
+            <svg class="activity-chart" viewBox="0 0 360 130" role="img" aria-label="Rising message activity graph">
+              <polyline points="18,92 42,82 66,98 90,84 114,104 138,90 162,116 190,106 216,96 242,112 268,82 294,72 318,80 342,52" />
+              <circle cx="342" cy="52" r="5" />
+            </svg>
+            <div class="role-note"><i></i><span data-i18n="roleNote">@Regular granted at 10k messages</span></div>
+          </div>
+        </article>
+
+        <article class="insight-card" data-reveal>
+          <span class="insight-overline" data-i18n="leaderboardOverline">Leaderboards</span>
+          <h2 data-i18n="leaderboardTitle">Put champions on display</h2>
+          <p data-i18n="leaderboardCopy">Auto-updating boards, pinned where members see them with hourly syncs.</p>
+          <div class="leaderboard-panel">
+            <div class="panel-head"><span data-i18n="leaderboardLabel"># Leaderboard</span><small data-i18n="updatesHourly">Updates hourly</small></div>
+            <ol>
+              <li><b>01</b><i>K</i><strong>Kira</strong><span>214</span></li>
+              <li><b>02</b><i>R</i><strong>Rex</strong><span>167</span></li>
+              <li><b>03</b><i>J</i><strong>Juno</strong><span>98</span></li>
+            </ol>
+          </div>
+        </article>
+      </section>
+
+      <section class="feature-showcase" aria-label="Beacon feature showcase">
+        <article class="feature-showcase__row feature-showcase__row--clean" data-reveal>
+          <div class="feature-showcase__copy">
+            <span class="feature-showcase__overline" data-i18n="purgeOverline">MODERATION</span>
+            <h2 data-i18n="purgeTitle">Clean up your server fast</h2>
+            <p data-i18n="purgeCopy">Keep conversations focused with simple moderation commands. <code>/purge</code> removes up to 99 recent messages, while <code>/purge-user</code> clears recent messages from one selected user.</p>
+            <a class="feature-showcase__button" href="/commands/purge/" data-i18n="purgeAction">Explore moderation</a>
+          </div>
+          <div class="feature-showcase__visual feature-showcase__visual--image" aria-label="Purge commands preview">
+            <img class="feature-showcase__image" src="assets/purge-feature.png?v=2" alt="Preview of the purge and purge-user commands" loading="lazy">
+          </div>
+        </article>
+        <article class="feature-showcase__row feature-showcase__row--reverse feature-showcase__row--clean" data-reveal>
+          <div class="feature-showcase__visual feature-showcase__visual--image" aria-label="Customize bot dashboard preview">
+            <img class="feature-showcase__image" src="assets/customize-feature.png?v=2" alt="Preview of the Customize Bot dashboard" loading="lazy">
+          </div>
+          <div class="feature-showcase__copy">
+            <span class="feature-showcase__overline" data-i18n="customizeOverline">CUSTOMIZATION</span>
+            <h2 data-i18n="customizeTitle">Customize your bot</h2>
+            <p data-i18n="customizeCopy">Give your bot a personality that fits your community. Update its avatar, banner and bio from one clean dashboard, then save the changes when everything feels right.</p>
+            <a class="feature-showcase__button" href="https://beacon-bot.site/dashboard#customize-bot" data-i18n="customizeAction">Customize your bot</a>
+          </div>
+        </article>
+        <article class="feature-showcase__row feature-showcase__row--feature" data-reveal>
+          <div class="feature-showcase__copy">
+            <span class="feature-showcase__overline" data-i18n="giveawaysOverline">GIVEAWAYS</span>
+            <h2 data-i18n="giveawaysTitle">Reward your community</h2>
+            <p data-i18n="giveawaysCopy">Entry requirements, bonus entries, automatic winner DMs and clean anti-spam controls.</p>
+            <a class="feature-showcase__button" href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&scope=bot%20applications.commands" data-i18n="featureAction">Add to Discord</a>
+          </div>
+          <div class="feature-showcase__visual" aria-label="Giveaway statistics">
+            <div class="feature-panel feature-panel--giveaway">
+              <div class="feature-panel__top"><span data-i18n="nitroDrop">Nitro drop</span><b data-i18n="running">RUNNING</b></div>
+              <div class="feature-panel__countdown">02:14:09</div>
+              <div class="feature-panel__stats"><span><small data-i18n="entries">ENTRIES</small><strong data-live-field="entries">1,284</strong></span><span><small data-i18n="winners">WINNERS</small><strong>02</strong></span></div>
+              <div class="feature-progress"><i></i></div>
+              <div class="feature-panel__footer"><span>✓</span><b data-i18n="enterGiveaway">Enter giveaway</b><small data-i18n="updatesHourly">Updates hourly</small></div>
+            </div>
+          </div>
+        </article>
+        <article class="feature-showcase__row feature-showcase__row--reverse feature-showcase__row--feature" data-reveal>
+          <div class="feature-showcase__visual" aria-label="Message activity statistics">
+            <div class="feature-panel feature-panel--activity">
+              <div class="feature-panel__top"><span data-i18n="messages7Days">MESSAGES - 7 DAYS</span><b data-live-field="messages">20,680</b></div>
+              <svg class="feature-panel__chart" viewBox="0 0 520 180" role="img" aria-label="Message activity graph"><polyline points="20,130 62,108 104,134 146,112 188,145 230,118 272,157 314,141 356,121 398,148 440,86 480,62" /><circle cx="480" cy="62" r="7" /></svg>
+              <div class="feature-panel__trend"><i></i><span>+28.4%</span><small>activity this week</small></div>
+              <div class="feature-panel__members"><span><b>12,408</b><small>messages</small></span><span><b>+842</b><small>members active</small></span><span><b>7d</b><small>tracked</small></span></div>
+            </div>
+          </div>
+          <div class="feature-showcase__copy">
+            <span class="feature-showcase__overline" data-i18n="messagesOverline">MESSAGE COUNTING</span>
+            <h2 data-i18n="messagesTitle">Measure real activity</h2>
+            <p data-i18n="messagesCopy">Per-member counts, live role rewards and readable growth over the last seven days.</p>
+            <a class="feature-showcase__button" href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&scope=bot%20applications.commands" data-i18n="featureAction">Add to Discord</a>
+          </div>
+        </article>
+        <article class="feature-showcase__row feature-showcase__row--feature" data-reveal>
+          <div class="feature-showcase__copy">
+            <span class="feature-showcase__overline" data-i18n="leaderboardOverline">LEADERBOARDS</span>
+            <h2 data-i18n="leaderboardTitle">Put champions on display</h2>
+            <p data-i18n="leaderboardCopy">Auto-updating boards, pinned where members see them with hourly syncs.</p>
+            <a class="feature-showcase__button" href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&scope=bot%20applications.commands" data-i18n="featureAction">Add to Discord</a>
+          </div>
+          <div class="feature-showcase__visual" aria-label="Community leaderboard">
+            <div class="feature-panel feature-panel--leaderboard">
+              <div class="feature-panel__top"><span data-i18n="leaderboardLabel"># LEADERBOARD</span><b data-i18n="updatesHourly">UPDATES HOURLY</b></div>
+              <ol><li><em>01</em><i>K</i><strong>Kira</strong><span>214</span></li><li><em>02</em><i>R</i><strong>Rex</strong><span>167</span></li><li><em>03</em><i>J</i><strong>Juno</strong><span>98</span></li><li><em>04</em><i>M</i><strong>Milo</strong><span>76</span></li></ol>
+              <div class="feature-panel__reward"><span>★</span><b>Top 3 earn the Champion role</b></div>
+            </div>
+          </div>
+        </article>
+        <article class="feature-showcase__row">
+          <div class="feature-showcase__visual feature-showcase__visual--commands" aria-hidden="true">
+            <div class="mock-window">
+              <div class="mock-window__top"><span data-i18n="mockCommandTitle">New custom command</span><b>×</b></div>
+              <small>Template</small><div class="mock-select">No template chosen <span>⌄</span></div>
+              <small>Command</small><div class="mock-input">!promote</div>
+              <div class="mock-action mock-action--active">Select an action</div>
+              <small>Bot response</small><div class="mock-action">Give a role</div>
+              <div class="mock-action">Send a message</div>
+            </div>
+            <div class="mock-command-card mock-command-card--one"><b>!tableflip</b><span>Will paste the table flipping emoji in the channel</span><i></i></div>
+            <div class="mock-command-card mock-command-card--two"><b>!unflip</b><span>Will paste the table unflipping emoji in the channel</span><i></i></div>
+            <div class="mock-mascot">✦</div>
+          </div>
+          <div class="feature-showcase__copy">
+            <span class="feature-showcase__overline" data-i18n="customOverline">AUTOMATION</span>
+            <h2 data-i18n="customTitle">Advanced custom commands</h2>
+            <p data-i18n="customCopy">Empower your server with custom commands designed to automate tasks, streamline role management and deliver personalized messages that fit your community.</p>
+            <a class="feature-showcase__button" href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&scope=bot%20applications.commands" data-i18n="featureAction">Add to Discord</a>
+          </div>
+        </article>
+
+        <article class="feature-showcase__row feature-showcase__row--reverse">
+          <div class="feature-showcase__copy">
+            <span class="feature-showcase__overline" data-i18n="socialOverline">COMMUNITY ACTIVITY</span>
+            <h2 data-i18n="socialTitle">Stay connected with your community</h2>
+            <p data-i18n="socialCopy">Send real-time notifications for streams, videos, events and server activity so your members never miss what is happening.</p>
+            <a class="feature-showcase__button" href="https://discord.com/oauth2/authorize?client_id=1529195963787251784&scope=bot%20applications.commands" data-i18n="featureAction">Add to Discord</a>
+          </div>
+          <div class="feature-showcase__visual feature-showcase__visual--activity" aria-hidden="true">
+            <div class="activity-art__bubble activity-art__bubble--purple">▮▮</div>
+            <div class="activity-art__bubble activity-art__bubble--blue">♥</div>
+            <div class="activity-art__screen"><div class="activity-art__person"></div><span>LIVE NOW</span></div>
+            <div class="activity-art__toast"><b>pokimane</b><small>#twitchlivestreams</small><i></i></div>
+            <div class="activity-art__play">▶</div>
+          </div>
+        </article>
+      </section>
+
+      <section class="upgrade-section" aria-label="Upgrade Beacon server">
+        <div class="upgrade-card">
+          <h2 data-i18n="upgradeTitle">Ready to upgrade your server?</h2>
+          <p data-i18n="upgradeCopy">Join growing communities already using Beacon to manage tickets, rewards, roles, commands and real-time server insights.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <a href="#top" aria-label="Beacon home"><img src="assets/beacon-logo.png?v=92" width="32" height="32" alt="" /><strong>Beacon</strong></a>
+        <span data-i18n="builtBy">Built by Sparkle</span>
+        <span class="sponsor-label" data-i18n="sponsoredBy">Sponsored by</span>
+        <img class="sponsor-logo" src="assets/nextbyte-logo.png?v=1" alt="Nextbyte" loading="lazy" />
+      </div>
+      <nav class="footer-legal" aria-label="Legal navigation">
+        <a href="/tos" data-i18n="legalTerms">Terms of Use</a>
+        <a href="/privacy" data-i18n="legalPrivacy">Privacy Policy</a>
+        <a href="/copyright" data-i18n="legalCopyright">Copyright Dispute</a>
+        <a href="/gdpr" data-i18n="legalGdpr">GDPR Notice</a>
+        <a href="/cookies" data-i18n="legalCookies">Cookie Policy</a>
+        <a href="/eula" data-i18n="legalEula">EULA</a>
+      </nav>
+      <p class="footer-rights" data-i18n="footerRights">© 2026 Beacon. All rights reserved. Beacon is not affiliated with Discord Inc.</p>
+    </footer>
+    <script src="app.js?v=110"></script>
+  </body>
+</html>

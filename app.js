@@ -13,57 +13,34 @@ const discordLogout = document.querySelector("#discord-logout");
 const authToast = document.querySelector("#auth-toast");
 const authRequiredLinks = [...document.querySelectorAll("[data-requires-auth]")];
 const heroTypewriter = document.querySelector("[data-typewriter-lines]");
+const claimButtons = [...document.querySelectorAll("[data-claim-badge]")];
 const giveawayCards = [...document.querySelectorAll(".insight-card--giveaway")];
-const externalModal = document.querySelector("#external-modal");
-const externalLinks = [...document.querySelectorAll("[data-external-site]")];
-const externalCloseButtons = [...document.querySelectorAll("[data-external-close]")];
-const copyExternalButton = document.querySelector("[data-copy-external]");
-const copyFeedback = document.querySelector("[data-copy-feedback]");
 let heroTypewriterTimer = null;
 let isDiscordSignedIn = false;
 
-function closeExternalModal() {
-  if (!externalModal) return;
-  externalModal.hidden = true;
-  document.body.classList.remove("external-modal-open");
-  if (copyFeedback) copyFeedback.textContent = "";
+function setClaimedState(button) {
+  button.classList.add("is-claimed");
+  button.innerHTML = '<span aria-hidden="true">✓</span>&nbsp; Already claimed';
+  button.setAttribute("aria-label", "Already claimed");
+  button.setAttribute("aria-disabled", "true");
+  const note = document.getElementById("giveaway-claim-note");
+  if (note) note.textContent = "This Easter badge has already been claimed in this browser.";
 }
 
-function openExternalModal() {
-  if (!externalModal) return;
-  externalModal.hidden = false;
-  document.body.classList.add("external-modal-open");
-  externalModal.querySelector(".external-modal__close")?.focus();
-}
-
-externalLinks.forEach((link) => link.addEventListener("click", (event) => {
-  event.preventDefault();
-  openExternalModal();
-}));
-externalCloseButtons.forEach((button) => button.addEventListener("click", closeExternalModal));
-copyExternalButton?.addEventListener("click", async () => {
+claimButtons.forEach((button) => {
+  const key = `beacon-claimed-${button.dataset.claimBadge}`;
   try {
-    await navigator.clipboard.writeText("https://nxtbyte.de/");
-    if (copyFeedback) copyFeedback.textContent = "Link copied to clipboard.";
-  } catch (_) {
-    if (copyFeedback) copyFeedback.textContent = "Copy failed. Please copy the link above.";
-  }
-});
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && externalModal && !externalModal.hidden) closeExternalModal();
-});
-
-const homeLogo = document.querySelector(".navbar-logo");
-if (homeLogo && window.location.pathname === "/") {
-  let logoClickCount = 0;
-  homeLogo.addEventListener("click", (event) => {
-    logoClickCount += 1;
-    if (logoClickCount === 14) {
+    if (localStorage.getItem(key) === "true") setClaimedState(button);
+  } catch (_) {}
+  button.addEventListener("click", (event) => {
+    if (button.classList.contains("is-claimed")) {
       event.preventDefault();
-      window.location.href = "/secret-badge";
+      return;
     }
+    try { localStorage.setItem(key, "true"); } catch (_) {}
+    setClaimedState(button);
   });
-}
+});
 
 function celebrateGiveaway(card) {
   const container = card.querySelector(".giveaway-confetti");
@@ -140,8 +117,6 @@ const pageTranslations = {
   de: { serverStrip: "Professionelle Server mit Beacon", giveawaysOverline: "Giveaways", giveawaysTitle: "Belohne deine Community", giveawaysCopy: "Teilnahmebedingungen, Bonus-Einträge, automatische Gewinner-DMs und sauberer Anti-Spam-Schutz.", messagesOverline: "Nachrichten zählen", messagesTitle: "Miss echte Aktivität", messagesCopy: "Zählungen pro Mitglied, Live-Rollenbelohnungen und verständliches Wachstum der letzten sieben Tage.", leaderboardOverline: "Ranglisten", leaderboardTitle: "Zeige die Champions", leaderboardCopy: "Automatisch aktualisierte Ranglisten, angepinnt für deine Mitglieder und stündlich synchronisiert.", nitroDrop: "Nitro-Drop", endsIn: "Endet in", running: "Läuft", entries: "Teilnahmen", winners: "Gewinner", enterGiveaway: "Am Giveaway teilnehmen", messages7Days: "Nachrichten · 7 Tage", roleNote: "@Regular ab 10.000 Nachrichten vergeben", leaderboardLabel: "# Rangliste", updatesHourly: "Stündliche Updates", upgradeTitle: "Bereit für das nächste Server-Level?", upgradeCopy: "Schließe dich wachsenden Communities an, die Beacon für Tickets, Belohnungen, Rollen, Commands und Live-Statistiken nutzen.", upgradeAdd: "Zu Discord hinzufügen", upgradeStatus: "Status ansehen", builtBy: "Gebaut von Sparkle", sponsoredBy: "Gesponsert von", legalTerms: "Nutzungsbedingungen", legalPrivacy: "Datenschutz", legalCopyright: "Copyright-Streitfall", legalGdpr: "DSGVO-Hinweis", legalCookies: "Cookie-Richtlinie", legalEula: "EULA", footerRights: "© 2026 Beacon. Alle Rechte vorbehalten. Beacon ist nicht mit Discord Inc. verbunden." },
 };
 Object.keys(translations).forEach((language) => Object.assign(translations[language], pageTranslations[language] || pageTranslations.en));
-translations.en.legalImprint = "Imprint";
-translations.de.legalImprint = "Impressum";
 
 const showcaseTranslations = {
   en: { purgeOverline: "MODERATION", purgeTitle: "Clean up your server fast", purgeCopy: "Keep conversations focused with simple moderation commands. /purge removes up to 99 recent messages, while /purge-user clears recent messages from one selected user.", purgeAction: "Explore moderation", customizeOverline: "CUSTOMIZATION", customizeTitle: "Customize your bot", customizeCopy: "Give your bot a personality that fits your community. Update its avatar, banner and bio from one clean dashboard, then save the changes when everything feels right.", customizeAction: "Customize your bot", mockCommandTitle: "New custom command", customOverline: "AUTOMATION", customTitle: "Advanced custom commands", customCopy: "Empower your server with custom commands designed to automate tasks, streamline role management and deliver personalized messages that fit your community.", socialOverline: "COMMUNITY ACTIVITY", socialTitle: "Stay connected with your community", socialCopy: "Send real-time notifications for streams, videos, events and server activity so your members never miss what is happening.", featureAction: "Add to Discord" },
@@ -214,15 +189,13 @@ function startHeroTypewriter(text) {
 }
 
 languageOptions.forEach((option) => option.addEventListener("click", (event) => {
+  event.preventDefault();
   setLanguage(option.dataset.lang);
   languageMenu?.removeAttribute("open");
 }));
 
-const pathLanguage = window.location.pathname.match(/^\/(en|fr|es|de|tr|ar|pt|pt-BR|it|nl)(?:\/|$)/)?.[1] || null;
-let savedLanguage = pathLanguage || "en";
-if (!pathLanguage) {
-  try { savedLanguage = localStorage.getItem("beacon-language") || "en"; } catch (_) {}
-}
+let savedLanguage = "de";
+try { savedLanguage = localStorage.getItem("beacon-language") || "de"; } catch (_) {}
 setLanguage(savedLanguage);
 
 async function loadDiscordSession() {
@@ -233,10 +206,9 @@ async function loadDiscordSession() {
     const { user } = await response.json();
     if (!user?.username) return;
     isDiscordSignedIn = true;
-    discordAvatar.src = user.avatar || "/assets/beacon-logo.png?v=92";
+    discordAvatar.src = user.avatar || "assets/beacon-logo.png?v=92";
     discordAvatar.alt = `${user.username} profile picture`;
     discordUsername.textContent = user.username;
-    if (discordLogout) discordLogout.textContent = "Log out";
     discordLoginLinks.forEach((link) => {
       link.hidden = true;
       link.setAttribute("aria-hidden", "true");
@@ -248,13 +220,11 @@ async function loadDiscordSession() {
 }
 
 function showAuthRequired() {
-  if (authToast) authToast.textContent = "Need to login first";
-  if (authToast) authToast.hidden = false;
   document.body.classList.remove("auth-flash", "show-auth-toast");
   void document.body.offsetWidth;
   document.body.classList.add("auth-flash", "show-auth-toast");
   window.setTimeout(() => document.body.classList.remove("auth-flash"), 1000);
-  window.setTimeout(() => { document.body.classList.remove("show-auth-toast"); if (authToast) authToast.hidden = true; }, 2300);
+  window.setTimeout(() => document.body.classList.remove("show-auth-toast"), 2300);
 }
 
 let discordSessionPromise = null;
@@ -289,7 +259,7 @@ const KNOWN_COMMAND_COUNT = 24;
 const numberFormatter = new Intl.NumberFormat("en-US");
 let statsRequest = null;
 const DEFAULT_SERVERS = [
-  { name: "Beacon", members: 57, iconUrl: "/assets/beacon-logo.png?v=92" },
+  { name: "Beacon", members: 57, iconUrl: "assets/beacon-logo.png?v=92" },
   { name: "Apex Design V2", members: 72, iconUrl: null },
   { name: "Gelsenkirchen RP", members: 61, iconUrl: null },
   { name: "BotTest123", members: 21, iconUrl: null },
@@ -306,8 +276,13 @@ function formatStatusNumber(value) {
 async function fetchLiveStats() {
   if (!window.fetch) return null;
   if (!statsRequest) {
-    statsRequest = fetch("/api/public-stats", { cache: "no-store" })
-      .then((response) => response.ok ? response.json() : null)
+    statsRequest = fetch("/api/discord-stats", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) {
+          throw new Error("Stats API unavailable: verify the Pages Functions deployment");
+        }
+        return response.json();
+      })
       .catch(() => null)
       .finally(() => {
         window.setTimeout(() => { statsRequest = null; }, 750);
@@ -335,8 +310,14 @@ function createServerCard(server) {
   if (server.iconUrl) {
     avatar.src = server.iconUrl;
     avatar.alt = "";
-    avatar.loading = "lazy";
+    avatar.loading = "eager";
     avatar.decoding = "async";
+    avatar.addEventListener("error", () => {
+      const fallback = document.createElement("span");
+      fallback.className = "server-avatar";
+      fallback.textContent = getInitials(server.name);
+      avatar.replaceWith(fallback);
+    }, { once: true });
   } else {
     avatar.textContent = getInitials(server.name);
   }
@@ -369,9 +350,12 @@ function buildServerFallback(stats) {
 function fillServerTrack(track, servers, stats) {
   const source = (Array.isArray(servers) ? servers : []).filter((server) => server?.name);
   const cards = source.length ? source : buildServerFallback(stats);
+  const signature = JSON.stringify(cards);
+  if (track.dataset.servers === signature) return;
+  track.dataset.servers = signature;
   const repeated = [];
   while (repeated.length < 16) repeated.push(...cards);
-  track.replaceChildren(...repeated.slice(0, Math.max(16, cards.length * 2)).map(createServerCard));
+  track.replaceChildren(...[...repeated, ...repeated].map(createServerCard));
 }
 
 function updateServerTracks(stats) {
@@ -401,7 +385,13 @@ async function syncLiveStats() {
   if ((!statusValues.length && !serverTracks.length && !liveFields.length) || !window.fetch) return;
   try {
     const stats = await fetchLiveStats();
-    if (!stats) return;
+    if (!stats) {
+      statusValues.forEach((element) => {
+        element.textContent = "Unavailable";
+        element.title = "Live statistics could not be loaded. Please try again shortly.";
+      });
+      return;
+    }
     const values = {
       commands: Number(stats.commands) > 0 ? formatStatusNumber(Number(stats.commands)) : String(KNOWN_COMMAND_COUNT),
       ping: Number.isFinite(Number(stats.ping)) ? `${Math.round(Number(stats.ping))} ms` : "--",
@@ -410,6 +400,7 @@ async function syncLiveStats() {
     };
     statusValues.forEach((element) => {
       element.textContent = values[element.dataset.stat] || "--";
+      element.title = stats.online ? "Live statistics" : "Last reported statistics; bot offline or heartbeat delayed";
     });
     updateServerTracks(stats);
     updateLiveFields(stats);
@@ -428,6 +419,7 @@ function revealOnScroll() {
 }
 window.addEventListener("scroll", revealOnScroll, { passive: true });
 window.addEventListener("resize", revealOnScroll);
+window.addEventListener("orientationchange", () => window.setTimeout(revealOnScroll, 200));
 window.addEventListener("load", revealOnScroll);
 
 function makeDashboardTexture(THREE) {
@@ -625,116 +617,3 @@ async function initThreeLaptop() {
 }
 
 requestAnimationFrame(revealOnScroll);
-
-const COOKIE_CONSENT_KEY = "beacon-cookie-consent-v1";
-const cookieNotice = document.querySelector("#cookie-notice");
-const cookieFloatingButton = document.querySelector(".cookie-floating-button");
-const cookieSettingsModal = document.querySelector("#cookie-settings-modal");
-const cookieSettingsButtons = [...document.querySelectorAll("[data-cookie-settings]")];
-const cookieCloseButtons = [...document.querySelectorAll("[data-cookie-close]")];
-const cookieAcceptAllButtons = [...document.querySelectorAll("[data-cookie-accept-all]")];
-const cookieNecessaryButtons = [...document.querySelectorAll("[data-cookie-necessary]")];
-const cookieSaveButton = document.querySelector("[data-cookie-save]");
-const cookieAnalyticsToggles = [...document.querySelectorAll("[data-cookie-analytics-toggle]")];
-let cookieAnalyticsEnabled = false;
-
-function getCookieConsent() {
-  try {
-    return JSON.parse(localStorage.getItem(COOKIE_CONSENT_KEY) || "null");
-  } catch (_) {
-    return null;
-  }
-}
-
-function setCookieConsent(analytics) {
-  const consent = {
-    necessary: true,
-    analytics: Boolean(analytics),
-    googleCookiesKept: analytics ? ["_ga", "_ga_*", "FPID"] : [],
-    updatedAt: new Date().toISOString(),
-  };
-  try {
-    localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(consent));
-  } catch (_) {}
-  if (!consent.analytics) clearGoogleAnalyticsCookies();
-  return consent;
-}
-
-function expireCookie(name, domain = "") {
-  const domainPart = domain ? `;domain=${domain}` : "";
-  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/${domainPart};SameSite=Lax`;
-}
-
-function clearGoogleAnalyticsCookies() {
-  const hostname = window.location.hostname;
-  const domains = ["", hostname, `.${hostname}`];
-  const googleCookieNames = document.cookie
-    .split(";")
-    .map((part) => part.trim().split("=")[0])
-    .filter((name) => name === "_ga" || name.startsWith("_ga_") || name === "FPID");
-
-  ["_ga", "FPID", ...googleCookieNames].forEach((name) => {
-    domains.forEach((domain) => expireCookie(name, domain));
-  });
-}
-
-function updateCookieToggles() {
-  cookieAnalyticsToggles.forEach((toggle) => {
-    toggle.classList.toggle("is-on", cookieAnalyticsEnabled);
-    toggle.setAttribute("aria-pressed", cookieAnalyticsEnabled ? "true" : "false");
-  });
-}
-
-function openCookieSettings() {
-  if (!cookieSettingsModal) return;
-  cookieSettingsModal.hidden = false;
-  cookieSettingsModal.querySelector(".cookie-settings__close")?.focus();
-}
-
-function closeCookieSettings() {
-  if (!cookieSettingsModal) return;
-  cookieSettingsModal.hidden = true;
-}
-
-function hideCookieNotice() {
-  if (cookieNotice) cookieNotice.hidden = true;
-  if (cookieFloatingButton) cookieFloatingButton.hidden = false;
-  closeCookieSettings();
-}
-
-function applyCookieChoice(analytics) {
-  cookieAnalyticsEnabled = Boolean(analytics);
-  setCookieConsent(cookieAnalyticsEnabled);
-  updateCookieToggles();
-  hideCookieNotice();
-}
-
-const existingCookieConsent = getCookieConsent();
-if (existingCookieConsent) {
-  cookieAnalyticsEnabled = Boolean(existingCookieConsent.analytics);
-  if (!cookieAnalyticsEnabled) clearGoogleAnalyticsCookies();
-} else if (cookieNotice) {
-  cookieNotice.hidden = false;
-  if (cookieFloatingButton) cookieFloatingButton.hidden = true;
-}
-if (existingCookieConsent && cookieFloatingButton) cookieFloatingButton.hidden = false;
-updateCookieToggles();
-
-cookieSettingsButtons.forEach((button) => button.addEventListener("click", openCookieSettings));
-cookieCloseButtons.forEach((button) => button.addEventListener("click", closeCookieSettings));
-cookieAnalyticsToggles.forEach((toggle) => toggle.addEventListener("click", () => {
-  cookieAnalyticsEnabled = !cookieAnalyticsEnabled;
-  cookieAnalyticsToggles.forEach((item) => {
-    item.classList.remove("is-switching");
-    void item.offsetWidth;
-    item.classList.add("is-switching");
-    window.setTimeout(() => item.classList.remove("is-switching"), 360);
-  });
-  updateCookieToggles();
-}));
-cookieAcceptAllButtons.forEach((button) => button.addEventListener("click", () => applyCookieChoice(true)));
-cookieNecessaryButtons.forEach((button) => button.addEventListener("click", () => applyCookieChoice(false)));
-cookieSaveButton?.addEventListener("click", () => applyCookieChoice(cookieAnalyticsEnabled));
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && cookieSettingsModal && !cookieSettingsModal.hidden) closeCookieSettings();
-});

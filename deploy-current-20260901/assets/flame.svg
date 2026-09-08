@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="flameGradient" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#FFD27B"/>
+      <stop offset="45%" stop-color="#FF914F"/>
+      <stop offset="80%" stop-color="#FF6726"/>
+      <stop offset="100%" stop-color="#D83E1F"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.3" r="0.8" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#FFDBA4" stop-opacity="0.8"/>
+      <stop offset="55%" stop-color="#FF8A33" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#FF8A33" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="256" cy="302" r="170" fill="url(#glow)"/>
+  <path d="M256 56C256 56 166 148 166 264C166 337 218 400 256 448C294 400 346 337 346 264C346 148 256 56 256 56Z" fill="url(#flameGradient)"/>
+  <path d="M256 120C256 120 206 180 206 240C206 286 236 324 256 356C276 324 306 286 306 240C306 180 256 120 256 120Z" fill="#FFEEB5" opacity="0.92"/>
+  <path d="M256 90C256 90 230 136 230 184C230 220 248 252 256 276C264 252 282 220 282 184C282 136 256 90 256 90Z" fill="#FFCA60" opacity="0.96"/>
+</svg>

@@ -5,11 +5,17 @@
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",
-    "check": "node --check bot.js"
+    "check": "node --check bot.js",
+    "build:web": "node scripts/build-web.cjs",
+    "dev:web": "npm run build:web && wrangler pages dev dist",
+    "deploy:web": "npm run build:web && wrangler pages deploy dist --project-name beacon --branch main"
   },
   "dependencies": {
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.7",
     "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "wrangler": "^4.129.1"
   }
 }

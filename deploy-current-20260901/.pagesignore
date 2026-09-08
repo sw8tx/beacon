@@ -1,0 +1,7 @@
+.git
+.wrangler
+node_modules
+mein-projekt.zip
+beacon-bot-deploy.zip
+.deploy-web-*
+_worker.bundle

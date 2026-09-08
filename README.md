@@ -1,5 +1,25 @@
 # Beacon Bot
 
+## Website deployment (Cloudflare Pages)
+
+Run `npm ci` and `npm run build:web`. Deploy only the generated `dist/` directory
+with `npm run deploy:web`, never the repository root or an old deployment ZIP.
+The build explicitly copies public assets and compiles Pages Functions into
+`dist/_worker.js`. This worker is server-side code, not a downloadable asset.
+For Git integration, use build command `npm run build:web` and output `dist`.
+The bot still runs separately with `npm start`; a website deployment does not start it.
+
+After deploying, verify `/api/discord-stats` returns JSON and
+`/api/auth/discord/login` redirects to Discord, not the homepage.
+Verify `/bot.js`, `/env.example`, `/.env`, `/package.json`, `/functions/`,
+`/app.sjs` and deployment ZIP paths return 404. Public browser scripts such as
+`/app.js` must remain accessible; hiding them would break the website.
+
+Preserve the production `STATUS_DB` / `DISCORD_STATS` bindings and OAuth secrets.
+The Discord redirect URI must be `https://beacon-bot.site/api/auth/discord/callback`.
+If sensitive files were publicly served, rotate affected credentials separately
+and remove obsolete deployments; blocking new requests cannot revoke downloaded copies.
+
 ## Start locally
 
 1. Copy .env.example to .env
