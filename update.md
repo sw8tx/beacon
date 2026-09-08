@@ -1,6 +1,10 @@
 # Beacon Bot - Latest Update
 
-**4 September 2026**
+**31 August 2026**
+
+## Introduction
+
+This update improves Beacon's reliability, privacy and public website experience. It also prepares the project for safer releases and clearer navigation.
 
 ## Server info improvements
 
@@ -14,9 +18,7 @@ The pagination button IDs were fixed so every component has a unique Discord `cu
 
 `/prestige` was removed from command registration, command handling and the `/help` menu. Existing level, XP and prestige data remains compatible, while the level-cap message no longer points members to an unavailable command.
 
-## Latest web update
-
-**8 September 2026**
+## August web update
 
 - **+ Security:** Direct source requests now show a Beacon joke instead of private code.
 - **+ Privacy:** Public scripts are minified and shipped without source maps.
