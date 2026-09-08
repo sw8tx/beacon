@@ -311,6 +311,17 @@ body.external-modal-open { overflow: hidden; }
   .external-modal__actions { justify-content: stretch; }
   .external-modal__button { flex: 1; padding-inline: 12px; }
 }
+
+html[dir="rtl"] body { text-align: right; }
+html[dir="rtl"] .site-navbar,
+html[dir="rtl"] .hero-section,
+html[dir="rtl"] .feature-showcase__row,
+html[dir="rtl"] .feature-showcase__row--reverse { direction: rtl; }
+html[dir="rtl"] .navbar-links,
+html[dir="rtl"] .navbar-actions,
+html[dir="rtl"] .hero-actions { direction: rtl; }
+html[dir="rtl"] .hero-copy,
+html[dir="rtl"] .feature-showcase__copy { text-align: right; }
 .feature-showcase { position: relative; overflow: hidden; padding: 20px 5.2vw 50px; background: #282b39; }
 .feature-showcase__row { display: none !important; }
 .feature-showcase__row--clean { display: grid !important; }
@@ -507,4 +518,3 @@ body.external-modal-open { overflow: hidden; }
   .cookie-settings__actions .cookie-button,
   .cookie-settings__actions .cookie-button--muted { width: 100%; min-width: 0; margin-left: 0; }
 }
-
