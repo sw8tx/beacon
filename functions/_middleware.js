@@ -23,6 +23,9 @@ export async function onRequest(context) {
   const secured = new Response(response.body, response);
   secured.headers.set("X-Content-Type-Options", "nosniff");
   if (url.pathname.startsWith("/api/")) secured.headers.set("Cache-Control", "no-store");
+  if (url.hostname === "beacon-bot.site" && (url.pathname === "/" || url.pathname === "/index.html")) {
+    secured.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
+  }
   return secured;
 }
 
