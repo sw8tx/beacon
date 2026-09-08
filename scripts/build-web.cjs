@@ -32,6 +32,7 @@ function copyPublic(relative, types) {
 for (const file of files) copyPublic(file, publicTypes);
 for (const directory of directories) copyPublic(directory, directory === 'assets' ? assetTypes : publicTypes);
 fs.copyFileSync(path.join(root, 'app.js'), path.join(output, 'assets', 'site-runtime.js'));
+fs.copyFileSync(path.join(root, 'app.js'), path.join(output, 'site-runtime.js'));
 fs.writeFileSync(path.join(output, '404.html'), '<!doctype html><html lang="en"><meta charset="utf-8"><title>Not found</title><h1>404 — Not found</h1><a href="/">Beacon home</a></html>');
 fs.writeFileSync(path.join(output, '_routes.json'), JSON.stringify({ version: 1, include: ['/*'], exclude: [] }));
 fs.writeFileSync(path.join(output, '_headers'), `/*

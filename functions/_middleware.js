@@ -1,5 +1,5 @@
 const PUBLIC_SCRIPTS = new Set([
-  "/prestige.js", "/badges/badge-data.js", "/badges/badge-icons.js", "/assets/site-runtime.js",
+  "/prestige.js", "/badges/badge-data.js", "/badges/badge-icons.js", "/site-runtime.js",
   "/badges/badges.js", "/status/status-runtime-v2.js",
 ]);
 
