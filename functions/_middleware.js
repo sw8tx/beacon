@@ -26,6 +26,17 @@ export async function onRequest(context) {
   if (url.hostname === "beacon-bot.site" && (url.pathname === "/" || url.pathname === "/index.html")) {
     secured.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
   }
+  if (response.status === 404 && !url.pathname.endsWith("/404.html")) {
+    const fallback = await context.env.ASSETS.fetch(new Request(new URL("/404.html", url), context.request));
+    return new Response(fallback.body, {
+      status: 404,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+      },
+    });
+  }
   return secured;
 }
 
