@@ -17,9 +17,21 @@ function privatePath(pathname) {
     || /\.(?:map|md|sql|toml|yaml|yml|zip|gz|bak|log|py|ps1|sh)(?:\/|$)/.test(decoded);
 }
 
+function isDirectRuntimeRequest(request, url) {
+  if (url.pathname !== "/site-runtime.js" && url.pathname !== "/badges/runtime.js") return false;
+  const destination = request.headers.get("sec-fetch-dest");
+  const referer = request.headers.get("referer");
+  if (destination !== "script" || !referer) return true;
+  try {
+    return new URL(referer).hostname !== url.hostname;
+  } catch {
+    return true;
+  }
+}
+
 export async function onRequest(context) {
   const url = new URL(context.request.url);
-  if (privatePath(url.pathname)) {
+  if (privatePath(url.pathname) || isDirectRuntimeRequest(context.request, url)) {
     return new Response(BLOCKED_SOURCE_MESSAGE, { status: 404, headers: { "cache-control": "no-store", "content-type": "text/plain; charset=utf-8", "x-content-type-options": "nosniff" } });
   }
   const response = await route(context, url);
