@@ -33,7 +33,16 @@ for (const file of files) copyPublic(file, publicTypes);
 for (const directory of directories) copyPublic(directory, directory === 'assets' ? assetTypes : publicTypes);
 fs.writeFileSync(path.join(output, '404.html'), '<!doctype html><html lang="en"><meta charset="utf-8"><title>Not found</title><h1>404 — Not found</h1><a href="/">Beacon home</a></html>');
 fs.writeFileSync(path.join(output, '_routes.json'), JSON.stringify({ version: 1, include: ['/*'], exclude: [] }));
-fs.writeFileSync(path.join(output, '_headers'), '/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n');
+fs.writeFileSync(path.join(output, '_headers'), `/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/index.html
+  Cache-Control: no-store, max-age=0
+
+/status/*
+  Cache-Control: no-store, max-age=0
+`);
 const wrangler = path.join(root, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
 const build = spawnSync(process.execPath, [wrangler, 'pages', 'functions', 'build', 'functions', '--outdir', path.join(output, '_worker.js')], { cwd: root, stdio: 'inherit' });
 if (build.status !== 0 || !fs.existsSync(path.join(output, '_worker.js'))) throw new Error('Functions build failed; do not deploy this directory');
