@@ -29,9 +29,6 @@ export async function onRequest(context) {
     secured.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
   }
   if (response.status === 404 && !url.pathname.endsWith("/404.html")) {
-    if (url.hostname !== "404.beacon-bot.site") {
-      return Response.redirect(`https://404.beacon-bot.site${url.pathname}${url.search}`, 302);
-    }
     return new Response(CUSTOM_404_HTML, {
       status: 404,
       headers: {
