@@ -1,27 +1,20 @@
 # Beacon Bot - Latest Update
 
-**31 August 2026**
+**8 September 2026**
 
 ## Introduction
 
-This update improves Beacon's reliability, privacy and public website experience. It also prepares the project for safer releases and clearer navigation.
+This update focuses on a cleaner website, safer public routes and a smoother experience for Beacon users.
 
-## Server info improvements
+## September update
 
-`/serverinfo` now opens a compact Components V2 overview with the server icon, member counts, channels, roles, emojis, boosts and security details.
+- **+ Website:** Restored the modern Beacon homepage, live stats and navigation.
+- **+ 404 page:** Added a custom Beacon 404 page with navigation, legal links and a return button.
+- **+ Security:** Private source files and direct runtime requests no longer expose code.
+- **+ Privacy:** Public scripts are minified and published without source maps.
+- **+ Languages:** Added Arabic translations with automatic RTL layout support.
+- **+ Reliability:** Normal website script loading remains functional while direct source views show a friendly Beacon message.
 
-The separate action buttons were replaced by a dropdown menu for Roles, Members, Channels, Bots, Emojis and Security. Detailed lists are private and include pagination with Back, Previous and Next controls.
+## Security status
 
-The pagination button IDs were fixed so every component has a unique Discord `custom_id`. This resolves the `COMPONENT_CUSTOM_ID_DUPLICATED` error when opening server details.
-
-## Command cleanup
-
-`/prestige` was removed from command registration, command handling and the `/help` menu. Existing level, XP and prestige data remains compatible, while the level-cap message no longer points members to an unavailable command.
-
-## August web update
-
-- **+ Security:** Direct source requests now show a Beacon joke instead of private code.
-- **+ Privacy:** Public scripts are minified and shipped without source maps.
-- **+ 404:** Unknown routes use the custom Beacon 404 page with navigation and legal links.
-- **+ Language:** Arabic translations and RTL layout support added.
-- **Security status:** No known critical issue from this update. Browser-loaded JavaScript cannot be fully hidden from DevTools.
+No known critical issue from this update. Browser-loaded JavaScript can still be inspected through browser developer tools.
