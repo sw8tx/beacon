@@ -9,7 +9,7 @@ if (fs.existsSync(output) && fs.lstatSync(output).isSymbolicLink()) throw new Er
 fs.rmSync(output, { recursive: true, force: true });
 fs.mkdirSync(output);
 
-const files = ['index.html', 'app.js', 'styles.css', 'marquee.css', 'commands-page.css', 'commands.css', 'legal.css', 'prestige.css', 'prestige.js', 'dmca-validation.html'];
+const files = ['index.html', 'styles.css', 'marquee.css', 'commands-page.css', 'commands.css', 'legal.css', 'prestige.css', 'prestige.js', 'dmca-validation.html'];
 const directories = ['assets', 'badges', 'commands', 'cookies', 'copyright', 'eula', 'gdpr', 'prestige', 'privacy', 'status', 'tos'];
 const assetTypes = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.ico', '.avif', '.woff', '.woff2', '.ttf']);
 const publicTypes = new Set(['.html', '.css', '.js', ...assetTypes]);
@@ -31,6 +31,7 @@ function copyPublic(relative, types) {
 
 for (const file of files) copyPublic(file, publicTypes);
 for (const directory of directories) copyPublic(directory, directory === 'assets' ? assetTypes : publicTypes);
+fs.copyFileSync(path.join(root, 'app.js'), path.join(output, 'assets', 'site-runtime.js'));
 fs.writeFileSync(path.join(output, '404.html'), '<!doctype html><html lang="en"><meta charset="utf-8"><title>Not found</title><h1>404 — Not found</h1><a href="/">Beacon home</a></html>');
 fs.writeFileSync(path.join(output, '_routes.json'), JSON.stringify({ version: 1, include: ['/*'], exclude: [] }));
 fs.writeFileSync(path.join(output, '_headers'), `/*
