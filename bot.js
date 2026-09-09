@@ -4708,6 +4708,15 @@ async function handleButton(interaction) {
     return;
   }
 
+  if (interaction.customId.startsWith("badges_page:")) {
+    const pageIndex = Number(interaction.customId.split(":")[1]);
+    await interaction.update({
+      components: [badgePageContainer(Number.isInteger(pageIndex) ? pageIndex : 0)],
+      flags: MessageFlags.IsComponentsV2,
+    });
+    return;
+  }
+
   if (interaction.customId === "beacon_refresh_health") {
     return health(interaction, data);
   }
@@ -4846,15 +4855,6 @@ async function handleSelect(interaction) {
 
   if (interaction.customId === "ticket_open_dropdown") {
     await ticketHandlers.showTicketModal(interaction, data, beaconUi());
-    return;
-  }
-
-  if (interaction.customId.startsWith("badges_page:")) {
-    const pageIndex = Number(interaction.customId.split(":")[1]);
-    await interaction.update({
-      components: [badgePageContainer(Number.isInteger(pageIndex) ? pageIndex : 0)],
-      flags: MessageFlags.IsComponentsV2,
-    });
     return;
   }
 
