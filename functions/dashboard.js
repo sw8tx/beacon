@@ -189,7 +189,7 @@ export async function onRequestGet({ request, env }) {
   const navHtml = navItems.map((label, index) => {
     const id = label.toLowerCase().replace(/\s+/g, "-");
     const active = index === 0 ? " is-active" : "";
-    const soon = id === "customize-bot";
+    const soon = false;
     return `<a class="dash-side-link${active}${soon ? " dash-side-link--soon" : ""}" href="#${id}" data-dashboard-tab="${id}"${soon ? ' aria-label="Customize Bot — Soon"' : ""}><span class="nav-mark"></span><span>${label}</span>${soon ? '<span class="soon-badge" aria-hidden="true">🛡 Soon!</span>' : ""}</a>`;
   }).join("");
   const botBio = "Beacon Community OS\nhttps://beacon-bot.site";
@@ -375,6 +375,7 @@ export async function onRequestGet({ request, env }) {
       .customize-panel--locked::before{content:"";position:absolute;z-index:10;inset:0;background:rgba(11,16,25,.48);backdrop-filter:blur(2px);cursor:not-allowed}
       .customize-panel--locked::after{content:"🛡  Soon!";position:absolute;z-index:11;top:22px;right:24px;border:1px solid rgba(255,195,28,.58);border-radius:999px;background:rgba(8,10,15,.82);color:#ffc31c;padding:8px 13px;font-size:.8rem;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.3)}
       .customize-panel h2{text-align:center;font-size:1.45rem;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:20px}
+      .customize-subtitle{margin:-8px 0 0;color:#67e84d;text-align:center;font-size:.78rem;font-weight:800}
       .customize-media-grid{display:grid;grid-template-columns:minmax(240px,330px) minmax(0,1fr);gap:18px;margin-top:20px}
       .asset-editor{display:grid;gap:14px;border-radius:11px;background:#121b28;padding:18px}
       .asset-editor strong,.bio-field span{color:#fff;font-size:.95rem}
@@ -536,8 +537,9 @@ export async function onRequestGet({ request, env }) {
           </div>
         </section>
         <section class="dash-content-section" id="customize-bot" data-dashboard-section="customize-bot">
-          <div class="dash-panel customize-panel customize-panel--locked" aria-disabled="true">
+          <div class="dash-panel customize-panel">
             <h2>Customize Bot</h2>
+            <p class="customize-subtitle">Free for every server owner</p>
             <div class="customize-media-grid">
               <article class="asset-editor asset-editor--avatar">
                 <strong>Avatar <small>(1024x1024)</small></strong>
