@@ -15,6 +15,11 @@ This update focuses on a cleaner website, safer public routes and a smoother exp
 - **+ Languages:** Added Arabic translations with automatic RTL layout support.
 - **+ Reliability:** Normal website script loading remains functional while direct source views show a friendly Beacon message.
 
+## Badge update
+
+- **+ Badges:** Added automatic Beacon Member and Server Booster awards, rare Lucky Signal drops, badge DMs and the new `/badges` browser.
+- **+ Prestige:** Renamed the Premium badge to Prestige and refreshed all badge icons from the new high-quality crops.
+
 ## Security status
 
 No known critical issue from this update. Browser-loaded JavaScript can still be inspected through browser developer tools.
