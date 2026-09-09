@@ -29,6 +29,20 @@ function isDirectRuntimeRequest(request, url) {
   }
 }
 
+function custom404Response() {
+  const html = CUSTOM_404_HTML
+    .replaceAll('href="/', 'href="https://beacon-bot.site/')
+    .replaceAll('src="/', 'src="https://beacon-bot.site/');
+  return new Response(html, {
+    status: 404,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+    },
+  });
+}
+
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   if (url.pathname === "/imprint") {
@@ -36,6 +50,9 @@ export async function onRequest(context) {
   }
   if (privatePath(url.pathname) || isDirectRuntimeRequest(context.request, url)) {
     return new Response(BLOCKED_SOURCE_MESSAGE, { status: 404, headers: { "cache-control": "no-store", "content-type": "text/plain; charset=utf-8", "x-content-type-options": "nosniff" } });
+  }
+  if (url.hostname === "404.beacon-bot.site" && (url.pathname === "/" || url.pathname === "/index.html")) {
+    return custom404Response();
   }
   const response = await route(context, url);
   const secured = new Response(response.body, response);
@@ -45,14 +62,12 @@ export async function onRequest(context) {
     secured.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
   }
   if (response.status === 404 && !url.pathname.endsWith("/404.html")) {
-    return new Response(CUSTOM_404_HTML, {
-      status: 404,
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "no-store",
-        "x-content-type-options": "nosniff",
-      },
-    });
+    if (url.hostname === "beacon-bot.site") {
+      const target = new URL(`https://404.beacon-bot.site${url.pathname}`);
+      target.search = url.search;
+      return Response.redirect(target.toString(), 302);
+    }
+    return custom404Response();
   }
   return secured;
 }
