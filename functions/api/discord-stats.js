@@ -51,7 +51,7 @@ function uptimePercent(history, monitoringStartedAt) {
   const now = Date.now();
   if (now - startedAt < 30 * 86400000) return null;
   const windowStart = Math.max(startedAt, now - 30 * 86400000);
-  const expectedReports = Math.max(1, Math.floor((now - windowStart) / 60000) + 1);
+  const expectedReports = Math.min(1440, Math.max(1, Math.floor((now - windowStart) / 60000) + 1));
   const receivedReports = history.reduce((total, entry) => {
     const day = Date.parse(`${entry.date}T00:00:00.000Z`);
     if (!Number.isFinite(day) || day + 86400000 <= windowStart) return total;

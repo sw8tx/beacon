@@ -48,11 +48,11 @@ function expectedReports(key, monitoringStartedAt) {
   const monitoringStart = Date.parse(monitoringStartedAt || "");
   const start = Math.max(bounds.start, Number.isFinite(monitoringStart) ? monitoringStart : now);
   const end = Math.min(bounds.end, now);
-  return end > start ? Math.max(1, Math.floor((end - start) / 60000) + 1) : 0;
+  return end > start ? Math.min(1440, Math.max(1, Math.floor((end - start) / 60000) + 1)) : 0;
 }
 
-function buildDays(stats) {
-  const history = new Map((stats.history || []).map((entry) => [entry.date, entry]));
+function buildDays(stats, sourceHistory = stats.history) {
+  const history = new Map((sourceHistory || []).map((entry) => [entry.date, entry]));
   const monitoringStart = Date.parse(stats.monitoringStartedAt || "");
   const monitoringDay = Number.isFinite(monitoringStart) ? dateKey(new Date(monitoringStart)) : dateKey(new Date());
   const days = [];
@@ -143,7 +143,7 @@ function dayLabel(key) {
 
 function historyTooltip(serviceName, day) {
   if (day.percent === null) {
-    return `${serviceName}\n${dayLabel(day.key)}\nNo monitoring data yet`;
+    return `${serviceName}\n${dayLabel(day.key)}\nKeine Daten`;
   }
 
   const stateLabel = day.state === "up" ? "Operational" : day.state === "degraded" ? "Degraded" : "Unavailable";
@@ -187,8 +187,9 @@ async function refreshStatus() {
   try {
     const stats = await fetchStats();
     const landing = await landingPromise;
-    const days = buildDays(stats);
-    const uptime = overallUptime(days);
+    const botDays = buildDays(stats);
+    const emptyServiceDays = buildDays(stats, []);
+    const uptime = overallUptime(botDays);
     const measuredUptime = hasNumericValue(stats.uptimePercent) ? Number(stats.uptimePercent) : uptime;
     const uptimeLabel = measuredUptime === null ? "Monitoring started" : `${measuredUptime.toFixed(2)}% uptime`;
     const allOnline = Boolean(stats.online && landing.online);
@@ -210,9 +211,9 @@ async function refreshStatus() {
     const bot = services.find((service) => service.dataset.service === "bot");
     const gateway = services.find((service) => service.dataset.service === "gateway");
     const website = services.find((service) => service.dataset.service === "website");
-    setService(bot, stats.online, uptimeLabel, stats.online ? `Online \u00b7 ${sessionLabel(stats)}` : "No fresh bot report received", days);
-    setService(gateway, stats.online, uptimeLabel, stats.online ? `Connected \u00b7 ${Math.round(stats.ping)} ms gateway ping` : "Discord gateway connection unavailable", days);
-    setService(website, landing.online, landing.online ? "Operational" : "Unavailable", landing.online ? `Responding \u00b7 ${landing.latency} ms browser check` : "Landing page check failed", withCurrentState(days, landing.online));
+    setService(bot, stats.online, uptimeLabel, stats.online ? `Online \u00b7 ${sessionLabel(stats)}` : "No fresh bot report received", botDays);
+    setService(gateway, stats.online, stats.online ? "Operational" : "Unavailable", stats.online ? `Connected \u00b7 ${Math.round(stats.ping)} ms gateway ping` : "Discord gateway connection unavailable", withCurrentState(emptyServiceDays, stats.online));
+    setService(website, landing.online, landing.online ? "Operational" : "Unavailable", landing.online ? `Responding \u00b7 ${landing.latency} ms browser check` : "Landing page check failed", withCurrentState(emptyServiceDays, landing.online));
 
     lastReportAt = Date.parse(stats.updatedAt || "");
     document.body.dataset.lastReportAt = stats.updatedAt || "";

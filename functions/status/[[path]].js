@@ -51,7 +51,7 @@ function uptimePercent(history, monitoringStartedAt) {
 
   const now = Date.now();
   const windowStart = Math.max(startedAt, now - 30 * 86400000);
-  const expectedReports = Math.max(1, Math.floor((now - windowStart) / 60000) + 1);
+  const expectedReports = Math.min(1440, Math.max(1, Math.floor((now - windowStart) / 60000) + 1));
   const receivedReports = history.reduce((total, entry) => {
     const day = Date.parse(`${entry.date}T00:00:00.000Z`);
     if (!Number.isFinite(day) || day + 86400000 <= windowStart) return total;
@@ -126,7 +126,7 @@ function renderStatusHtml(html, stats) {
     .replace("[data-summary-icon]>&#10003;", `[data-summary-icon]>${allOnline ? "&#10003;" : "!"}`)
     .replace("<strong data-service-uptime>Checking...</strong>", `<strong data-service-uptime>${escapeHtml(uptimeText)}</strong>`)
     .replace("<p class=\"service-detail\" data-service-detail>Discord gateway and command service</p>", `<p class="service-detail" data-service-detail>${escapeHtml(allOnline ? "Online" : "No fresh bot report received")}</p>`)
-    .replace("<strong data-service-uptime>Checking...</strong>", `<strong data-service-uptime>${escapeHtml(uptimeText)}</strong>`)
+    .replace("<strong data-service-uptime>Checking...</strong>", "<strong data-service-uptime>Operational</strong>")
     .replace("<p class=\"service-detail\" data-service-detail>Realtime connection to Discord</p>", `<p class="service-detail" data-service-detail>${escapeHtml(allOnline ? `Connected - ${Math.round(Number(stats.ping) || 0)} ms gateway ping` : "Discord gateway connection unavailable")}</p>`)
     .replace("<strong data-service-uptime>Checking...</strong>", "<strong data-service-uptime>Operational</strong>")
     .replace("<p class=\"service-detail\" data-service-detail>Public Beacon website</p>", '<p class="service-detail" data-service-detail>Public Beacon website is reachable</p>');
@@ -226,7 +226,7 @@ function baseStatusHtml() {
     </main>
 
     <footer><span>Beacon status</span><span data-last-updated>Last updated: waiting</span></footer>
-    <script src="/status/status-runtime-v2.js?v=5" defer></script>
+    <script src="/status/status-runtime-v2.js?v=6" defer></script>
   </body>
 </html>`;
 }
