@@ -4,23 +4,16 @@
 
 ## Introduction
 
-This update focuses on a cleaner website, safer public routes and a smoother experience for Beacon users.
+This update focuses on a cleaner badge system, automatic rewards and a smoother Discord experience for Beacon users.
 
 ## September update
 
-- **+ Website:** Restored the modern Beacon homepage, live stats and navigation.
-- **+ 404 page:** Added a custom Beacon 404 page with navigation, legal links and a return button.
-- **+ Security:** Private source files and direct runtime requests no longer expose code.
-- **+ Privacy:** Public scripts are minified and published without source maps.
-- **+ Languages:** Added Arabic translations with automatic RTL layout support.
-- **+ Reliability:** Normal website script loading remains functional while direct source views show a friendly Beacon message.
-
-## 9 September update
-
-- **+ Badges:** Added automatic Beacon Member and Server Booster awards, rare Lucky Signal drops, badge DMs and the new `/badges` browser.
-- **+ Discord:** Added Components V2 badge pages with dashboard and badge-website buttons.
-- **+ Prestige:** Renamed the Premium badge to Prestige and refreshed all badge icons from high-quality crops.
+- **+ Badges:** Added automatic Beacon Member and Server Booster awards.
+- **+ Rewards:** Added the ultra-rare Lucky Signal drop with a 0.01% chance per slash command.
+- **+ Notifications:** Users now receive a DM with the badge icon, description and useful links when they unlock a badge.
+- **+ Discord:** Added the `/badges` command with Components V2 pagination and dashboard links.
+- **+ Prestige:** Renamed the Premium badge to Prestige and refreshed the badge icons with high-quality crops.
 
 ## Security status
 
-No known critical issue from this update. Browser-loaded JavaScript can still be inspected through browser developer tools.
+Badge awards are stored safely, duplicate awards are prevented, and manual badges remain controlled by the Beacon team.
