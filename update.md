@@ -1,6 +1,6 @@
 # Beacon Bot - Latest Update
 
-**8 September 2026**
+**9 September 2026**
 
 ## Introduction
 
@@ -15,10 +15,11 @@ This update focuses on a cleaner website, safer public routes and a smoother exp
 - **+ Languages:** Added Arabic translations with automatic RTL layout support.
 - **+ Reliability:** Normal website script loading remains functional while direct source views show a friendly Beacon message.
 
-## Badge update
+## 9 September update
 
 - **+ Badges:** Added automatic Beacon Member and Server Booster awards, rare Lucky Signal drops, badge DMs and the new `/badges` browser.
-- **+ Prestige:** Renamed the Premium badge to Prestige and refreshed all badge icons from the new high-quality crops.
+- **+ Discord:** Added Components V2 badge pages with dashboard and badge-website buttons.
+- **+ Prestige:** Renamed the Premium badge to Prestige and refreshed all badge icons from high-quality crops.
 
 ## Security status
 
