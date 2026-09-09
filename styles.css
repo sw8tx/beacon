@@ -277,6 +277,8 @@ h1 em, h2 em { color: var(--yellow); font-style: normal; }
 .sponsor-label { margin-top: 5px; color: #a7aaa4; font-size: .65rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
 .sponsor-link { display: inline-flex; width: max-content; align-items: center; padding: 3px 0; border-radius: 7px; transition: opacity .18s ease, transform .18s ease, filter .18s ease; }
 .sponsor-logo { display: block; width: min(185px, 46vw); height: auto; object-fit: contain; object-position: left center; }
+.wired-badge { display: block; width: max-content; max-width: 100%; margin-top: 4px; }
+.wired-badge img { display: block; width: min(200px, 54vw); height: auto; }
 .sponsor-link:hover, .sponsor-link:focus-visible { opacity: 1; transform: translateY(-1px); filter: drop-shadow(0 0 12px rgba(45,220,207,.16)); }
 .footer-links { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 11px 23px; }
 .footer-links { color: #d7dad4; font-weight: 700; }
