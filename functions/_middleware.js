@@ -63,9 +63,7 @@ export async function onRequest(context) {
   }
   if (response.status === 404 && !url.pathname.endsWith("/404.html")) {
     if (url.hostname === "beacon-bot.site") {
-      const target = new URL(`https://404.beacon-bot.site${url.pathname}`);
-      target.search = url.search;
-      return Response.redirect(target.toString(), 302);
+      return Response.redirect("https://404.beacon-bot.site/", 302);
     }
     return custom404Response();
   }
