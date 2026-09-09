@@ -30,9 +30,9 @@ export const BADGE_ICONS = {
     <circle cx="32" cy="32" r="25" fill="url(#donor-g)"/>
     <path fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" d="M39 20h-9c-5 0-8 3-8 7s3 7 8 7h5c5 0 8 3 8 7s-3 8-9 8h-10M32 14v8M32 50v-8"/>
   `),
-  premium: svg(`
-    <defs><linearGradient id="premium-g" x1="11" y1="8" x2="53" y2="55"><stop stop-color="#a66bff"/><stop offset="1" stop-color="#7432e6"/></linearGradient></defs>
-    <path fill="url(#premium-g)" d="M11 43h42l-4 10H15zM13 39l5-26 12 15 11-20 7 21 9-12-6 22z"/>
+  prestige: svg(`
+    <defs><linearGradient id="prestige-g" x1="11" y1="8" x2="53" y2="55"><stop stop-color="#a66bff"/><stop offset="1" stop-color="#7432e6"/></linearGradient></defs>
+    <path fill="url(#prestige-g)" d="M11 43h42l-4 10H15zM13 39l5-26 12 15 11-20 7 21 9-12-6 22z"/>
     <circle cx="18" cy="13" r="4" fill="#8f5bff"/><circle cx="41" cy="8" r="4" fill="#8f5bff"/><circle cx="57" cy="17" r="4" fill="#8f5bff"/>
   `),
   staff: svg(`

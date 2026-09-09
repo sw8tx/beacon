@@ -93,7 +93,9 @@ async function getUnlockedBadgeIds(env, userId) {
     SELECT badge_id FROM badge_unlocks WHERE user_id = ?
   `).bind(userId).all();
 
-  return new Set((rows.results || []).map((row) => row.badge_id));
+  const unlocked = new Set((rows.results || []).map((row) => row.badge_id));
+  if (unlocked.has("premium")) unlocked.add("prestige");
+  return unlocked;
 }
 
 function renderBadgeCard(badge, unlocked) {

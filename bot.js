@@ -49,6 +49,10 @@ const CLIENT_ID = process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID || "152
 const DEV_GUILD_ID = process.env.DEV_GUILD_ID || "";
 const STATS_SECRET = process.env.STATS_SECRET || "";
 const DASHBOARD_URL = process.env.DASHBOARD_URL || "https://beacon-bot.site";
+const BADGES_URL = process.env.BADGES_URL || "https://badges.beacon-bot.site/";
+const BADGE_GRANT_ENDPOINT = process.env.BADGE_GRANT_ENDPOINT || "https://beacon-bot.site/api/badges/grant";
+const BOOSTER_GUILD_ID = "1542826914652233779";
+const BOOSTER_ROLE_ID = "1546531489192218644";
 const STATS_SYNC_ENDPOINT = process.env.STATS_SYNC_ENDPOINT || process.env.SYNC_ENDPOINT || "https://beacon-bot.site/api/discord-stats";
 const STATS_SYNC_INTERVAL_MS = Number(process.env.STATS_SYNC_INTERVAL_MS || process.env.SYNC_INTERVAL_MS || 5_000);
 const STATUS_CHANNEL_ID = "1543574239389417604";
@@ -61,6 +65,28 @@ const BOT_STATUS_TYPE = Number(process.env.BOT_STATUS_TYPE || 3); // 0 = Playing
 const PROFILE_SYNC_SECRET = String(process.env.PROFILE_SYNC_SECRET || "").trim();
 const PROFILE_SYNC_PORT = Number(process.env.PORT || 3000);
 const STATS_AUTH_TOKEN = STATS_SECRET || process.env.DISCORD_BOT_TOKEN || TOKEN;
+const BADGE_CATALOG = {
+  "beacon-member": { name: "Beacon Member", description: "You connected your Discord account to Beacon." },
+  pioneer: { name: "Pioneer", description: "You were here during Beacon's early days." },
+  "beacon-developer": { name: "Beacon Developer", description: "You helped build Beacon." },
+  verified: { name: "Verified", description: "Beacon recognizes you as a trusted creator or partner." },
+  donator: { name: "Donator", description: "You supported Beacon directly." },
+  prestige: { name: "Prestige", description: "You unlocked Beacon Prestige." },
+  staff: { name: "Staff", description: "You are part of the Beacon team." },
+  helper: { name: "Helper", description: "Your help made a real difference to the community." },
+  "bug-hunter": { name: "Bug Hunter", description: "You reported a confirmed Beacon bug." },
+  "server-booster": { name: "Server Booster", description: "You boosted the official Beacon server." },
+  witness: { name: "Witness", description: "You were present for a special Beacon moment." },
+  "the-beacon": { name: "The Beacon", description: "You helped Beacon stand out." },
+  "beacons-princess": { name: "Beacon's Princess", description: "A rare Beacon badge was unlocked." },
+  "found-the-light": { name: "Found the Light", description: "You found a hidden Beacon interaction." },
+  "not-found": { name: "404", description: "You found something that should not be there." },
+  "lost-signal": { name: "Lost Signal", description: "You discovered a hidden Beacon path." },
+  "night-owl": { name: "Night Owl", description: "You kept building while everyone else was asleep." },
+  "command-relic": { name: "Command Relic", description: "Your long-term command pattern unlocked this relic." },
+  "prismatic-key": { name: "Prismatic Key", description: "Different Beacon systems lined up for you." },
+  "lucky-signal": { name: "Lucky Signal", description: "A very rare Beacon drop found you." },
+};
 const BOT_STARTED_AT = new Date().toISOString();
 const BOT_SESSION_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const DATA_FILE = path.join(__dirname, "beacon-data.json");
@@ -186,6 +212,68 @@ async function getFetch() {
   if (typeof globalThis.fetch === "function") return globalThis.fetch.bind(globalThis);
   const nodeFetch = await import("node-fetch");
   return nodeFetch.default;
+}
+
+function badgeAssetUrl(badgeId) {
+  return `${BADGES_URL.replace(/\/$/, "")}/assets/badges/${badgeId}.png?v=2`;
+}
+
+async function grantBadge(userId, badgeId, source, reason) {
+  if (!/^\d{17,22}$/.test(String(userId)) || !BADGE_CATALOG[badgeId]) return false;
+  if (!STATS_AUTH_TOKEN || STATS_AUTH_TOKEN.startsWith("PASTE_")) return false;
+  try {
+    const fetchImpl = await getFetch();
+    const response = await fetchImpl(BADGE_GRANT_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${STATS_AUTH_TOKEN}`,
+        "X-Stats-Secret": STATS_AUTH_TOKEN,
+      },
+      body: JSON.stringify({ userId: String(userId), badgeId, source, reason }),
+    });
+    if (!response.ok) return false;
+    const payload = await response.json().catch(() => null);
+    return Boolean(payload?.awarded);
+  } catch (error) {
+    console.error(`[badge-grant] ${error?.message || String(error)}`);
+    return false;
+  }
+}
+
+function badgeAwardContainer(badgeId, reason) {
+  const badge = BADGE_CATALOG[badgeId] || { name: badgeId, description: "A new Beacon badge was unlocked." };
+  return new ContainerBuilder()
+    .setAccentColor(BRAND_COLOR)
+    .addSectionComponents(
+      new SectionBuilder()
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(`## Badge unlocked\n### ${badge.name}\n${badge.description}\n\n*${reason || "You earned this badge through Beacon."}*`)
+        )
+        .setThumbnailAccessory(new ThumbnailBuilder().setURL(badgeAssetUrl(badgeId)).setDescription(badge.name))
+    )
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setLabel("View dashboard").setStyle(ButtonStyle.Link).setURL(`${DASHBOARD_URL}/dashboard`),
+      new ButtonBuilder().setLabel("View all badges").setStyle(ButtonStyle.Link).setURL(BADGES_URL)
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Good looking badge. Beacon noticed you."));
+}
+
+async function notifyBadgeAward(user, badgeId, reason) {
+  try {
+    await user.send({ components: [badgeAwardContainer(badgeId, reason)], flags: MessageFlags.IsComponentsV2 });
+    return true;
+  } catch (error) {
+    console.warn(`[badge-dm] Could not DM ${user?.id || "user"}: ${error?.message || String(error)}`);
+    return false;
+  }
+}
+
+async function awardBadge(user, badgeId, source, reason) {
+  const awarded = await grantBadge(user.id, badgeId, source, reason);
+  if (awarded) await notifyBadgeAward(user, badgeId, reason);
+  return awarded;
 }
 
 function buildStatsPayload() {
@@ -2853,6 +2941,10 @@ const commands = [
     .setDescription("Show Beacon commands and quick actions."),
 
   new SlashCommandBuilder()
+    .setName("badges")
+    .setDescription("Browse every Beacon badge and its unlock path."),
+
+  new SlashCommandBuilder()
     .setName("quickstart")
     .setDescription("Show the recommended Beacon setup flow for this server."),
 
@@ -3417,6 +3509,25 @@ async function registerCommands() {
   await syncCachedGuildCommands(rest);
 }
 
+function isServerBooster(member) {
+  return member.guild.id === BOOSTER_GUILD_ID && (
+    Boolean(member.premiumSince) || member.roles.cache.has(BOOSTER_ROLE_ID)
+  );
+}
+
+async function syncServerBoosterBadges() {
+  const guild = client.guilds.cache.get(BOOSTER_GUILD_ID);
+  if (!guild) return;
+  const members = await guild.members.fetch();
+  let checked = 0;
+  for (const member of members.values()) {
+    if (member.user.bot || !isServerBooster(member)) continue;
+    checked += 1;
+    await awardBadge(member.user, "server-booster", "booster-sync", "You boosted the official Beacon server or already have its Server Booster role.");
+  }
+  console.log(`[badges] Checked ${checked} existing Server Booster member(s).`);
+}
+
 client.once("clientReady", async () => {
   console.log(`Beacon is online as ${client.user.tag}`);
   client.user.setPresence({
@@ -3429,6 +3540,7 @@ client.once("clientReady", async () => {
 
   try {
     await registerCommands();
+    await syncServerBoosterBadges().catch((error) => console.error(`[badges] Booster sync failed: ${error.message}`));
     await syncDiscordStats();
     scheduleExistingPolls();
     await postStartupStatus();
@@ -3544,6 +3656,13 @@ client.on("guildMemberAdd", async (member) => {
   debounceMemberSync(); // Sync stats after member join
 });
 
+client.on("guildMemberUpdate", async (oldMember, newMember) => {
+  if (newMember.user.bot || !isServerBooster(newMember)) return;
+  const wasBooster = Boolean(oldMember.premiumSince) || oldMember.roles.cache.has(BOOSTER_ROLE_ID);
+  if (wasBooster) return;
+  await awardBadge(newMember.user, "server-booster", "booster-event", "You boosted the official Beacon server or received its Server Booster role.");
+});
+
 client.on("guildMemberRemove", async (member) => {
   const data = guildData(member.guild.id);
   data.stats.leavesWeek += 1;
@@ -3654,6 +3773,10 @@ async function handleCommand(interaction) {
   const data = guildData(interaction.guild.id);
   addBotLog(interaction.guild, "Command executed", `${interaction.user.tag} used /${command}.`);
 
+  if (Math.random() < 0.0001) {
+    await awardBadge(interaction.user, "lucky-signal", "slash-command-drop", `You hit the 0.01% Lucky Signal drop while using /${command}.`);
+  }
+
   if (command === "poll-create") return pollCreate(interaction, data);
   if (command === "poll-edit") return pollEdit(interaction, data);
   if (command === "poll-delete") return pollDelete(interaction, data);
@@ -3662,6 +3785,7 @@ async function handleCommand(interaction) {
   if (command === "unban") return unbanCommand(interaction);
   if (command === "unban-id") return unbanIdCommand(interaction);
   if (command === "help") return sendHelp(interaction);
+  if (command === "badges") return badges(interaction);
   if (command === "quickstart") return quickStart(interaction, data);
   if (command === "setup") return setup(interaction, data);
   if (command === "honeypot-setup") return honeypotSetup(interaction, data);
@@ -3744,6 +3868,42 @@ const helpPages = [
     ],
   },
 ];
+
+function badgePageContainer(pageIndex) {
+  const badgeIds = Object.keys(BADGE_CATALOG);
+  const pageSize = 5;
+  const pageCount = Math.ceil(badgeIds.length / pageSize);
+  const currentPage = Math.max(0, Math.min(pageCount - 1, Number(pageIndex) || 0));
+  const pageBadges = badgeIds.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+  const container = new ContainerBuilder()
+    .setAccentColor(BRAND_COLOR)
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      `## Beacon Badges\nBrowse the badge collection and see what each one means.\n-# Page ${currentPage + 1}/${pageCount}`
+    ))
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+
+  for (const badgeId of pageBadges) {
+    const badge = BADGE_CATALOG[badgeId];
+    container.addSectionComponents(
+      new SectionBuilder()
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### ${badge.name}\n${badge.description}`))
+        .setThumbnailAccessory(new ThumbnailBuilder().setURL(badgeAssetUrl(badgeId)).setDescription(badge.name))
+    );
+  }
+
+  return container
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`badges_page:${currentPage - 1}`).setLabel("Previous").setStyle(ButtonStyle.Secondary).setDisabled(currentPage === 0),
+      new ButtonBuilder().setCustomId(`badges_page:${currentPage + 1}`).setLabel(`Page ${currentPage + 1}/${pageCount}`).setStyle(ButtonStyle.Primary).setDisabled(currentPage === pageCount - 1),
+      new ButtonBuilder().setLabel("View dashboard").setStyle(ButtonStyle.Link).setURL(`${DASHBOARD_URL}/dashboard`),
+      new ButtonBuilder().setLabel("Badge website").setStyle(ButtonStyle.Link).setURL(BADGES_URL),
+    ));
+}
+
+async function badges(interaction) {
+  await interaction.reply({ components: [badgePageContainer(0)], flags: MessageFlags.IsComponentsV2 });
+}
 
 function helpPageContainer(pageIndex) {
   const page = helpPages[pageIndex] || helpPages[0];
@@ -4686,6 +4846,15 @@ async function handleSelect(interaction) {
 
   if (interaction.customId === "ticket_open_dropdown") {
     await ticketHandlers.showTicketModal(interaction, data, beaconUi());
+    return;
+  }
+
+  if (interaction.customId.startsWith("badges_page:")) {
+    const pageIndex = Number(interaction.customId.split(":")[1]);
+    await interaction.update({
+      components: [badgePageContainer(Number.isInteger(pageIndex) ? pageIndex : 0)],
+      flags: MessageFlags.IsComponentsV2,
+    });
     return;
   }
 

@@ -12,11 +12,44 @@ async function unlockSecretBadge(env, userId) {
     )
   `).run();
 
-  await env.STATUS_DB.prepare(`
+  const result = await env.STATUS_DB.prepare(`
     INSERT OR IGNORE INTO badge_unlocks (user_id, badge_id) VALUES (?, ?)
   `).bind(userId, "found-the-light").run();
 
-  return true;
+  return Boolean(result?.meta?.changes);
+}
+
+async function sendBadgeDm(env, userId) {
+  const botToken = String(env.DISCORD_BOT_TOKEN || env.DISCORD_TOKEN || env.BOT_TOKEN || env.TOKEN || "").replace(/^Bot\s+/i, "").trim();
+  if (!botToken) return;
+  try {
+    const dmResponse = await fetch("https://discord.com/api/v10/users/@me/channels", {
+      method: "POST",
+      headers: { authorization: `Bot ${botToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ recipient_id: userId }),
+    });
+    if (!dmResponse.ok) return;
+    const dm = await dmResponse.json();
+    await fetch(`https://discord.com/api/v10/channels/${dm.id}/messages`, {
+      method: "POST",
+      headers: { authorization: `Bot ${botToken}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        embeds: [{
+          color: 0xff9c1b,
+          title: "Badge unlocked",
+          description: "## Found the Light\nYou found a hidden interaction somewhere on Beacon.\n\n*You noticed something most people missed.*",
+          thumbnail: { url: "https://badges.beacon-bot.site/assets/badges/found-the-light.png?v=2" },
+          footer: { text: "Beacon · Community OS" },
+        }],
+        components: [{ type: 1, components: [
+          { type: 2, style: 5, label: "View dashboard", url: "https://beacon-bot.site/dashboard" },
+          { type: 2, style: 5, label: "View all badges", url: "https://badges.beacon-bot.site/" },
+        ] }],
+      }),
+    });
+  } catch (_) {
+    // Badge ownership is already stored; a closed DM must not break claiming.
+  }
 }
 
 async function hasClaimedSecretBadge(env, userId) {
@@ -112,6 +145,7 @@ export async function onRequestPost({ request, env }) {
     return Response.redirect(new URL("/?login_required=1", request.url).toString(), 302);
   }
 
-  await unlockSecretBadge(env, session.user.id);
+  const awarded = await unlockSecretBadge(env, session.user.id);
+  if (awarded) await sendBadgeDm(env, session.user.id);
   return Response.redirect(new URL("/dashboard#badges", request.url).toString(), 303);
 }

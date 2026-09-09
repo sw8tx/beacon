@@ -45,13 +45,13 @@ export const BEACON_BADGES = [
     hint: "Donate to Beacon. Bigger support may unlock stronger donor tiers later.",
   },
   {
-    id: "premium",
-    name: "Premium",
+    id: "prestige",
+    name: "Prestige",
     tag: "Paid",
     tone: "violet",
     icon: "PR",
-    summary: "Bought Beacon Premium for a server.",
-    hint: "Purchase Premium or Prestige on a server connected to your Beacon account.",
+    summary: "Bought Beacon Prestige for a server.",
+    hint: "Purchase Prestige on a server connected to your Beacon account.",
   },
   {
     id: "staff",

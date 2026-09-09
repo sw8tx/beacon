@@ -23,7 +23,7 @@ $badges = @(
   @{ id = "beacon-developer"; x = 621; y = 112; w = 159; h = 121 },
   @{ id = "verified"; x = 907; y = 101; w = 139; h = 133 },
   @{ id = "donator"; x = 1181; y = 105; w = 143; h = 126 },
-  @{ id = "premium"; x = 81; y = 357; w = 142; h = 121 },
+  @{ id = "prestige"; x = 81; y = 357; w = 142; h = 121 },
   @{ id = "staff"; x = 356; y = 351; w = 132; h = 128 },
   @{ id = "helper"; x = 653; y = 351; w = 96; h = 128 },
   @{ id = "bug-hunter"; x = 916; y = 347; w = 126; h = 134 },

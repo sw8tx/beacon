@@ -2,6 +2,61 @@ import { avatarUrl, createCookie, createSession, errorResponse, getConfig, getCo
 
 const DISCORD_API = "https://discord.com/api/v10";
 const DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token";
+const BEACON_BADGE = {
+  id: "beacon-member",
+  name: "Beacon Member",
+  description: "You connected your Discord account to the Beacon dashboard.",
+  reason: "You authorized Beacon with Discord.",
+};
+
+async function grantBeaconMember(env, userId) {
+  if (!env.STATUS_DB) return false;
+  await env.STATUS_DB.prepare(`
+    CREATE TABLE IF NOT EXISTS badge_unlocks (
+      user_id TEXT NOT NULL,
+      badge_id TEXT NOT NULL,
+      unlocked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, badge_id)
+    )
+  `).run();
+  const result = await env.STATUS_DB.prepare(
+    "INSERT OR IGNORE INTO badge_unlocks (user_id, badge_id) VALUES (?, ?)"
+  ).bind(userId, BEACON_BADGE.id).run();
+  return Boolean(result?.meta?.changes);
+}
+
+async function sendBadgeDm(env, user, token) {
+  const botToken = String(env.DISCORD_BOT_TOKEN || env.DISCORD_TOKEN || env.BOT_TOKEN || env.TOKEN || "").replace(/^Bot\s+/i, "").trim();
+  if (!botToken) return;
+  try {
+    const dmResponse = await fetch(`${DISCORD_API}/users/@me/channels`, {
+      method: "POST",
+      headers: { authorization: `Bot ${botToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ recipient_id: user.id }),
+    });
+    if (!dmResponse.ok) return;
+    const dm = await dmResponse.json();
+    await fetch(`${DISCORD_API}/channels/${dm.id}/messages`, {
+      method: "POST",
+      headers: { authorization: `Bot ${botToken}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        embeds: [{
+          color: 0xff9c1b,
+          title: "Badge unlocked",
+          description: `## ${BEACON_BADGE.name}\n${BEACON_BADGE.description}\n\n*${BEACON_BADGE.reason}*`,
+          thumbnail: { url: `https://badges.beacon-bot.site/assets/badges/${BEACON_BADGE.id}.png?v=2` },
+          footer: { text: "Beacon · Community OS" },
+        }],
+        components: [{ type: 1, components: [
+          { type: 2, style: 5, label: "View dashboard", url: "https://beacon-bot.site/dashboard" },
+          { type: 2, style: 5, label: "View all badges", url: "https://badges.beacon-bot.site/" },
+        ] }],
+      }),
+    });
+  } catch (error) {
+    console.error(`[badge-dm] ${error?.message || String(error)}`);
+  }
+}
 
 function tokenErrorMessage(details) {
   let parsed = null;
@@ -77,6 +132,8 @@ export async function onRequestGet({ request, env }) {
       avatar: avatarUrl(discordUser),
     };
     const session = await createSession(user, sessionSecret, { discordAccessToken: token.access_token });
+    const newBadge = await grantBeaconMember(env, user.id).catch(() => false);
+    if (newBadge) await sendBadgeDm(env, user, token.access_token);
     const next = getCookie(request, "beacon_login_next");
     const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
     const headers = new Headers({ Location: new URL(safeNext, request.url).toString() });
