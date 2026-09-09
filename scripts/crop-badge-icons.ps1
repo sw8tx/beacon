@@ -12,30 +12,32 @@ if (!(Test-Path -LiteralPath $Source)) {
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
 $sourceImage = [System.Drawing.Bitmap]::FromFile((Resolve-Path -LiteralPath $Source))
-$scaleX = $sourceImage.Width / 257.0
-$scaleY = $sourceImage.Height / 189.0
+$referenceWidth = 1402.0
+$referenceHeight = 1122.0
+$scaleX = $sourceImage.Width / $referenceWidth
+$scaleY = $sourceImage.Height / $referenceHeight
 
 $badges = @(
-  @{ id = "verified"; x = 10; y = 9; w = 31; h = 29 },
-  @{ id = "beacon-member"; x = 63; y = 8; w = 28; h = 34 },
-  @{ id = "pioneer"; x = 105; y = 10; w = 44; h = 31 },
-  @{ id = "beacon-developer"; x = 163; y = 8; w = 32; h = 34 },
-  @{ id = "donator"; x = 216; y = 8; w = 31; h = 34 },
-  @{ id = "premium"; x = 12; y = 62; w = 31; h = 32 },
-  @{ id = "staff"; x = 63; y = 57; w = 30; h = 40 },
-  @{ id = "helper"; x = 106; y = 64; w = 44; h = 31 },
-  @{ id = "bug-hunter"; x = 163; y = 60; w = 35; h = 37 },
-  @{ id = "server-booster"; x = 218; y = 60; w = 29; h = 38 },
-  @{ id = "the-beacon"; x = 9; y = 110; w = 36; h = 38 },
-  @{ id = "beacons-princess"; x = 59; y = 111; w = 39; h = 36 },
-  @{ id = "not-found"; x = 113; y = 112; w = 34; h = 34 },
-  @{ id = "lost-signal"; x = 162; y = 112; w = 39; h = 34 },
-  @{ id = "night-owl"; x = 217; y = 109; w = 31; h = 39 },
-  @{ id = "command-relic"; x = 9; y = 157; w = 34; h = 30 },
-  @{ id = "prismatic-key"; x = 62; y = 153; w = 32; h = 35 },
-  @{ id = "lucky-signal"; x = 111; y = 153; w = 36; h = 35 },
-  @{ id = "found-the-light"; x = 166; y = 152; w = 29; h = 36 },
-  @{ id = "witness"; x = 216; y = 153; w = 32; h = 35 }
+  @{ id = "beacon-member"; x = 82; y = 107; w = 134; h = 123 },
+  @{ id = "pioneer"; x = 365; y = 104; w = 124; h = 126 },
+  @{ id = "beacon-developer"; x = 621; y = 112; w = 159; h = 121 },
+  @{ id = "verified"; x = 907; y = 101; w = 139; h = 133 },
+  @{ id = "donator"; x = 1181; y = 105; w = 143; h = 126 },
+  @{ id = "premium"; x = 81; y = 357; w = 142; h = 121 },
+  @{ id = "staff"; x = 356; y = 351; w = 132; h = 128 },
+  @{ id = "helper"; x = 653; y = 351; w = 96; h = 128 },
+  @{ id = "bug-hunter"; x = 916; y = 347; w = 126; h = 134 },
+  @{ id = "server-booster"; x = 1196; y = 347; w = 119; h = 135 },
+  @{ id = "witness"; x = 77; y = 615; w = 151; h = 99 },
+  @{ id = "the-beacon"; x = 354; y = 583; w = 139; h = 143 },
+  @{ id = "beacons-princess"; x = 627; y = 607; w = 149; h = 108 },
+  @{ id = "found-the-light"; x = 893; y = 599; w = 170; h = 110 },
+  @{ id = "not-found"; x = 1192; y = 591; w = 126; h = 132 },
+  @{ id = "lost-signal"; x = 75; y = 837; w = 154; h = 132 },
+  @{ id = "night-owl"; x = 358; y = 838; w = 133; h = 126 },
+  @{ id = "command-relic"; x = 630; y = 840; w = 144; h = 122 },
+  @{ id = "prismatic-key"; x = 906; y = 831; w = 139; h = 128 },
+  @{ id = "lucky-signal"; x = 1194; y = 827; w = 130; h = 142 }
 )
 
 function New-Rectangle($x, $y, $w, $h) {
@@ -50,7 +52,7 @@ function New-Rectangle($x, $y, $w, $h) {
 function Test-BackgroundPixel([System.Drawing.Color]$color) {
   $max = [Math]::Max([Math]::Max($color.R, $color.G), $color.B)
   $min = [Math]::Min([Math]::Min($color.R, $color.G), $color.B)
-  return $color.R -gt 205 -and $color.G -gt 205 -and $color.B -gt 205 -and ($max - $min) -lt 42
+  return $max -lt 42 -and ($max - $min) -lt 24
 }
 
 function Remove-WhiteBackground([System.Drawing.Bitmap]$bitmap) {
@@ -119,7 +121,7 @@ foreach ($badge in $badges) {
   $bounds = Get-ContentBounds $crop
   $trimmed = $crop.Clone($bounds, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
 
-  $canvasSize = 160
+  $canvasSize = 512
   $canvas = [System.Drawing.Bitmap]::new($canvasSize, $canvasSize, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
   $graphics = [System.Drawing.Graphics]::FromImage($canvas)
   $graphics.Clear([System.Drawing.Color]::Transparent)
@@ -127,7 +129,7 @@ foreach ($badge in $badges) {
   $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
   $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 
-  $maxSide = 138.0
+  $maxSide = 440.0
   $ratio = [Math]::Min($maxSide / $trimmed.Width, $maxSide / $trimmed.Height)
   $drawW = [int][Math]::Round($trimmed.Width * $ratio)
   $drawH = [int][Math]::Round($trimmed.Height * $ratio)

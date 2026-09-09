@@ -14,7 +14,7 @@ function escapeHtml(value) {
 }
 
 function badgeCard(badge) {
-  const png = `/assets/badges/${escapeHtml(badge.id)}.png`;
+  const png = `/assets/badges/${escapeHtml(badge.id)}.png?v=2`;
   return `
     <article class="badge-card badge-card--${escapeHtml(badge.tone)}">
       <div class="badge-symbol" aria-hidden="true">

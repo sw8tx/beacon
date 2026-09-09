@@ -99,7 +99,7 @@ async function getUnlockedBadgeIds(env, userId) {
 function renderBadgeCard(badge, unlocked) {
   const stateClass = unlocked ? " is-unlocked" : " is-locked";
   const stateLabel = unlocked ? "Unlocked" : "Locked";
-  const png = `/assets/badges/${escapeHtml(badge.id)}.png`;
+  const png = `/assets/badges/${escapeHtml(badge.id)}.png?v=2`;
   return `
     <article class="dash-badge dash-badge--${escapeHtml(badge.tone)}${stateClass}">
       <div class="dash-badge-icon" aria-hidden="true">

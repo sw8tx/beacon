@@ -72,7 +72,7 @@ function renderPage({ signedIn, claimed }) {
   <body>
     <main class="secret-card">
       <div class="badge-preview">
-        <div class="badge-icon"><img src="/assets/badges/found-the-light.png" alt="" /></div>
+        <div class="badge-icon"><img src="/assets/badges/found-the-light.png?v=2" alt="" /></div>
         <div>
           <h1>Found the Light</h1>
           <p>Found a hidden interaction somewhere on Beacon.</p>
