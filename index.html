@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=134" />
+    <link rel="stylesheet" href="styles.css?v=135" />
     <link rel="stylesheet" href="marquee.css?v=1" />
   </head>
   <body>
@@ -159,14 +159,14 @@
       </section>
 
       <section class="feature-spotlight" aria-labelledby="feature-spotlight-title">
-        <div class="feature-spotlight__intro" data-reveal>
+        <div class="feature-spotlight__intro">
           <span class="feature-spotlight__overline">BEACON FEATURES</span>
           <h2 id="feature-spotlight-title">The tools your server uses every day</h2>
-          <p>Keep your community safe, supported and moving with focused tools that feel native to Discord.</p>
         </div>
         <div class="feature-spotlight__grid">
-          <a class="feature-spotlight__card" href="/commands/honeypot/" data-reveal>
-            <div class="feature-spotlight__screen feature-spotlight__screen--honeypot" aria-hidden="true">
+          <a class="feature-spotlight__card" href="/commands/honeypot/">
+            <img class="feature-spotlight__screenshot" src="assets/feature-honeypot.png?v=1" alt="Beacon honeypot protection in Discord" loading="lazy">
+            <div class="feature-spotlight__screen feature-spotlight__screen--honeypot" aria-hidden="true" hidden>
               <div class="spotlight-screen__bar"><span class="spotlight-dot"></span><b>HONEYPOT</b><em>ACTIVE</em></div>
               <div class="spotlight-screen__channel"># security-monitor</div>
               <div class="spotlight-alert"><span>!</span><div><b>Suspicious message blocked</b><small>Action: timeout · Logged by Beacon</small></div></div>
@@ -175,8 +175,9 @@
             <div class="feature-spotlight__copy"><span class="feature-spotlight__tag">MODERATION</span><h3>Honeypot protection</h3><p>Catch spam and raid bots before they reach the rest of your server.</p><span class="feature-spotlight__link">Explore honeypot <i>↗</i></span></div>
           </a>
 
-          <a class="feature-spotlight__card" href="/commands/tickets/" data-reveal>
-            <div class="feature-spotlight__screen feature-spotlight__screen--tickets" aria-hidden="true">
+          <a class="feature-spotlight__card" href="/commands/tickets/">
+            <img class="feature-spotlight__screenshot" src="assets/feature-tickets.png?v=1" alt="Beacon ticket setup options in Discord" loading="lazy">
+            <div class="feature-spotlight__screen feature-spotlight__screen--tickets" aria-hidden="true" hidden>
               <div class="spotlight-screen__bar"><span class="spotlight-dot spotlight-dot--blue"></span><b>TICKET PANEL</b><em>ONLINE</em></div>
               <div class="spotlight-ticket"><div><b>Support</b><small>Need a hand? Open a private ticket.</small></div><span class="spotlight-ticket__button">✉ Create ticket</span></div>
               <div class="spotlight-form"><span>New support ticket</span><i>Tell us what you need...</i><b>Submit</b></div>
@@ -184,8 +185,9 @@
             <div class="feature-spotlight__copy"><span class="feature-spotlight__tag">SUPPORT</span><h3>Ticket system</h3><p>Give members a clean way to ask for help with forms, routing and transcripts.</p><span class="feature-spotlight__link">Explore tickets <i>↗</i></span></div>
           </a>
 
-          <a class="feature-spotlight__card" href="/commands/emoji-steal/" data-reveal>
-            <div class="feature-spotlight__screen feature-spotlight__screen--emoji" aria-hidden="true">
+          <a class="feature-spotlight__card" href="/commands/emoji-steal/">
+            <img class="feature-spotlight__screenshot" src="assets/feature-emoji-steal.png?v=1" alt="Beacon emoji steal confirmation in Discord" loading="lazy">
+            <div class="feature-spotlight__screen feature-spotlight__screen--emoji" aria-hidden="true" hidden>
               <div class="spotlight-screen__bar"><span class="spotlight-dot spotlight-dot--purple"></span><b>EMOJI STEAL</b><em>READY</em></div>
               <div class="spotlight-command"><strong>/emoji-steal</strong><span>Copy custom emojis into your server</span><i>✓</i></div>
               <div class="spotlight-command spotlight-command--muted"><strong>/emoji-steal-bulk</strong><span>Bring over a complete emoji set</span><i>✓</i></div>
