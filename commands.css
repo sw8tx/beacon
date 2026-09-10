@@ -484,6 +484,91 @@ code {
 .preview-actions .danger {
   background: #e43f55;
 }
+
+.discord-avatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffc31c;
+  background: #17181e;
+  font-size: 1.25rem;
+}
+
+.discord-message {
+  min-width: 0;
+  color: #e4e6ed;
+  line-height: 1.45;
+}
+
+.discord-message > b {
+  color: #ff9c1b;
+}
+
+.discord-message small {
+  border-radius: 3px;
+  padding: 2px 4px;
+  color: #fff;
+  background: #5865f2;
+  font-size: .58rem;
+}
+
+.discord-card {
+  width: min(100%, 390px);
+  margin-top: 7px;
+  border-left: 4px solid #ff9c1b;
+  border-radius: 7px;
+  padding: 15px;
+  background: #2b2c33;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+}
+
+.discord-card h3 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.discord-card p {
+  margin: 0 0 13px;
+  color: #d4d6df;
+}
+
+.discord-card button {
+  border: 0;
+  border-radius: 5px;
+  padding: 8px 12px;
+  color: #fff;
+  background: #454750;
+  font: inherit;
+  font-size: .85rem;
+}
+
+.discord-card footer {
+  margin-top: 13px;
+  color: #9da1af;
+  font-size: .73rem;
+}
+
+.discord-card.warning {
+  border-left-color: #ed4245;
+}
+
+.mention {
+  color: #c9cdfd;
+  background: rgba(88, 101, 242, .25);
+}
+
+.member-line {
+  margin: 18px 0 7px;
+  color: #b8bbc6;
+  font-size: .84rem;
+}
+
+.discord-card.repost {
+  border-left-color: #32d6a0;
+}
 .app-badge { display: inline-block; margin-left: 5px; border-radius: 3px; padding: 2px 4px; color: #fff; background: #5865f2; font-size: .58rem; vertical-align: 2px; }
 .honeypot-shot h3 { font-size: 1.2rem; }
 .honeypot-shot small, .poll-shot small { display: block; margin-top: 13px; color: #9ba2b0; }

@@ -103,6 +103,7 @@ const HONEYPOT_DESCRIPTION = "This channel is used to catch spam bots. Any messa
 const xpCooldowns = new Map();
 const honeypotSetupDrafts = new Map();
 const pendingModerationActions = new Map();
+const stickyRefreshLocks = new Map();
 
 if (!TOKEN || TOKEN.startsWith("PASTE_")) {
   console.error("Missing Discord bot token. Set DISCORD_TOKEN in your .env file or in your hosting environment.");
@@ -127,6 +128,7 @@ const defaultGuildData = () => ({
     welcomeThumbnail: null,
     welcomeButtonLabel: "Start here",
     logChannelId: null,
+    logChannelEnabled: false,
     memberRoleId: null,
     onboardingChannelId: null,
     dmWelcomeEnabled: false,
@@ -173,6 +175,7 @@ const defaultGuildData = () => ({
     automodLinks: true,
     automodImages: false,
     automodMentions: true,
+    automodWarningTimeout: 10,
     accentColor: "#32d6a0",
   },
   stats: {
@@ -909,8 +912,8 @@ function ticketPriorityLabel(priority) {
 
 async function sendTicketLog(guild, data, title, description, ui) {
   const channel = guild.channels.cache.get(data.settings.ticketLogChannelId);
-  if (!channel) return;
-  await channel.send(ui.withBrandFiles({ embeds: [ui.brandEmbed(title, description)] })).catch(() => null);
+  if (channel) await channel.send(ui.withBrandFiles({ embeds: [ui.brandEmbed(title, description)] })).catch(() => null);
+  await sendAuditLog(guild, `Ticket: ${title}`, description, `ticket-${String(title || "event").toLowerCase().replace(/[^a-z0-9]+/g, "-") || "event"}.txt`).catch(() => null);
 }
 
 function ticketRatingContainer(guildId, ticketId, rating = null) {
@@ -1591,7 +1594,8 @@ async function closeTicket(interaction, data, reason, ui) {
   if (data.settings.ticketDmTranscript) {
     const owner = await interaction.client.users.fetch(ticket.ownerId).catch(() => null);
     if (owner) {
-      await owner.send(ui.withBrandFiles({ embeds: [logEmbed], files: [transcriptFile] })).catch(() => null);
+      const transcriptSent = await owner.send(ui.withBrandFiles({ embeds: [logEmbed], files: [transcriptFile] })).then(() => true).catch(() => false);
+      await sendAuditLog(interaction.guild, "Ticket transcript DM", `${interaction.user.tag} sent the transcript for <#${ticket.channelId}> to <@${ticket.ownerId}>. Delivery: ${transcriptSent ? "sent" : "failed"}.`, `${interaction.channel.name}-transcript.txt`).catch(() => null);
     }
   }
 
@@ -1605,7 +1609,7 @@ async function closeTicket(interaction, data, reason, ui) {
   }
 
   await interaction.reply(ui.withBrandFiles({ embeds: [ui.successEmbed("Ticket closing", data.settings.ticketDmTranscript ? "Transcript DM attempted. This channel will be deleted in 5 seconds." : "This channel will be deleted in 5 seconds.")] }));
-  setTimeout(() => interaction.channel.delete(`Ticket closed by ${interaction.user.tag}`).catch(() => null), 5000);
+  setTimeout(() => interaction.channel.delete(`Ticket closed by ${interaction.user.tag}`).then(() => sendAuditLog(interaction.guild, "Ticket channel deleted", `${interaction.user.tag} deleted closed ticket #${interaction.channel.name}.`, `${interaction.channel.name}-deletion.txt`)).catch(() => null), 5000);
 }
 
 const MAX_PURGE_COUNT = 99;
@@ -1868,6 +1872,7 @@ async function deleteMessages(interaction, messages, ui, label, scannedCount) {
   await interaction.editReply(ui.withBrandFiles({
     embeds: [buildResultEmbed(ui, label, scannedCount, list.length, deleted.size, skipped)],
   }));
+  await log(interaction.guild, "Messages deleted", `${interaction.user.tag} deleted ${deleted.size} message(s) in #${interaction.channel.name}. Command: /${interaction.commandName}. Filtered: ${list.length}; skipped: ${skipped}.`).catch(() => null);
 }
 
 async function handlePurgeCommand(interaction, ui) {
@@ -2179,7 +2184,21 @@ function moderationDmEmbed(type, guild, reason, duration = 0) {
 async function sendModerationDm(userId, guild, type, reason, duration = 0) {
   const user = await client.users.fetch(userId).catch(() => null);
   if (!user) return false;
-  return Boolean(await user.send(withBrandFiles({ embeds: [moderationDmEmbed(type, guild, reason, duration)] })).then(() => true).catch(() => false));
+  const sent = Boolean(await user.send(withBrandFiles({ embeds: [moderationDmEmbed(type, guild, reason, duration)] })).then(() => true).catch(() => false));
+  if (sent) await sendAuditLog(guild, "Moderation DM sent", `Beacon sent a ${type} notification to <@${userId}>. Reason: ${reason || "No reason provided."}`, `dm-${type}-${userId}.txt`).catch(() => null);
+  return sent;
+}
+
+async function sendAutomodWarningDm(message, duration, timeoutApplied = true, alreadyTimedOut = false) {
+  const guild = message.guild;
+  const icon = guild.iconURL({ extension: "png", size: 128 });
+  const embed = new EmbedBuilder().setColor(Colors.Red).setAuthor({ name: "Beacon Automod", iconURL: BRAND_THUMBNAIL_URL }).setTitle("Automod warning").setDescription(`Your message in **${guild.name}** was removed.\n\nYou have been timed out for **${duration} seconds**. Please stop sending the content that triggered Automod. Further violations can extend the timeout or lead to stronger action.`).setFooter({ text: "Beacon · Community OS" }).setTimestamp();
+  if (icon) embed.setThumbnail(icon);
+  const status = timeoutApplied ? `You have been timed out for **${duration} seconds**.` : alreadyTimedOut ? "Your existing timeout is still active." : "The message was removed, but Beacon could not apply the timeout because of a permission or hierarchy limit.";
+  embed.setDescription(`Your message in **${guild.name}** was removed.\n\n${status}\nPlease stop sending the content that triggered Automod. Further violations can extend the timeout or lead to stronger action.`);
+  const sent = Boolean(await message.author.send(withBrandFiles({ embeds: [embed] })).then(() => true).catch(() => false));
+  if (sent) await sendAuditLog(guild, "Automod DM sent", `Automod warned ${message.author.tag} after removing a message in #${message.channel.name}. Timeout: ${duration}s.`, `automod-dm-${message.author.id}.txt`).catch(() => null);
+  return sent;
 }
 
 function moderationConfirmContainer(action) {
@@ -2897,7 +2916,38 @@ function stickyContainer(sticky, guild, controls = false) {
     new ButtonBuilder().setCustomId(`sticky_configure:${sticky.id}`).setLabel("Configure").setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId(`sticky_remove:${sticky.id}`).setLabel("Remove").setStyle(ButtonStyle.Danger)
   ));
-  return container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# Sticky · ${guild.name}`));
+  return container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# Sticky · ${guild.name} · ID: ${sticky.id}`));
+}
+
+async function refreshSticky(sticky, guild) {
+  const channel = await guild.channels.fetch(sticky.channelId).catch(() => null);
+  if (!channel?.isTextBased()) return null;
+  const oldMessage = sticky.messageId ? await channel.messages.fetch(sticky.messageId).catch(() => null) : null;
+  if (oldMessage) await oldMessage.delete().catch(() => null);
+  const sent = await channel.send({ components: [stickyContainer(sticky, guild)], flags: MessageFlags.IsComponentsV2 }).catch((error) => {
+    console.error(`[sticky] Could not repost ${sticky.id}: ${error.message}`);
+    return null;
+  });
+  if (sent) {
+    sticky.messageId = sent.id;
+    sticky.lastPostedAt = new Date().toISOString();
+    saveData();
+    await sendAuditLog(guild, "Sticky reposted", `Sticky ${sticky.id} was moved to the bottom of <#${sticky.channelId}> after a new message.`, `${sticky.id}-repost.txt`).catch(() => null);
+  }
+  return sent;
+}
+
+async function refreshStickiesForChannel(guild, channelId) {
+  const data = guildData(guild.id);
+  const stickies = Object.values(data.stickies).filter((sticky) => sticky.channelId === channelId);
+  if (!stickies.length) return;
+  const previous = stickyRefreshLocks.get(channelId) || Promise.resolve();
+  const current = previous.then(async () => {
+    for (const sticky of stickies) await refreshSticky(sticky, guild);
+  }).catch((error) => console.error(`[sticky] Refresh failed: ${error.message}`));
+  stickyRefreshLocks.set(channelId, current);
+  await current;
+  if (stickyRefreshLocks.get(channelId) === current) stickyRefreshLocks.delete(channelId);
 }
 
 function automodSummary(data) {
@@ -2936,7 +2986,7 @@ async function stickyCreate(interaction, data) {
   const buttonUrl = interaction.options.getString("button_url") || null;
   if (buttonUrl && !/^https:\/\//i.test(buttonUrl)) return interaction.reply({ components: [v2Notice("Invalid button URL", "Button links must use HTTPS.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
   const sticky = { id: `sticky_${Date.now().toString(36)}`, channelId: channel.id, title: interaction.options.getString("title"), message: interaction.options.getString("message"), thumbnail: attachment?.url || null, buttonLabel: interaction.options.getString("button_label") || null, buttonUrl, messageId: null, createdAt: new Date().toISOString() };
-  const sent = await channel.send({ components: [stickyContainer(sticky, interaction.guild)], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
+  const sent = await channel.send({ components: [stickyContainer(sticky, interaction.guild)], flags: MessageFlags.IsComponentsV2 }).catch((error) => { console.error(`[sticky] Could not create ${sticky.id}: ${error.message}`); return null; });
   if (!sent) return interaction.reply({ components: [v2Notice("Sticky not posted", "I could not send the V2 panel to that channel.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
   sticky.messageId = sent.id; data.stickies[sticky.id] = sticky; saveData();
   await interaction.reply({ components: [v2Notice("Sticky created", `The V2 sticky is live in ${channel}.\nID: \`${sticky.id}\``)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
@@ -2962,8 +3012,14 @@ async function automodConfigure(interaction, data) {
 async function welcomeCreate(interaction, data) {
   const channel = interaction.options.getChannel("channel");
   data.settings.welcomeChannelId = channel.id; saveData();
-  const sent = await channel.send({ components: [welcomeContainer(data, interaction.guild, false)], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
-  await interaction.reply({ components: [v2Notice(sent ? "Welcome panel posted" : "Welcome panel failed", sent ? `The V2 panel is live in ${channel}.` : "I could not send the panel. Check my View Channel and Send Messages permissions.", sent ? BRAND_COLOR : Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+  const botMember = interaction.guild.members.me || await interaction.guild.members.fetchMe().catch(() => null);
+  if (!botMember?.permissionsIn(channel).has(PermissionFlagsBits.ViewChannel | PermissionFlagsBits.SendMessages)) {
+    await interaction.reply({ components: [v2Notice("Welcome panel failed", "Beacon needs View Channel and Send Messages in the selected channel.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+    return;
+  }
+  let sendError = null;
+  const sent = await channel.send({ components: [welcomeContainer(data, interaction.guild, false)], flags: MessageFlags.IsComponentsV2 }).catch((error) => { sendError = error; return null; });
+  await interaction.reply({ components: [v2Notice(sent ? "Welcome panel posted" : "Welcome panel failed", sent ? `The V2 panel is live in ${channel}.` : `Discord rejected the panel: ${String(sendError?.message || "unknown error").slice(0, 300)}`, sent ? BRAND_COLOR : Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
 }
 
 async function welcomeRemove(interaction, data) { data.settings.welcomeChannelId = null; saveData(); await interaction.reply({ components: [v2Notice("Welcome disabled", "New members will no longer receive a welcome panel.")], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral }); }
@@ -2990,7 +3046,19 @@ async function automodCommand(interaction, data) {
   saveData(); await interaction.reply({ components: [v2Notice(`Automod ${data.settings.automodEnabled ? "enabled" : "disabled"}`, automodSummary(data))], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
 }
 
+async function logSetup(interaction, data) {
+  const channel = interaction.options.getChannel("channel");
+  const enabled = interaction.options.getBoolean("enabled");
+  if (channel) data.settings.logChannelId = channel.id;
+  if (enabled !== null) data.settings.logChannelEnabled = enabled;
+  if (!channel && enabled === null) data.settings.logChannelEnabled = Boolean(data.settings.logChannelId);
+  saveData();
+  const destination = data.settings.logChannelId ? `<#${data.settings.logChannelId}>` : "not configured";
+  await interaction.reply({ components: [v2Notice("Log setup saved", `Status: **${data.settings.logChannelEnabled ? "Enabled" : "Disabled"}**\nDestination: ${destination}\n\nBeacon writes commands, moderation actions, ticket events, message deletions and sent moderation DMs there. Each entry includes a readable `.txt` audit file.`)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+}
+
 const commands = [
+  new SlashCommandBuilder().setName("log-setup").setDescription("Configure the central Beacon audit log channel.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addChannelOption((o) => o.setName("channel").setDescription("Where audit events should be posted").addChannelTypes(ChannelType.GuildText)).addBooleanOption((o) => o.setName("enabled").setDescription("Enable or disable central logging")),
   new SlashCommandBuilder().setName("welcome-create").setDescription("Post the configured Components V2 welcome panel.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addChannelOption((o) => o.setName("channel").setDescription("Where to post it").addChannelTypes(ChannelType.GuildText).setRequired(true)),
   new SlashCommandBuilder().setName("welcome-configure").setDescription("Configure welcome text, button and thumbnail upload.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addChannelOption((o) => o.setName("channel").setDescription("Welcome channel").addChannelTypes(ChannelType.GuildText)).addStringOption((o) => o.setName("title").setDescription("Panel title; supports {server}").setMaxLength(100)).addStringOption((o) => o.setName("message").setDescription("Panel message; supports {user}, {server}").setMaxLength(1800)).addStringOption((o) => o.setName("button_label").setDescription("Welcome button label").setMaxLength(80)).addAttachmentOption((o) => o.setName("thumbnail").setDescription("Upload an image thumbnail")),
   new SlashCommandBuilder().setName("welcome-remove").setDescription("Disable welcome messages for new members.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
@@ -3875,6 +3943,7 @@ client.on("messageCreate", async (message) => {
 
   const data = guildData(message.guild.id);
   if (await handleHoneypotMessage(message, data)) return;
+  await refreshStickiesForChannel(message.guild, message.channel.id);
   if (data.settings.automodEnabled) {
     const channelScope = !data.settings.automodChannels.length || data.settings.automodChannels.includes(message.channel.id);
     const now = Date.now(); const recent = data.automodRecent[message.author.id] || [];
@@ -3883,11 +3952,15 @@ client.on("messageCreate", async (message) => {
     const violation = channelScope && (spam || (data.settings.automodLinks && hasLink(message)) || (data.settings.automodImages && hasImageOrFile(message)) || (data.settings.automodMentions && hasMention(message) && (message.mentions.users.size + message.mentions.roles.size >= 4 || message.mentions.everyone)));
     data.automodRecent[message.author.id] = [...recentMessages, { at: now, text: fingerprint }].slice(-12);
     if (violation) {
+      const wasAlreadyTimedOut = Number(message.member?.communicationDisabledUntilTimestamp || 0) > now;
       if (data.settings.automodAction === "delete") await message.delete().catch(() => null);
-      if (data.settings.automodAction === "timeout") await message.member?.timeout(data.settings.automodDuration * 1000, "Beacon automod violation").catch(() => null);
+      const timeoutSeconds = data.settings.automodAction === "timeout" ? data.settings.automodDuration : data.settings.automodWarningTimeout;
+      let timeoutApplied = wasAlreadyTimedOut;
+      if (!wasAlreadyTimedOut && (data.settings.automodAction === "delete" || data.settings.automodAction === "timeout")) timeoutApplied = Boolean(await message.member?.timeout(timeoutSeconds * 1000, data.settings.automodAction === "delete" ? "Beacon automod warning" : "Beacon automod violation").then(() => true).catch(() => false));
       if (data.settings.automodAction === "kick") await message.member?.kick("Beacon automod violation").catch(() => null);
       if (data.settings.automodAction === "ban") await message.member?.ban({ reason: "Beacon automod violation" }).catch(() => null);
-      await log(message.guild, "Automod action", `${message.author.tag} triggered automod in #${message.channel.name}. Action: ${data.settings.automodAction}.`).catch(() => null);
+      if (data.settings.automodAction === "delete") await sendAutomodWarningDm(message, timeoutSeconds, timeoutApplied && !wasAlreadyTimedOut, wasAlreadyTimedOut).catch(() => null);
+      await log(message.guild, "Automod action", `${message.author.tag} triggered automod in #${message.channel.name}. Action: ${data.settings.automodAction}; timeout: ${wasAlreadyTimedOut ? "already active" : `${timeoutSeconds}s`}.`).catch(() => null);
       saveData(); return;
     }
   }
@@ -3987,6 +4060,7 @@ async function handleCommand(interaction) {
   const command = interaction.commandName;
   const data = guildData(interaction.guild.id);
   addBotLog(interaction.guild, "Command executed", `${interaction.user.tag} used /${command}.`);
+  sendAuditLog(interaction.guild, "Command executed", `${interaction.user.tag} used /${command} in <#${interaction.channelId}>.`, `command-${command}.txt`).catch(() => null);
 
   if (Math.random() < 0.0001) {
     await awardBadge(interaction.user, "lucky-signal", "slash-command-drop", `You hit the 0.01% Lucky Signal drop while using /${command}.`);
@@ -4044,6 +4118,7 @@ async function handleCommand(interaction) {
   if (command === "rank") return rank(interaction, data);
   if (command === "leaderboard") return leaderboard(interaction, data);
   if (command === "settings") return settings(interaction, data);
+  if (command === "log-setup") return logSetup(interaction, data);
   if (command === "status") return status(interaction);
 }
 
@@ -4059,6 +4134,7 @@ const helpPages = [
       ["/dashboard", "Open a live server snapshot."],
       ["/status", "Check uptime, ping, servers and memory."],
       ["/settings", "View the current Beacon configuration."],
+      ["/log-setup", "Choose a central audit channel for commands, moderation, tickets, DMs and deletions with TXT records."],
     ],
   },
   {
@@ -5199,11 +5275,17 @@ function addBotLog(guild, title, description) {
 
 async function log(guild, title, description) {
   addBotLog(guild, title, description);
+  await sendAuditLog(guild, title, description, `${String(title || "event").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "event"}.txt`);
+}
+
+async function sendAuditLog(guild, title, description, filename = "beacon-event.txt") {
   const data = guildData(guild.id);
-  const channel = guild.channels.cache.get(data.settings.logChannelId);
-  if (!channel) return;
-  const embed = brandEmbed(title, description);
-  await channel.send(withBrandFiles({ embeds: [embed] })).catch(() => null);
+  if (!data.settings.logChannelEnabled || !data.settings.logChannelId) return false;
+  const channel = guild.channels.cache.get(data.settings.logChannelId) || await guild.channels.fetch(data.settings.logChannelId).catch(() => null);
+  if (!channel?.isTextBased()) return false;
+  const auditText = ["Beacon audit event", `Guild: ${guild.name} (${guild.id})`, `Event: ${title}`, `Time: ${new Date().toISOString()}`, "", String(description || "")].join("\n");
+  await channel.send(withBrandFiles({ embeds: [brandEmbed(title, description)], files: [new AttachmentBuilder(Buffer.from(auditText, "utf8"), { name: filename.slice(0, 90).replace(/[^a-zA-Z0-9._-]/g, "-") })] })).catch((error) => console.error(`[audit] Could not write log: ${error.message}`));
+  return true;
 }
 
 process.on("SIGINT", () => {
