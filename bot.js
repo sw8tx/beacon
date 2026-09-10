@@ -2894,8 +2894,9 @@ function v2Notice(title, body, accent = BRAND_COLOR) {
     .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Beacon · Components V2"));
 }
 
-function welcomeContainer(data, guild, preview = false) {
-  const replaceWelcomePlaceholders = (value) => String(value || "").replace(/\{server\}/gi, guild.name).replace(/\{servermember\}/gi, "@new member").replace(/\{membercount\}/gi, `${guild.memberCount || 0}`);
+function welcomeContainer(data, guild, preview = false, member = null) {
+  const memberMention = member?.toString?.() || "@new member";
+  const replaceWelcomePlaceholders = (value) => String(value || "").replace(/\{server\}/gi, guild.name).replace(/\{servermember\}/gi, memberMention).replace(/\{user\}/gi, memberMention).replace(/\{membercount\}/gi, `${guild.memberCount || 0}`);
   const title = replaceWelcomePlaceholders(data.settings.welcomeTitle || "Welcome to {server}");
   const body = replaceWelcomePlaceholders(data.settings.welcomeMessage || "Welcome!");
   const header = new SectionBuilder().addTextDisplayComponents(
@@ -3930,9 +3931,7 @@ client.on("guildMemberAdd", async (member) => {
 
   const welcomeChannel = member.guild.channels.cache.get(data.settings.welcomeChannelId);
   if (welcomeChannel) {
-    const replaceMemberWelcome = (value) => String(value || "").replace(/\{server\}/gi, member.guild.name).replace(/\{servermember\}/gi, member.toString()).replace(/\{user\}/gi, member.toString()).replace(/\{membercount\}/gi, `${member.guild.memberCount || 0}`);
-    const welcome = { ...data, settings: { ...data.settings, welcomeTitle: replaceMemberWelcome(data.settings.welcomeTitle), welcomeMessage: replaceMemberWelcome(data.settings.welcomeMessage) } };
-    await welcomeChannel.send({ components: [welcomeContainer(welcome, member.guild, false)], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
+    await welcomeChannel.send({ components: [welcomeContainer(data, member.guild, false, member)], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
   }
 
   if (data.settings.dmWelcomeEnabled) {
