@@ -2897,8 +2897,11 @@ function welcomeContainer(data, guild, preview = false) {
   const header = new SectionBuilder().addTextDisplayComponents(
     new TextDisplayBuilder().setContent(`## ${title}\n${body}`)
   );
+  const container = new ContainerBuilder().setAccentColor(BRAND_COLOR);
   if (data.settings.welcomeThumbnail) header.setThumbnailAccessory(new ThumbnailBuilder().setURL(data.settings.welcomeThumbnail).setDescription("Welcome thumbnail"));
-  return new ContainerBuilder().setAccentColor(BRAND_COLOR).addSectionComponents(header)
+  if (data.settings.welcomeThumbnail) container.addSectionComponents(header);
+  else container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}\n${body}`));
+  return container
     .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
     .addActionRowComponents(new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId("welcome_start").setLabel(data.settings.welcomeButtonLabel || "Start here").setStyle(ButtonStyle.Primary),
@@ -2910,7 +2913,9 @@ function welcomeContainer(data, guild, preview = false) {
 function stickyContainer(sticky, guild, controls = false) {
   const header = new SectionBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${sticky.title}\n${sticky.message}`));
   if (sticky.thumbnail) header.setThumbnailAccessory(new ThumbnailBuilder().setURL(sticky.thumbnail).setDescription(`${sticky.title} thumbnail`));
-  const container = new ContainerBuilder().setAccentColor(BRAND_COLOR).addSectionComponents(header);
+  const container = new ContainerBuilder().setAccentColor(BRAND_COLOR);
+  if (sticky.thumbnail) container.addSectionComponents(header);
+  else container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${sticky.title}\n${sticky.message}`));
   if (sticky.buttonLabel && sticky.buttonUrl) container.addActionRowComponents(new ActionRowBuilder().addComponents(new ButtonBuilder().setLabel(sticky.buttonLabel).setStyle(ButtonStyle.Link).setURL(sticky.buttonUrl)));
   if (controls) container.addActionRowComponents(new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId(`sticky_configure:${sticky.id}`).setLabel("Configure").setStyle(ButtonStyle.Secondary),
