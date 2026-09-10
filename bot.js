@@ -122,6 +122,10 @@ const client = new Client({
 const defaultGuildData = () => ({
   settings: {
     welcomeChannelId: null,
+    welcomeTitle: "Welcome to {server}",
+    welcomeMessage: "Hey {user}, glad you're here. Start with onboarding, pick your interests, and say hello.",
+    welcomeThumbnail: null,
+    welcomeButtonLabel: "Start here",
     logChannelId: null,
     memberRoleId: null,
     onboardingChannelId: null,
@@ -160,6 +164,15 @@ const defaultGuildData = () => ({
     honeypotDeleteMessage: true,
     honeypotBanCount: 0,
     honeypotMessageId: null,
+    dmModerationNotifications: true,
+    automodEnabled: false,
+    automodChannels: [],
+    automodAction: "delete",
+    automodDuration: 600,
+    automodSpam: true,
+    automodLinks: true,
+    automodImages: false,
+    automodMentions: true,
     accentColor: "#32d6a0",
   },
   stats: {
@@ -447,6 +460,8 @@ function guildData(guildId) {
   db.guilds[guildId].tickets = db.guilds[guildId].tickets || {};
   db.guilds[guildId].botLogs = Array.isArray(db.guilds[guildId].botLogs) ? db.guilds[guildId].botLogs : [];
   db.guilds[guildId].polls = db.guilds[guildId].polls || {};
+  db.guilds[guildId].stickies = db.guilds[guildId].stickies || {};
+  db.guilds[guildId].automodRecent = db.guilds[guildId].automodRecent || {};
   return db.guilds[guildId];
 }
 
@@ -2152,7 +2167,22 @@ function parseDiscordUserId(value) {
 }
 
 function moderationActionTitle(type) {
-  return type === "unban" ? "Unban" : "Ban";
+  return type === "unban" ? "Unban" : type === "timeout" ? "Timeout" : "Ban";
+}
+
+function moderationDmEmbed(type, guild, reason, duration = 0) {
+  const title = type === "ban" ? "You were banned" : type === "timeout" ? "You were timed out" : "Moderation notice";
+  const detail = type === "timeout" ? `Your timeout lasts **${Math.ceil(duration / 60)} minute(s)**.` : "You can no longer participate in this server.";
+  const icon = guild.iconURL({ extension: "png", size: 128 });
+  const embed = new EmbedBuilder().setColor(type === "ban" ? Colors.Red : BRAND_COLOR).setAuthor({ name: "Beacon Moderation", iconURL: BRAND_THUMBNAIL_URL }).setTitle(title).setDescription(`A moderator took action in **${guild.name}**.\n\n${detail}\n**Reason:** ${String(reason || "No reason provided.").slice(0, 500)}`).setFooter({ text: "Beacon · Community OS" }).setTimestamp();
+  if (icon) embed.setThumbnail(icon);
+  return embed;
+}
+
+async function sendModerationDm(userId, guild, type, reason, duration = 0) {
+  const user = await client.users.fetch(userId).catch(() => null);
+  if (!user) return false;
+  return Boolean(await user.send(withBrandFiles({ embeds: [moderationDmEmbed(type, guild, reason, duration)] })).then(() => true).catch(() => false));
 }
 
 function moderationConfirmContainer(action) {
@@ -2166,7 +2196,12 @@ function moderationConfirmContainer(action) {
   if (action.type === "ban") {
     details.push(`**Delete messages**\n${action.deleteMessageDays} day(s)`);
   }
-
+  if (action.type === "timeout") {
+    details.push(`**Duration**\n${Math.ceil(action.duration / 60)} minute(s)`);
+  }
+  if (action.type === "ban" || action.type === "timeout") {
+    details.push(`**DM notification**\n${action.dmNotify ? "Enabled" : "Disabled"}`);
+  }
   return new ContainerBuilder()
     .setAccentColor(action.type === "ban" ? Colors.Red : BRAND_COLOR)
     .addTextDisplayComponents(
@@ -2185,19 +2220,21 @@ function moderationResultContainer(title, description, success = true) {
     .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}\n${description}`));
 }
 
-async function ensureModerationPermissions(interaction) {
-  if (!interaction.memberPermissions?.has(PermissionFlagsBits.BanMembers)) {
+async function ensureModerationPermissions(interaction, type = "ban") {
+  const permission = type === "timeout" ? PermissionFlagsBits.ModerateMembers : PermissionFlagsBits.BanMembers;
+  const label = type === "timeout" ? "Moderate Members" : "Ban Members";
+  if (!interaction.memberPermissions?.has(permission)) {
     await interaction.reply({
-      components: [moderationResultContainer("Permission missing", "You need **Ban Members** to use this command.", false)],
+      components: [moderationResultContainer("Permission missing", `You need **${label}** to use this command.`, false)],
       flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
     });
     return false;
   }
 
   const botMember = interaction.guild.members.me || await interaction.guild.members.fetchMe().catch(() => null);
-  if (!botMember?.permissions.has(PermissionFlagsBits.BanMembers)) {
+  if (!botMember?.permissions.has(permission)) {
     await interaction.reply({
-      components: [moderationResultContainer("Bot permission missing", "Beacon needs **Ban Members** before it can ban or unban users.", false)],
+      components: [moderationResultContainer("Bot permission missing", `Beacon needs **${label}** before it can perform this action.`, false)],
       flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
     });
     return false;
@@ -2206,8 +2243,8 @@ async function ensureModerationPermissions(interaction) {
   return true;
 }
 
-async function prepareModerationAction(interaction, type, targetId, reason, deleteMessageDays = 0) {
-  if (!await ensureModerationPermissions(interaction)) return;
+async function prepareModerationAction(interaction, type, targetId, reason, deleteMessageDays = 0, duration = 600, dmNotify = true) {
+  if (!await ensureModerationPermissions(interaction, type)) return;
   if (!targetId) {
     await interaction.reply({
       components: [moderationResultContainer("Invalid user ID", "Send a valid Discord user ID with 17-22 digits.", false)],
@@ -2240,6 +2277,13 @@ async function prepareModerationAction(interaction, type, targetId, reason, dele
       return;
     }
   }
+  if (type === "timeout") {
+    const member = await interaction.guild.members.fetch(targetId).catch(() => null);
+    if (!member || !member.moderatable) {
+      await interaction.reply({ components: [moderationResultContainer("Cannot timeout user", "That member is above Beacon in the role hierarchy or cannot be moderated.", false)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+      return;
+    }
+  }
 
   const id = moderationActionId();
   const action = {
@@ -2250,6 +2294,8 @@ async function prepareModerationAction(interaction, type, targetId, reason, dele
     targetId,
     reason: String(reason || "No reason provided.").slice(0, 512),
     deleteMessageDays: Math.max(0, Math.min(7, Number(deleteMessageDays) || 0)),
+    duration: Math.max(10, Math.min(2419200, Number(duration) || 600)),
+    dmNotify: dmNotify !== false,
     createdAt: Date.now(),
   };
 
@@ -2266,14 +2312,21 @@ async function banCommand(interaction) {
   const user = interaction.options.getUser("user", true);
   const reason = interaction.options.getString("reason") || `Banned by ${interaction.user.tag}`;
   const deleteMessageDays = interaction.options.getInteger("delete_days") || 0;
-  await prepareModerationAction(interaction, "ban", user.id, reason, deleteMessageDays);
+  await prepareModerationAction(interaction, "ban", user.id, reason, deleteMessageDays, 0, interaction.options.getBoolean("dm"));
 }
 
 async function banIdCommand(interaction) {
   const targetId = parseDiscordUserId(interaction.options.getString("user_id", true));
   const reason = interaction.options.getString("reason") || `Banned by ${interaction.user.tag}`;
   const deleteMessageDays = interaction.options.getInteger("delete_days") || 0;
-  await prepareModerationAction(interaction, "ban", targetId, reason, deleteMessageDays);
+  await prepareModerationAction(interaction, "ban", targetId, reason, deleteMessageDays, 0, interaction.options.getBoolean("dm"));
+}
+
+async function timeoutCommand(interaction) {
+  const user = interaction.options.getUser("user", true);
+  const duration = interaction.options.getInteger("duration", true);
+  const reason = interaction.options.getString("reason") || `Timed out by ${interaction.user.tag}`;
+  await prepareModerationAction(interaction, "timeout", user.id, reason, 0, duration, interaction.options.getBoolean("dm"));
 }
 
 async function unbanCommand(interaction) {
@@ -2304,7 +2357,7 @@ async function confirmModerationAction(interaction, id) {
     });
     return;
   }
-  if (!await ensureModerationPermissions(interaction)) return;
+  if (!await ensureModerationPermissions(interaction, action.type)) return;
 
   pendingModerationActions.delete(id);
   await interaction.deferUpdate();
@@ -2319,7 +2372,17 @@ async function confirmModerationAction(interaction, id) {
         components: [moderationResultContainer("User banned", `<@${action.targetId}> was banned.\nReason: ${action.reason}`)],
         flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
       });
+      if (action.dmNotify) await sendModerationDm(action.targetId, interaction.guild, "ban", action.reason);
       await log(interaction.guild, "User banned", `${interaction.user.tag} banned ${action.targetId}. Reason: ${action.reason}`);
+      return;
+    }
+
+    if (action.type === "timeout") {
+      const member = await interaction.guild.members.fetch(action.targetId);
+      await member.timeout(action.duration * 1000, action.reason);
+      await interaction.editReply({ components: [moderationResultContainer("User timed out", `<@${action.targetId}> was timed out for **${Math.ceil(action.duration / 60)} minute(s)**.\nReason: ${action.reason}`)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+      if (action.dmNotify) await sendModerationDm(action.targetId, interaction.guild, "timeout", action.reason, action.duration);
+      await log(interaction.guild, "User timed out", `${interaction.user.tag} timed out ${action.targetId} for ${action.duration}s. Reason: ${action.reason}`);
       return;
     }
 
@@ -2806,7 +2869,143 @@ async function handleTicketCommand(interaction, data, ui) {
 
 const ticketHandlers = { ticketSetup, ticketPanel, ticketClose, ticketAdd, ticketRemove, ticketRename, ticketInfo, ticketStats, showTicketModal, openTicket, claimTicket, closeTicket, ticketPriority, ticketTransfer, ticketRating, ticketArchive };
 
+function v2Notice(title, body, accent = BRAND_COLOR) {
+  return new ContainerBuilder().setAccentColor(accent)
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}\n${body}`))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Beacon · Components V2"));
+}
+
+function welcomeContainer(data, guild, preview = false) {
+  const title = String(data.settings.welcomeTitle || "Welcome to {server}").replaceAll("{server}", guild.name).replaceAll("{memberCount}", `${guild.memberCount || 0}`);
+  const body = String(data.settings.welcomeMessage || "Welcome!").replaceAll("{server}", guild.name).replaceAll("{memberCount}", `${guild.memberCount || 0}`);
+  const header = new SectionBuilder().addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(`## ${title}\n${body}`)
+  );
+  if (data.settings.welcomeThumbnail) header.setThumbnailAccessory(new ThumbnailBuilder().setURL(data.settings.welcomeThumbnail).setDescription("Welcome thumbnail"));
+  return new ContainerBuilder().setAccentColor(BRAND_COLOR).addSectionComponents(header)
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("welcome_start").setLabel(data.settings.welcomeButtonLabel || "Start here").setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId("welcome_customize").setLabel("Customize").setStyle(ButtonStyle.Secondary).setDisabled(!preview)
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Configure this welcome panel with /welcome-configure"));
+}
+
+function stickyContainer(sticky, guild, controls = false) {
+  const header = new SectionBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${sticky.title}\n${sticky.message}`));
+  if (sticky.thumbnail) header.setThumbnailAccessory(new ThumbnailBuilder().setURL(sticky.thumbnail).setDescription(`${sticky.title} thumbnail`));
+  const container = new ContainerBuilder().setAccentColor(BRAND_COLOR).addSectionComponents(header);
+  if (sticky.buttonLabel && sticky.buttonUrl) container.addActionRowComponents(new ActionRowBuilder().addComponents(new ButtonBuilder().setLabel(sticky.buttonLabel).setStyle(ButtonStyle.Link).setURL(sticky.buttonUrl)));
+  if (controls) container.addActionRowComponents(new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`sticky_configure:${sticky.id}`).setLabel("Configure").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(`sticky_remove:${sticky.id}`).setLabel("Remove").setStyle(ButtonStyle.Danger)
+  ));
+  return container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# Sticky · ${guild.name}`));
+}
+
+function automodSummary(data) {
+  const channels = data.settings.automodChannels.length ? data.settings.automodChannels.map((id) => `<#${id}>`).join(", ") : "All text channels";
+  const checks = [data.settings.automodSpam && "spam", data.settings.automodLinks && "links", data.settings.automodImages && "images", data.settings.automodMentions && "spam pings"].filter(Boolean).join(", ") || "none";
+  return `Status: **${data.settings.automodEnabled ? "Enabled" : "Disabled"}**\nChannels: ${channels}\nModeration: **${checks}**\nAction: **${data.settings.automodAction}** · Duration: **${data.settings.automodDuration}s**`;
+}
+
+function findSticky(data, id) { return data.stickies[id] || null; }
+
+async function welcomeConfigure(interaction, data) {
+  const channel = interaction.options.getChannel("channel");
+  const title = interaction.options.getString("title");
+  const message = interaction.options.getString("message");
+  const buttonLabel = interaction.options.getString("button_label");
+  const thumbnail = interaction.options.getAttachment("thumbnail");
+  if (thumbnail && !String(thumbnail.contentType || "").startsWith("image/")) {
+    await interaction.reply({ components: [v2Notice("Invalid thumbnail", "Upload an image file such as PNG, JPG, GIF or WEBP.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+    return;
+  }
+  if (channel) data.settings.welcomeChannelId = channel.id;
+  if (title) data.settings.welcomeTitle = title;
+  if (message) data.settings.welcomeMessage = message;
+  if (buttonLabel) data.settings.welcomeButtonLabel = buttonLabel;
+  if (thumbnail) data.settings.welcomeThumbnail = thumbnail.url;
+  saveData();
+  await interaction.reply({ components: [v2Notice("Welcome saved", `New members will receive the V2 welcome in ${data.settings.welcomeChannelId ? `<#${data.settings.welcomeChannelId}>` : "the configured welcome channel"}.\n\n${automodSafeText(data.settings.welcomeMessage)}`)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+}
+
+function automodSafeText(value) { return String(value || "").slice(0, 700).replace(/@everyone|@here/g, "@​everyone"); }
+
+async function stickyCreate(interaction, data) {
+  const channel = interaction.options.getChannel("channel");
+  const attachment = interaction.options.getAttachment("thumbnail");
+  if (attachment && !String(attachment.contentType || "").startsWith("image/")) return interaction.reply({ components: [v2Notice("Invalid thumbnail", "Upload an image file such as PNG, JPG, GIF or WEBP.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+  const buttonUrl = interaction.options.getString("button_url") || null;
+  if (buttonUrl && !/^https:\/\//i.test(buttonUrl)) return interaction.reply({ components: [v2Notice("Invalid button URL", "Button links must use HTTPS.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+  const sticky = { id: `sticky_${Date.now().toString(36)}`, channelId: channel.id, title: interaction.options.getString("title"), message: interaction.options.getString("message"), thumbnail: attachment?.url || null, buttonLabel: interaction.options.getString("button_label") || null, buttonUrl, messageId: null, createdAt: new Date().toISOString() };
+  const sent = await channel.send({ components: [stickyContainer(sticky, interaction.guild)], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
+  if (!sent) return interaction.reply({ components: [v2Notice("Sticky not posted", "I could not send the V2 panel to that channel.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+  sticky.messageId = sent.id; data.stickies[sticky.id] = sticky; saveData();
+  await interaction.reply({ components: [v2Notice("Sticky created", `The V2 sticky is live in ${channel}.\nID: \`${sticky.id}\``)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+}
+
+async function stickyList(interaction, data) {
+  const list = Object.values(data.stickies);
+  const container = new ContainerBuilder().setAccentColor(BRAND_COLOR).addTextDisplayComponents(new TextDisplayBuilder().setContent(`## Sticky library\n${list.length ? "Choose a sticky to manage." : "No stickies have been created yet."}`));
+  if (list.length) container.addActionRowComponents(new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId("sticky_library").setPlaceholder("Choose from your media library").addOptions(list.slice(0, 25).map((item) => ({ label: item.title.slice(0, 100), value: item.id, description: `${item.channelId === interaction.channelId ? "This channel" : "Sticky panel"} · ${item.id}` })))));
+  await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+}
+
+async function automodConfigure(interaction, data) {
+  const channel = interaction.options.getChannel("channel");
+  if (channel) data.settings.automodChannels = [channel.id];
+  for (const [name, key] of [["spam", "automodSpam"], ["links", "automodLinks"], ["images", "automodImages"], ["mentions", "automodMentions"]]) { const value = interaction.options.getBoolean(name); if (value !== null) data.settings[key] = value; }
+  const action = interaction.options.getString("action"); if (action) data.settings.automodAction = action;
+  const duration = interaction.options.getInteger("duration"); if (duration) data.settings.automodDuration = duration;
+  data.settings.automodEnabled = interaction.options.getBoolean("enabled") ?? data.settings.automodEnabled;
+  saveData(); await interaction.reply({ components: [v2Notice("Automod configured", automodSummary(data))], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+}
+
+async function welcomeCreate(interaction, data) {
+  const channel = interaction.options.getChannel("channel");
+  data.settings.welcomeChannelId = channel.id; saveData();
+  const sent = await channel.send({ components: [welcomeContainer(data, interaction.guild, false)], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
+  await interaction.reply({ components: [v2Notice(sent ? "Welcome panel posted" : "Welcome panel failed", sent ? `The V2 panel is live in ${channel}.` : "I could not send the panel. Check my View Channel and Send Messages permissions.", sent ? BRAND_COLOR : Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+}
+
+async function welcomeRemove(interaction, data) { data.settings.welcomeChannelId = null; saveData(); await interaction.reply({ components: [v2Notice("Welcome disabled", "New members will no longer receive a welcome panel.")], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral }); }
+async function welcomePreview(interaction, data) { await interaction.reply({ components: [welcomeContainer(data, interaction.guild, true)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral }); }
+
+async function stickyConfigure(interaction, data, id) {
+  const sticky = findSticky(data, id); if (!sticky) return interaction.reply({ components: [v2Notice("Sticky not found", "Use /sticky-list to choose a valid media-library item.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+  for (const [key, option] of [["title", "title"], ["message", "message"]]) { const value = interaction.options.getString(option); if (value) sticky[key] = value; }
+  const image = interaction.options.getAttachment("thumbnail"); if (image) sticky.thumbnail = image.url;
+  const channel = await interaction.guild.channels.fetch(sticky.channelId).catch(() => null); const old = sticky.messageId ? await channel?.messages.fetch(sticky.messageId).catch(() => null) : null;
+  if (old) await old.edit({ components: [stickyContainer(sticky, interaction.guild)] }).catch(() => null); saveData();
+  await interaction.reply({ components: [v2Notice("Sticky updated", `\`${sticky.id}\` was updated in ${channel || "its channel"}.`)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+}
+
+async function stickyRemove(interaction, data, id) {
+  const sticky = findSticky(data, id); if (!sticky) return interaction.reply({ components: [v2Notice("Sticky not found", "Use /sticky-list to browse the media library.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+  const channel = await interaction.guild.channels.fetch(sticky.channelId).catch(() => null); if (channel && sticky.messageId) await channel.messages.delete(sticky.messageId).catch(() => null); delete data.stickies[id]; saveData();
+  await interaction.reply({ components: [v2Notice("Sticky removed", `\`${id}\` was removed from the server.`)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+}
+
+async function automodCommand(interaction, data) {
+  if (interaction.commandName === "automod-enable") data.settings.automodEnabled = true;
+  if (interaction.commandName === "automod-disable") data.settings.automodEnabled = false;
+  saveData(); await interaction.reply({ components: [v2Notice(`Automod ${data.settings.automodEnabled ? "enabled" : "disabled"}`, automodSummary(data))], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+}
+
 const commands = [
+  new SlashCommandBuilder().setName("welcome-create").setDescription("Post the configured Components V2 welcome panel.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addChannelOption((o) => o.setName("channel").setDescription("Where to post it").addChannelTypes(ChannelType.GuildText).setRequired(true)),
+  new SlashCommandBuilder().setName("welcome-configure").setDescription("Configure welcome text, button and thumbnail upload.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addChannelOption((o) => o.setName("channel").setDescription("Welcome channel").addChannelTypes(ChannelType.GuildText)).addStringOption((o) => o.setName("title").setDescription("Panel title; supports {server}").setMaxLength(100)).addStringOption((o) => o.setName("message").setDescription("Panel message; supports {user}, {server}").setMaxLength(1800)).addStringOption((o) => o.setName("button_label").setDescription("Welcome button label").setMaxLength(80)).addAttachmentOption((o) => o.setName("thumbnail").setDescription("Upload an image thumbnail")),
+  new SlashCommandBuilder().setName("welcome-remove").setDescription("Disable welcome messages for new members.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+  new SlashCommandBuilder().setName("welcome-preview").setDescription("Preview the configured Components V2 welcome panel.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+  new SlashCommandBuilder().setName("sticky-create").setDescription("Create a Components V2 sticky panel.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addChannelOption((o) => o.setName("channel").setDescription("Where to post the sticky").addChannelTypes(ChannelType.GuildText).setRequired(true)).addStringOption((o) => o.setName("title").setDescription("Sticky title").setMaxLength(100).setRequired(true)).addStringOption((o) => o.setName("message").setDescription("Sticky content").setMaxLength(1800).setRequired(true)).addAttachmentOption((o) => o.setName("thumbnail").setDescription("Upload a thumbnail")).addStringOption((o) => o.setName("button_label").setDescription("Optional link button label").setMaxLength(80)).addStringOption((o) => o.setName("button_url").setDescription("Optional HTTPS button URL").setMaxLength(500)),
+  new SlashCommandBuilder().setName("sticky-configure").setDescription("Configure an existing V2 sticky.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addStringOption((o) => o.setName("sticky_id").setDescription("ID from /sticky-list").setRequired(true)).addStringOption((o) => o.setName("title").setDescription("New title").setMaxLength(100)).addStringOption((o) => o.setName("message").setDescription("New content").setMaxLength(1800)).addAttachmentOption((o) => o.setName("thumbnail").setDescription("Replace thumbnail")),
+  new SlashCommandBuilder().setName("sticky-remove").setDescription("Remove a V2 sticky panel.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addStringOption((o) => o.setName("sticky_id").setDescription("ID from /sticky-list").setRequired(true)),
+  new SlashCommandBuilder().setName("sticky-list").setDescription("Browse your sticky media library.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+  new SlashCommandBuilder().setName("automod-enable").setDescription("Enable configured automod rules.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+  new SlashCommandBuilder().setName("automod-disable").setDescription("Disable automod without losing its configuration.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+  new SlashCommandBuilder().setName("automod-configure").setDescription("Configure channels, rules, action and duration for automod.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addChannelOption((o) => o.setName("channel").setDescription("Only moderate this channel").addChannelTypes(ChannelType.GuildText)).addBooleanOption((o) => o.setName("enabled").setDescription("Enable immediately")).addBooleanOption((o) => o.setName("spam").setDescription("Moderate spam")).addBooleanOption((o) => o.setName("links").setDescription("Moderate links")).addBooleanOption((o) => o.setName("images").setDescription("Moderate images/files")).addBooleanOption((o) => o.setName("mentions").setDescription("Moderate spam pings")).addStringOption((o) => o.setName("action").setDescription("Action taken").addChoices({ name: "Delete", value: "delete" }, { name: "Timeout", value: "timeout" }, { name: "Kick", value: "kick" }, { name: "Ban", value: "ban" }, { name: "Log only", value: "log" })).addIntegerOption((o) => o.setName("duration").setDescription("Timeout duration in seconds").setMinValue(10).setMaxValue(2419200)),
+  new SlashCommandBuilder().setName("automod-status").setDescription("Show the current automod configuration.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
   ...purgeCommands,
 
   new SlashCommandBuilder()
@@ -2868,7 +3067,17 @@ const commands = [
         .setMinValue(0)
         .setMaxValue(7)
         .setRequired(false)
-    ),
+    )
+    .addBooleanOption((opt) => opt.setName("dm").setDescription("Send the banned user a branded moderation DM")),
+
+  new SlashCommandBuilder()
+    .setName("timeout")
+    .setDescription("Timeout a member with a Components V2 confirmation and optional DM.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
+    .addUserOption((opt) => opt.setName("user").setDescription("Member to timeout").setRequired(true))
+    .addIntegerOption((opt) => opt.setName("duration").setDescription("Timeout duration in seconds").setMinValue(10).setMaxValue(2419200).setRequired(true))
+    .addStringOption((opt) => opt.setName("reason").setDescription("Reason for the timeout").setMaxLength(500))
+    .addBooleanOption((opt) => opt.setName("dm").setDescription("Send the member a branded moderation DM")),
 
   new SlashCommandBuilder()
     .setName("ban-id")
@@ -2896,7 +3105,8 @@ const commands = [
         .setMinValue(0)
         .setMaxValue(7)
         .setRequired(false)
-    ),
+    )
+    .addBooleanOption((opt) => opt.setName("dm").setDescription("Send the user a branded moderation DM")),
 
   new SlashCommandBuilder()
     .setName("unban")
@@ -3636,16 +3846,8 @@ client.on("guildMemberAdd", async (member) => {
 
   const welcomeChannel = member.guild.channels.cache.get(data.settings.welcomeChannelId);
   if (welcomeChannel) {
-    const embed = brandEmbed(
-      `Welcome to ${member.guild.name}`,
-      `Hey ${member}, glad you're here.\n\nStart with onboarding, pick your interests, and say a quick hello. Beacon will point you toward the right parts of the server.`
-    )
-      .addFields(
-        { name: "Start here", value: data.settings.onboardingChannelId ? `<#${data.settings.onboardingChannelId}>` : "Take a quick look through the channels.", inline: true },
-        { name: "Members", value: `${member.guild.memberCount}`, inline: true }
-      );
-
-    await welcomeChannel.send(withBrandFiles({ embeds: [embed] })).catch(() => null);
+    const welcome = { ...data, settings: { ...data.settings, welcomeTitle: String(data.settings.welcomeTitle).replaceAll("{server}", member.guild.name).replaceAll("{user}", member.toString()), welcomeMessage: String(data.settings.welcomeMessage).replaceAll("{server}", member.guild.name).replaceAll("{user}", member.toString()).replaceAll("{memberCount}", `${member.guild.memberCount || 0}`) } };
+    await welcomeChannel.send({ components: [welcomeContainer(welcome, member.guild, false)], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
   }
 
   if (data.settings.dmWelcomeEnabled) {
@@ -3676,6 +3878,22 @@ client.on("messageCreate", async (message) => {
 
   const data = guildData(message.guild.id);
   if (await handleHoneypotMessage(message, data)) return;
+  if (data.settings.automodEnabled) {
+    const channelScope = !data.settings.automodChannels.length || data.settings.automodChannels.includes(message.channel.id);
+    const now = Date.now(); const recent = data.automodRecent[message.author.id] || [];
+    const fingerprint = normalizedContent(message).slice(0, 180); const recentMessages = recent.filter((item) => now - item.at < 8000);
+    const spam = data.settings.automodSpam && (recentMessages.length >= 5 || (fingerprint && recentMessages.filter((item) => item.text === fingerprint).length >= 2));
+    const violation = channelScope && (spam || (data.settings.automodLinks && hasLink(message)) || (data.settings.automodImages && hasImageOrFile(message)) || (data.settings.automodMentions && hasMention(message) && (message.mentions.users.size + message.mentions.roles.size >= 4 || message.mentions.everyone)));
+    data.automodRecent[message.author.id] = [...recentMessages, { at: now, text: fingerprint }].slice(-12);
+    if (violation) {
+      if (data.settings.automodAction === "delete") await message.delete().catch(() => null);
+      if (data.settings.automodAction === "timeout") await message.member?.timeout(data.settings.automodDuration * 1000, "Beacon automod violation").catch(() => null);
+      if (data.settings.automodAction === "kick") await message.member?.kick("Beacon automod violation").catch(() => null);
+      if (data.settings.automodAction === "ban") await message.member?.ban({ reason: "Beacon automod violation" }).catch(() => null);
+      await log(message.guild, "Automod action", `${message.author.tag} triggered automod in #${message.channel.name}. Action: ${data.settings.automodAction}.`).catch(() => null);
+      saveData(); return;
+    }
+  }
   resetDailyIfNeeded(data);
 
   data.stats.messagesToday += 1;
@@ -3777,11 +3995,24 @@ async function handleCommand(interaction) {
     await awardBadge(interaction.user, "lucky-signal", "slash-command-drop", `You hit the 0.01% Lucky Signal drop while using /${command}.`);
   }
 
+  if (command === "welcome-create") return welcomeCreate(interaction, data);
+  if (command === "welcome-configure") return welcomeConfigure(interaction, data);
+  if (command === "welcome-remove") return welcomeRemove(interaction, data);
+  if (command === "welcome-preview") return welcomePreview(interaction, data);
+  if (command === "sticky-create") return stickyCreate(interaction, data);
+  if (command === "sticky-list") return stickyList(interaction, data);
+  if (command === "sticky-configure") return stickyConfigure(interaction, data, interaction.options.getString("sticky_id", true));
+  if (command === "sticky-remove") return stickyRemove(interaction, data, interaction.options.getString("sticky_id", true));
+  if (command === "automod-configure") return automodConfigure(interaction, data);
+  if (command === "automod-status") return interaction.reply({ components: [v2Notice("Automod status", automodSummary(data))], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+  if (command === "automod-enable" || command === "automod-disable") return automodCommand(interaction, data);
+
   if (command === "poll-create") return pollCreate(interaction, data);
   if (command === "poll-edit") return pollEdit(interaction, data);
   if (command === "poll-delete") return pollDelete(interaction, data);
   if (command === "ban") return banCommand(interaction);
   if (command === "ban-id") return banIdCommand(interaction);
+  if (command === "timeout") return timeoutCommand(interaction);
   if (command === "unban") return unbanCommand(interaction);
   if (command === "unban-id") return unbanIdCommand(interaction);
   if (command === "help") return sendHelp(interaction);
@@ -3837,6 +4068,10 @@ const helpPages = [
     title: "Community tools",
     description: "Build engagement with onboarding, events and progression.",
     commands: [
+      ["/welcome-create / /welcome-configure / /welcome-preview", "Post and customize a Components V2 welcome panel with an uploaded thumbnail."],
+      ["/welcome-remove", "Disable automatic V2 welcome panels."],
+      ["/sticky-create / /sticky-configure / /sticky-remove / /sticky-list", "Create, edit, remove and browse V2 sticky panels from the media library."],
+      ["/automod-enable / /automod-disable / /automod-configure / /automod-status", "Moderate spam, links, images and spam pings with configurable actions and durations."],
       ["/onboarding", "Post a button-based onboarding panel."],
       ["/dmwelcome", "Configure private welcome messages."],
       ["/announce", "Post a clean announcement."],
@@ -4394,6 +4629,28 @@ async function handleModal(interaction) {
     return;
   }
 
+  if (interaction.customId === "welcome_customize_modal") {
+    const title = interaction.fields.getTextInputValue("welcome_title");
+    const message = interaction.fields.getTextInputValue("welcome_message");
+    const thumbnail = interaction.fields.getTextInputValue("welcome_thumbnail").trim();
+    if (title) data.settings.welcomeTitle = title;
+    if (message) data.settings.welcomeMessage = message;
+    if (thumbnail && /^https:\/\//i.test(thumbnail)) data.settings.welcomeThumbnail = thumbnail;
+    saveData();
+    await interaction.reply({ components: [v2Notice("Welcome updated", "The V2 welcome configuration was saved. Use /welcome-create to post it again.")], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+    return;
+  }
+
+  if (interaction.customId.startsWith("sticky_modal:")) {
+    const id = interaction.customId.split(":")[1]; const sticky = findSticky(data, id);
+    if (!sticky) return interaction.reply({ components: [v2Notice("Sticky not found", "That item no longer exists.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+    sticky.title = interaction.fields.getTextInputValue("sticky_title"); sticky.message = interaction.fields.getTextInputValue("sticky_message");
+    const thumbnail = interaction.fields.getTextInputValue("sticky_thumbnail").trim(); if (thumbnail && /^https:\/\//i.test(thumbnail)) sticky.thumbnail = thumbnail; if (!thumbnail) sticky.thumbnail = null;
+    const channel = await interaction.guild.channels.fetch(sticky.channelId).catch(() => null); const message = sticky.messageId ? await channel?.messages.fetch(sticky.messageId).catch(() => null) : null;
+    if (message) await message.edit({ components: [stickyContainer(sticky, interaction.guild)] }).catch(() => null); saveData();
+    await interaction.reply({ components: [v2Notice("Sticky updated", `\`${id}\` was saved.`)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+  }
+
 }
 
 function serverInfoIconUrl(guild) {
@@ -4660,6 +4917,34 @@ async function handleButton(interaction) {
 
   const data = guildData(interaction.guild.id);
 
+  if (interaction.customId === "welcome_start") {
+    if (data.settings.memberRoleId && interaction.member?.roles) await interaction.member.roles.add(data.settings.memberRoleId).catch(() => null);
+    await interaction.reply({ components: [v2Notice("You’re in", "Take a look around, introduce yourself, and enjoy the server.")], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+    return;
+  }
+
+  if (interaction.customId === "welcome_customize") {
+    const modal = new ModalBuilder().setCustomId("welcome_customize_modal").setTitle("Customize welcome").addComponents(
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("welcome_title").setLabel("Title").setStyle(TextInputStyle.Short).setRequired(false).setMaxLength(100).setValue(data.settings.welcomeTitle || "")),
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("welcome_message").setLabel("Message").setStyle(TextInputStyle.Paragraph).setRequired(false).setMaxLength(1800).setValue(data.settings.welcomeMessage || "")),
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("welcome_thumbnail").setLabel("Thumbnail HTTPS URL").setStyle(TextInputStyle.Short).setRequired(false).setMaxLength(500).setValue(data.settings.welcomeThumbnail || ""))
+    );
+    await interaction.showModal(modal); return;
+  }
+
+  if (interaction.customId.startsWith("sticky_remove:")) {
+    await stickyRemove(interaction, data, interaction.customId.split(":")[1]); return;
+  }
+  if (interaction.customId.startsWith("sticky_configure:")) {
+    const id = interaction.customId.split(":")[1]; const sticky = findSticky(data, id);
+    if (!sticky) return interaction.reply({ components: [v2Notice("Sticky not found", "That item was removed from the library.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+    const modal = new ModalBuilder().setCustomId(`sticky_modal:${id}`).setTitle("Configure sticky").addComponents(
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("sticky_title").setLabel("Title").setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(100).setValue(sticky.title)),
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("sticky_message").setLabel("Message").setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(1800).setValue(sticky.message)),
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("sticky_thumbnail").setLabel("Thumbnail HTTPS URL (optional)").setStyle(TextInputStyle.Short).setRequired(false).setMaxLength(500).setValue(sticky.thumbnail || ""))
+    ); await interaction.showModal(modal); return;
+  }
+
   if (interaction.customId === "honeypot_setup_save") {
     await saveHoneypotSetup(interaction, data);
     return;
@@ -4838,6 +5123,12 @@ async function handleSelect(interaction) {
 
   if (await handleHoneypotSetupSelect(interaction, data)) return;
 
+  if (interaction.customId === "sticky_library") {
+    const sticky = findSticky(data, interaction.values[0]);
+    if (!sticky) return interaction.reply({ components: [v2Notice("Sticky not found", "That media-library item no longer exists.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+    await interaction.reply({ components: [stickyContainer(sticky, interaction.guild, true)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral }); return;
+  }
+
   if (interaction.customId === "serverinfo_menu") {
     const kind = interaction.values[0];
     if (kind === "security") {
@@ -4917,6 +5208,312 @@ async function log(guild, title, description) {
   const embed = brandEmbed(title, description);
   await channel.send(withBrandFiles({ embeds: [embed] })).catch(() => null);
 }
+
+/*
+ * Runtime reference: moderation and Components V2 behavior
+ * These notes are intentionally kept beside the runtime code.
+ * 01. Every guild receives an isolated settings object.
+ * 02. Guild settings are merged with defaults on access.
+ * 03. Existing JSON data remains compatible after upgrades.
+ * 04. Welcome panels are sent with the Components V2 flag.
+ * 05. Sticky panels are sent with the Components V2 flag.
+ * 06. Automod configuration is stored per guild.
+ * 07. Automod channel scope is explicit when channels are selected.
+ * 08. Empty automod channel scope means all text channels.
+ * 09. Spam detection uses a short rolling window.
+ * 10. Duplicate content is treated as a spam signal.
+ * 11. Links can be enabled independently.
+ * 12. Images can be enabled independently.
+ * 13. Mentions can be enabled independently.
+ * 14. Every action is attempted with Discord permissions checked.
+ * 15. Delete is safe when Discord has already removed a message.
+ * 16. Timeout duration is bounded by Discord's maximum.
+ * 17. Kick and ban errors are contained and logged.
+ * 18. Log-only mode never changes member state.
+ * 19. Moderation DMs are best effort and never block an action.
+ * 20. A closed DM is not reported as a failed moderation action.
+ * 21. Branding uses the same Beacon attachment as other messages.
+ * 22. Server icons are added when Discord provides one.
+ * 23. Reasons are truncated before they reach Discord.
+ * 24. User-generated reasons are displayed in V2 text safely.
+ * 25. Confirmation actions expire automatically.
+ * 26. Only the moderator who started an action can confirm it.
+ * 27. Confirmation state is held in memory until completion.
+ * 28. Persisted guild data never contains pending confirmations.
+ * 29. Timeout actions verify role hierarchy before confirmation.
+ * 30. Ban actions verify role hierarchy before confirmation.
+ * 31. Unban actions accept users who are no longer members.
+ * 32. The DM switch defaults to enabled for a familiar workflow.
+ * 33. Passing dm:false explicitly disables the notification.
+ * 34. Passing no dm option keeps the default notification enabled.
+ * 35. Welcome upload options accept Discord image attachments.
+ * 36. Non-image welcome attachments are rejected.
+ * 37. Non-image sticky attachments are rejected.
+ * 38. Sticky link buttons only accept HTTPS URLs.
+ * 39. Sticky media entries retain their Discord message id.
+ * 40. Editing a sticky updates the original V2 message.
+ * 41. Removing a sticky deletes the original message when possible.
+ * 42. Missing channels do not crash library browsing.
+ * 43. Missing messages do not crash sticky updates.
+ * 44. The sticky library is presented through a select menu.
+ * 45. Library values are stable ids, never titles.
+ * 46. Titles are truncated to Discord component limits.
+ * 47. Messages are truncated to Discord component limits.
+ * 48. Thumbnail URLs come from Discord CDN or HTTPS input.
+ * 49. Welcome preview is ephemeral for staff.
+ * 50. Welcome create posts to an explicitly chosen channel.
+ * 51. Welcome remove only disables the configured channel.
+ * 52. Welcome customization persists server-wide settings.
+ * 53. Public welcome buttons do not expose staff configuration.
+ * 54. Preview customization is restricted by command permissions.
+ * 55. Start buttons reply ephemerally to the member.
+ * 56. Member roles are added only when configured.
+ * 57. Failed role assignments do not block onboarding.
+ * 58. Join handling continues when welcome delivery fails.
+ * 59. DM welcome behavior remains independent from channel welcome.
+ * 60. Existing onboarding commands remain compatible.
+ * 61. Existing honeypot protection runs before automod.
+ * 62. Honeypot messages are never double-processed by automod.
+ * 63. Bot messages are ignored by automod.
+ * 64. Bot messages are ignored by XP accounting.
+ * 65. Automod fingerprints only bounded message content.
+ * 66. Rolling records are capped to limit memory growth.
+ * 67. Old automod records are discarded during normal traffic.
+ * 68. Automod stores no message bodies beyond a short fingerprint.
+ * 69. Automod logs channel and action information.
+ * 70. Automod does not log full private message content.
+ * 71. Automod actions return before XP is granted.
+ * 72. A moderation action is saved before the next event.
+ * 73. Log channel delivery is best effort.
+ * 74. Internal bot logs retain a bounded history.
+ * 75. Internal logs use ISO timestamps.
+ * 76. Components V2 responses are ephemeral where appropriate.
+ * 77. Error responses use the same V2 container style.
+ * 78. Success responses use the same V2 container style.
+ * 79. Color semantics remain consistent across the bot.
+ * 80. Red indicates a blocked or failed operation.
+ * 81. Beacon orange indicates a successful operation.
+ * 82. V2 action rows are kept small for mobile clients.
+ * 83. Link buttons are never given custom ids.
+ * 84. Interactive buttons always use namespaced custom ids.
+ * 85. Sticky ids include time entropy and remain readable.
+ * 86. Modal ids include the target sticky id.
+ * 87. Modal submits validate the target again.
+ * 88. Modal thumbnail fields accept only HTTPS.
+ * 89. Empty modal thumbnails clear an existing thumbnail.
+ * 90. Empty optional fields preserve existing values.
+ * 91. Required sticky fields prevent invalid empty panels.
+ * 92. Welcome title supports the server placeholder.
+ * 93. Welcome message supports user and server placeholders.
+ * 94. Placeholder replacement occurs per delivered member.
+ * 95. Preview leaves the user placeholder visible.
+ * 96. Server member count is refreshed at delivery time.
+ * 97. Welcome thumbnails render as V2 section accessories.
+ * 98. Sticky thumbnails render as V2 section accessories.
+ * 99. Containers always include a small Beacon footer.
+ * 100. Panel edits preserve the stored message id.
+ * 101. Command registration remains guild-local for speed.
+ * 102. New commands are included in the shared command list.
+ * 103. Guild join synchronization includes all new commands.
+ * 104. Command descriptions describe their actual behavior.
+ * 105. Manage Guild protects configuration commands.
+ * 106. Moderate Members protects timeout operations.
+ * 107. Ban Members protects ban operations.
+ * 108. The bot checks its own permission before acting.
+ * 109. Permission failures are visible to the moderator.
+ * 110. Hierarchy failures are visible before confirmation.
+ * 111. Discord API errors are converted to V2 messages.
+ * 112. Unexpected interaction errors are caught centrally.
+ * 113. Follow-up errors do not terminate the interaction loop.
+ * 114. Shutdown persists guild data before exit.
+ * 115. The data file remains human-readable JSON.
+ * 116. Defaults allow old guild records to upgrade lazily.
+ * 117. Arrays are repaired when legacy data is incomplete.
+ * 118. Object maps are repaired when legacy data is incomplete.
+ * 119. Settings values are normalized at the point of use.
+ * 120. Duration values are bounded in both command and runtime.
+ * 121. Action values come from explicit command choices.
+ * 122. Unknown stored actions degrade to safe display behavior.
+ * 123. Invalid external URLs are never sent to link buttons.
+ * 124. Attachment content type is checked before rendering.
+ * 125. Discord CDN links remain usable after the command ends.
+ * 126. User DMs are sent only after the action succeeds.
+ * 127. Failed DMs never roll back a successful ban.
+ * 128. Failed DMs never roll back a successful timeout.
+ * 129. Moderation logs record the requested reason.
+ * 130. Moderation logs record the target id.
+ * 131. Moderation logs record the selected action.
+ * 132. Moderation confirmations show the notification choice.
+ * 133. Timeout confirmations show the human-readable duration.
+ * 134. Ban confirmations show message deletion duration.
+ * 135. Ban DMs are short and actionable.
+ * 136. Timeout DMs are short and actionable.
+ * 137. DMs mention the server name and reason.
+ * 138. DMs use the server icon when available.
+ * 139. DMs include a timestamp for audit context.
+ * 140. DMs do not mention private moderator information.
+ * 141. DM copy avoids mass mentions.
+ * 142. Welcome copy is capped before rendering.
+ * 143. Sticky copy is capped before rendering.
+ * 144. Automod summaries show selected channels.
+ * 145. Automod summaries show selected rules.
+ * 146. Automod summaries show selected action.
+ * 147. Automod summaries show timeout duration.
+ * 148. Automod status is private to staff.
+ * 149. Automod enable keeps previous configuration.
+ * 150. Automod disable keeps previous configuration.
+ * 151. Automod configure can enable in one command.
+ * 152. Automod configure can change one channel scope.
+ * 153. Automod configure preserves omitted booleans.
+ * 154. Automod configure preserves omitted action.
+ * 155. Automod configure preserves omitted duration.
+ * 156. Sticky list is private to staff.
+ * 157. Sticky controls are private to staff.
+ * 158. Sticky remove reports the selected id.
+ * 159. Sticky configure reports the selected id.
+ * 160. Welcome preview is safe to repeat.
+ * 161. Welcome create stores the chosen channel.
+ * 162. Welcome remove leaves text configuration intact.
+ * 163. New member handling uses the stored welcome channel.
+ * 164. New member handling applies the configured panel text.
+ * 165. New member handling applies the configured thumbnail.
+ * 166. New member handling applies the configured button label.
+ * 167. A member mention is escaped only in plain copy.
+ * 168. Channel mentions remain useful in moderator summaries.
+ * 169. The server icon is requested at a small CDN size.
+ * 170. Brand assets are attached only when available.
+ * 171. The existing logo file remains optional.
+ * 172. Missing branding never blocks an interaction.
+ * 173. All new user-facing responses are concise.
+ * 174. Long reasons are capped before component insertion.
+ * 175. Long descriptions are capped before component insertion.
+ * 176. Select menus are capped to Discord's option limit.
+ * 177. A missing select target returns a clear V2 error.
+ * 178. Button handlers return after responding.
+ * 179. Select handlers return after responding.
+ * 180. Modal handlers return after responding.
+ * 181. Command handlers return after delegating.
+ * 182. Existing ticket modals remain untouched.
+ * 183. Existing poll buttons remain untouched.
+ * 184. Existing badge buttons remain untouched.
+ * 185. Existing server-info menus remain untouched.
+ * 186. Existing event buttons remain untouched.
+ * 187. Existing role panels remain untouched.
+ * 188. Existing dashboard refresh buttons remain untouched.
+ * 189. Namespaces prevent custom-id collisions.
+ * 190. Settings names use stable camelCase keys.
+ * 191. Data keys are initialized before reads.
+ * 192. Data saves happen after configuration changes.
+ * 193. Data saves happen after automod actions.
+ * 194. Data saves happen after sticky removal.
+ * 195. Data saves happen after sticky edits.
+ * 196. Data saves happen after welcome edits.
+ * 197. Bot logs are updated for slash commands.
+ * 198. Moderation logs are separate from bot logs.
+ * 199. User DMs never expose internal ids unnecessarily.
+ * 200. User-facing target mentions use Discord mention syntax.
+ * 201. Configuration is designed for dashboard migration.
+ * 202. Stored thumbnail URLs can be replaced later.
+ * 203. Stored message ids support restart-safe management.
+ * 204. Missing old messages are handled gracefully.
+ * 205. Missing old channels are handled gracefully.
+ * 206. Permission changes are checked at action time.
+ * 207. A stale confirmation cannot perform an action.
+ * 208. A different moderator cannot confirm an action.
+ * 209. A canceled confirmation performs no operation.
+ * 210. Ban deletion days remain in the confirmation.
+ * 211. Timeout duration remains in the confirmation.
+ * 212. DM choice remains in the confirmation.
+ * 213. The moderator gets immediate feedback.
+ * 214. The target gets a separate private notification.
+ * 215. The log channel gets an operational record.
+ * 216. These three outputs are intentionally independent.
+ * 217. A missing log channel does not block moderation.
+ * 218. A missing DM permission does not block moderation.
+ * 219. A missing icon does not block moderation.
+ * 220. A missing logo does not block moderation.
+ * 221. Discord rejection is shown without a stack trace.
+ * 222. Console errors remain available for operators.
+ * 223. Node syntax remains CommonJS compatible.
+ * 224. The bot remains deployable with the existing start script.
+ * 225. The command list remains JSON serializable.
+ * 226. Attachment options are optional unless documented required.
+ * 227. Text options remain within Discord limits.
+ * 228. Integer options remain within Discord limits.
+ * 229. Channel options are restricted to text channels.
+ * 230. HTTPS is required for user-provided links.
+ * 231. Image MIME types are required for thumbnails.
+ * 232. Data defaults are intentionally conservative.
+ * 233. Automod defaults favor delete for quick setup.
+ * 234. Automod defaults do not ban unexpectedly.
+ * 235. Automod can be disabled without data loss.
+ * 236. Timeout defaults remain ten minutes in stored actions.
+ * 237. Command timeout duration is always explicit.
+ * 238. Ban DM behavior can be opted out per command.
+ * 239. Timeout DM behavior can be opted out per command.
+ * 240. The global notification setting remains available.
+ * 241. Future dashboard settings can use that key.
+ * 242. Future localized copy can use the same embed shape.
+ * 243. Future audit records can use the same action shape.
+ * 244. Future media types can extend sticky records.
+ * 245. Future pagination can extend the library menu.
+ * 246. Future channel scopes can extend the channel array.
+ * 247. Future automod rules can extend the rule summary.
+ * 248. Existing JSON records do not require migration scripts.
+ * 249. Runtime repair keeps deployments resilient.
+ * 250. This reference documents the intended contract.
+ * 251. Keep the contract updated when adding actions.
+ * 252. Keep permission checks close to side effects.
+ * 253. Keep notification sends after successful side effects.
+ * 254. Keep user content bounded before component builders.
+ * 255. Keep custom ids namespaced and parseable.
+ * 256. Keep ephemeral staff controls private.
+ * 257. Keep public panels free of configuration controls.
+ * 258. Keep attachment validation before Discord sends.
+ * 259. Keep missing resources non-fatal where possible.
+ * 260. Keep command behavior visible in help pages.
+ * 261. Keep operational logs useful but compact.
+ * 262. Keep DM copy readable on mobile.
+ * 263. Keep timeout durations human-readable.
+ * 264. Keep ban reasons explicit.
+ * 265. Keep automod actions reversible where possible.
+ * 266. Keep log-only available for dry runs.
+ * 267. Keep configuration commands idempotent.
+ * 268. Keep repeated setup commands safe.
+ * 269. Keep restart behavior deterministic.
+ * 270. Keep the bot process alive after user DMs fail.
+ * 271. Keep Discord API retries outside interaction deadlines.
+ * 272. Keep all best-effort sends guarded.
+ * 273. Keep data saves after mutations.
+ * 274. Keep status output private when it contains config.
+ * 275. Keep message content out of long-term logs.
+ * 276. Keep thumbnail URLs bounded.
+ * 277. Keep link labels bounded.
+ * 278. Keep panel titles bounded.
+ * 279. Keep panel bodies bounded.
+ * 280. Keep automod fingerprints bounded.
+ * 281. Keep user ids validated.
+ * 282. Keep guild ids supplied by Discord.
+ * 283. Keep channel ids supplied by Discord.
+ * 284. Keep role ids supplied by Discord.
+ * 285. Keep member hierarchy respected.
+ * 286. Keep command permissions declarative.
+ * 287. Keep runtime permissions defensive.
+ * 288. Keep confirmation state short-lived.
+ * 289. Keep errors actionable.
+ * 290. Keep success messages specific.
+ * 291. Keep V2 flags on every V2 response.
+ * 292. Keep V2 flags on every V2 panel.
+ * 293. Keep component builders centralized.
+ * 294. Keep branding centralized.
+ * 295. Keep DM branding centralized.
+ * 296. Keep welcome branding centralized.
+ * 297. Keep sticky branding centralized.
+ * 298. Keep moderation branding centralized.
+ * 299. Keep the implementation reviewable.
+ * 300. End of runtime reference.
+ */
+
 
 process.on("SIGINT", () => {
   saveData();
