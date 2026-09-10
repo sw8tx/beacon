@@ -3074,7 +3074,7 @@ async function logSetup(interaction, data) {
   if (!channel && enabled === null) data.settings.logChannelEnabled = Boolean(data.settings.logChannelId);
   saveData();
   const destination = data.settings.logChannelId ? `<#${data.settings.logChannelId}>` : "not configured";
-  await interaction.reply({ components: [v2Notice("Log setup saved", `Status: **${data.settings.logChannelEnabled ? "Enabled" : "Disabled"}**\nDestination: ${destination}\n\nBeacon writes commands, moderation actions, ticket events, message deletions and sent moderation DMs there. Each entry includes a readable `.txt` audit file.`)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+  await interaction.reply({ components: [v2Notice("Log setup saved", `Status: **${data.settings.logChannelEnabled ? "Enabled" : "Disabled"}**\nDestination: ${destination}\n\nBeacon writes commands, moderation actions, ticket events, message deletions and sent moderation DMs there. Each entry includes a readable TXT audit file.`)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
 }
 
 const commands = [
