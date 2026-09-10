@@ -127,6 +127,9 @@ const defaultGuildData = () => ({
     welcomeMessage: "Hey {user}, glad you're here. Start with onboarding, pick your interests, and say hello.",
     welcomeThumbnail: null,
     welcomeButtonLabel: "Start here",
+    welcomeButtonUrl: null,
+    welcomeButton2Label: null,
+    welcomeButton2Url: null,
     logChannelId: null,
     logChannelEnabled: false,
     memberRoleId: null,
@@ -2892,8 +2895,9 @@ function v2Notice(title, body, accent = BRAND_COLOR) {
 }
 
 function welcomeContainer(data, guild, preview = false) {
-  const title = String(data.settings.welcomeTitle || "Welcome to {server}").replaceAll("{server}", guild.name).replaceAll("{memberCount}", `${guild.memberCount || 0}`);
-  const body = String(data.settings.welcomeMessage || "Welcome!").replaceAll("{server}", guild.name).replaceAll("{memberCount}", `${guild.memberCount || 0}`);
+  const replaceWelcomePlaceholders = (value) => String(value || "").replace(/\{server\}/gi, guild.name).replace(/\{servermember\}/gi, "@new member").replace(/\{membercount\}/gi, `${guild.memberCount || 0}`);
+  const title = replaceWelcomePlaceholders(data.settings.welcomeTitle || "Welcome to {server}");
+  const body = replaceWelcomePlaceholders(data.settings.welcomeMessage || "Welcome!");
   const header = new SectionBuilder().addTextDisplayComponents(
     new TextDisplayBuilder().setContent(`## ${title}\n${body}`)
   );
@@ -2901,12 +2905,14 @@ function welcomeContainer(data, guild, preview = false) {
   if (data.settings.welcomeThumbnail) header.setThumbnailAccessory(new ThumbnailBuilder().setURL(data.settings.welcomeThumbnail).setDescription("Welcome thumbnail"));
   if (data.settings.welcomeThumbnail) container.addSectionComponents(header);
   else container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}\n${body}`));
+  const buttons = [];
+  if (data.settings.welcomeButtonUrl) buttons.push(new ButtonBuilder().setLabel(data.settings.welcomeButtonLabel || "Open link").setStyle(ButtonStyle.Link).setURL(data.settings.welcomeButtonUrl));
+  else buttons.push(new ButtonBuilder().setCustomId("welcome_start").setLabel(data.settings.welcomeButtonLabel || "Start here").setStyle(ButtonStyle.Primary));
+  if (data.settings.welcomeButton2Url) buttons.push(new ButtonBuilder().setLabel(data.settings.welcomeButton2Label || "Learn more").setStyle(ButtonStyle.Link).setURL(data.settings.welcomeButton2Url));
+  else if (preview) buttons.push(new ButtonBuilder().setCustomId("welcome_customize").setLabel("Customize").setStyle(ButtonStyle.Secondary).setDisabled(true));
   return container
     .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
-    .addActionRowComponents(new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("welcome_start").setLabel(data.settings.welcomeButtonLabel || "Start here").setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId("welcome_customize").setLabel("Customize").setStyle(ButtonStyle.Secondary).setDisabled(!preview)
-    ))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(buttons))
     .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# Configure this welcome panel with /welcome-configure"));
 }
 
@@ -2968,6 +2974,9 @@ async function welcomeConfigure(interaction, data) {
   const title = interaction.options.getString("title");
   const message = interaction.options.getString("message");
   const buttonLabel = interaction.options.getString("button_label");
+  const buttonUrl = interaction.options.getString("button_url");
+  const button2Label = interaction.options.getString("button2_label");
+  const button2Url = interaction.options.getString("button2_url");
   const thumbnail = interaction.options.getAttachment("thumbnail");
   if (thumbnail && !String(thumbnail.contentType || "").startsWith("image/")) {
     await interaction.reply({ components: [v2Notice("Invalid thumbnail", "Upload an image file such as PNG, JPG, GIF or WEBP.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
@@ -2978,6 +2987,11 @@ async function welcomeConfigure(interaction, data) {
   if (message) data.settings.welcomeMessage = message;
   if (buttonLabel) data.settings.welcomeButtonLabel = buttonLabel;
   if (thumbnail) data.settings.welcomeThumbnail = thumbnail.url;
+  if (buttonUrl !== null && !/^https:\/\//i.test(buttonUrl)) return interaction.reply({ components: [v2Notice("Invalid button URL", "Button links must use HTTPS.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+  if (button2Url !== null && !/^https:\/\//i.test(button2Url)) return interaction.reply({ components: [v2Notice("Invalid second button URL", "Button links must use HTTPS.", Colors.Red)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+  if (buttonUrl !== null) data.settings.welcomeButtonUrl = buttonUrl || null;
+  if (button2Label) data.settings.welcomeButton2Label = button2Label;
+  if (button2Url !== null) data.settings.welcomeButton2Url = button2Url || null;
   saveData();
   await interaction.reply({ components: [v2Notice("Welcome saved", `New members will receive the V2 welcome in ${data.settings.welcomeChannelId ? `<#${data.settings.welcomeChannelId}>` : "the configured welcome channel"}.\n\n${automodSafeText(data.settings.welcomeMessage)}`)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
 }
@@ -3065,7 +3079,7 @@ async function logSetup(interaction, data) {
 const commands = [
   new SlashCommandBuilder().setName("log-setup").setDescription("Configure the central Beacon audit log channel.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addChannelOption((o) => o.setName("channel").setDescription("Where audit events should be posted").addChannelTypes(ChannelType.GuildText)).addBooleanOption((o) => o.setName("enabled").setDescription("Enable or disable central logging")),
   new SlashCommandBuilder().setName("welcome-create").setDescription("Post the configured Components V2 welcome panel.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addChannelOption((o) => o.setName("channel").setDescription("Where to post it").addChannelTypes(ChannelType.GuildText).setRequired(true)),
-  new SlashCommandBuilder().setName("welcome-configure").setDescription("Configure welcome text, button and thumbnail upload.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addChannelOption((o) => o.setName("channel").setDescription("Welcome channel").addChannelTypes(ChannelType.GuildText)).addStringOption((o) => o.setName("title").setDescription("Panel title; supports {server}").setMaxLength(100)).addStringOption((o) => o.setName("message").setDescription("Panel message; supports {user}, {server}").setMaxLength(1800)).addStringOption((o) => o.setName("button_label").setDescription("Welcome button label").setMaxLength(80)).addAttachmentOption((o) => o.setName("thumbnail").setDescription("Upload an image thumbnail")),
+  new SlashCommandBuilder().setName("welcome-configure").setDescription("Configure welcome text, two buttons and thumbnail upload.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addChannelOption((o) => o.setName("channel").setDescription("Welcome channel").addChannelTypes(ChannelType.GuildText)).addStringOption((o) => o.setName("title").setDescription("Panel title; supports {server}, {servermember}").setMaxLength(100)).addStringOption((o) => o.setName("message").setDescription("Panel message; supports {user}, {server}, {servermember}").setMaxLength(1800)).addStringOption((o) => o.setName("button_label").setDescription("First button label").setMaxLength(80)).addStringOption((o) => o.setName("button_url").setDescription("Optional HTTPS link for the first button; empty restores Start here").setMaxLength(500)).addStringOption((o) => o.setName("button2_label").setDescription("Second button label").setMaxLength(80)).addStringOption((o) => o.setName("button2_url").setDescription("Optional HTTPS link for the second button").setMaxLength(500)).addAttachmentOption((o) => o.setName("thumbnail").setDescription("Upload an image thumbnail")),
   new SlashCommandBuilder().setName("welcome-remove").setDescription("Disable welcome messages for new members.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
   new SlashCommandBuilder().setName("welcome-preview").setDescription("Preview the configured Components V2 welcome panel.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
   new SlashCommandBuilder().setName("sticky-create").setDescription("Create a Components V2 sticky panel.").setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild).addChannelOption((o) => o.setName("channel").setDescription("Where to post the sticky").addChannelTypes(ChannelType.GuildText).setRequired(true)).addStringOption((o) => o.setName("title").setDescription("Sticky title").setMaxLength(100).setRequired(true)).addStringOption((o) => o.setName("message").setDescription("Sticky content").setMaxLength(1800).setRequired(true)).addAttachmentOption((o) => o.setName("thumbnail").setDescription("Upload a thumbnail")).addStringOption((o) => o.setName("button_label").setDescription("Optional link button label").setMaxLength(80)).addStringOption((o) => o.setName("button_url").setDescription("Optional HTTPS button URL").setMaxLength(500)),
@@ -3916,7 +3930,8 @@ client.on("guildMemberAdd", async (member) => {
 
   const welcomeChannel = member.guild.channels.cache.get(data.settings.welcomeChannelId);
   if (welcomeChannel) {
-    const welcome = { ...data, settings: { ...data.settings, welcomeTitle: String(data.settings.welcomeTitle).replaceAll("{server}", member.guild.name).replaceAll("{user}", member.toString()), welcomeMessage: String(data.settings.welcomeMessage).replaceAll("{server}", member.guild.name).replaceAll("{user}", member.toString()).replaceAll("{memberCount}", `${member.guild.memberCount || 0}`) } };
+    const replaceMemberWelcome = (value) => String(value || "").replace(/\{server\}/gi, member.guild.name).replace(/\{servermember\}/gi, member.toString()).replace(/\{user\}/gi, member.toString()).replace(/\{membercount\}/gi, `${member.guild.memberCount || 0}`);
+    const welcome = { ...data, settings: { ...data.settings, welcomeTitle: replaceMemberWelcome(data.settings.welcomeTitle), welcomeMessage: replaceMemberWelcome(data.settings.welcomeMessage) } };
     await welcomeChannel.send({ components: [welcomeContainer(welcome, member.guild, false)], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
   }
 
