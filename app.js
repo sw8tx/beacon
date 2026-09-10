@@ -515,8 +515,6 @@ function makeDashboardTexture(THREE) {
 
 async function initThreeLaptop() {
   const stage = document.querySelector(".hero-stage");
-  // The static dashboard laptop is the production preview. It keeps the
-  // landing page responsive without starting a WebGL renderer or frame loop.
   if (!stage) return;
   stage.classList.add("is-fallback");
   return;

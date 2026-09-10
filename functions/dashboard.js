@@ -27,7 +27,6 @@ async function getDashboardServers(env, discordAccessToken, request) {
       }
     }
   } catch (_) {
-    // Direct bot lookups below remain the fallback.
   }
   try {
     const response = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
@@ -45,7 +44,6 @@ async function getDashboardServers(env, discordAccessToken, request) {
           });
           if (botGuildResponse.ok || botGuildResponse.status === 404) withBeacon = botGuildResponse.ok;
         } catch (_) {
-          // Keep the synced ID result if Discord is temporarily unavailable.
         }
       }
       return {

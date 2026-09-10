@@ -48,7 +48,6 @@ async function sendBadgeDm(env, userId) {
       }),
     });
   } catch (_) {
-    // Badge ownership is already stored; a closed DM must not break claiming.
   }
 }
 
