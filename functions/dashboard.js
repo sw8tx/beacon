@@ -1,6 +1,7 @@
 import { BEACON_BADGES } from "../badges/badge-data.js";
 import { iconForBadge } from "../badges/badge-icons.js";
 import { getConfig, getCookie, readSession } from "./api/auth/discord/_shared.js";
+import { manualBadgesForUser } from "../badges/manual-awards.js";
 
 function escapeHtml(value) {
   return String(value || "").replace(/[&<>"']/g, (character) => ({
@@ -90,6 +91,12 @@ async function getUnlockedBadgeIds(env, userId) {
   await env.STATUS_DB.prepare(`
     INSERT OR IGNORE INTO badge_unlocks (user_id, badge_id) VALUES (?, ?)
   `).bind(userId, "beacon-member").run();
+
+  for (const award of manualBadgesForUser(userId)) {
+    await env.STATUS_DB.prepare(
+      "INSERT OR IGNORE INTO badge_unlocks (user_id, badge_id) VALUES (?, ?)"
+    ).bind(userId, award.badgeId).run();
+  }
 
   const rows = await env.STATUS_DB.prepare(`
     SELECT badge_id FROM badge_unlocks WHERE user_id = ?

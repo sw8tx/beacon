@@ -47,6 +47,9 @@ export const BADGE_ICONS = {
     <path fill="url(#helper-a)" d="M8 30l13-17 12 7-13 20z"/><path fill="url(#helper-b)" d="M31 18l9-5 16 11-12 16-11-2-8 7-9-7 11-12z"/>
     <path stroke="#ffd34d" stroke-width="5" stroke-linecap="round" d="M22 42l7 8M16 39l7 9M36 40l-8 10"/>
   `),
+  "badge-hunter": svg(`
+    <circle cx="28" cy="28" r="17" fill="none" stroke="#ffc31c" stroke-width="6"/><path stroke="#ffc31c" stroke-width="7" stroke-linecap="round" d="M41 41l12 12"/><path fill="#ffc31c" d="M28 16l4 9 10 1-8 7 3 10-9-5-9 5 3-10-8-7 10-1z"/>
+  `),
   "bug-hunter": svg(`
     <defs><linearGradient id="bug-g" x1="12" y1="8" x2="52" y2="56"><stop stop-color="#3ea83a"/><stop offset="1" stop-color="#155c17"/></linearGradient></defs>
     <circle cx="28" cy="28" r="17" fill="none" stroke="url(#bug-g)" stroke-width="6"/><path stroke="url(#bug-g)" stroke-width="7" stroke-linecap="round" d="M41 41l12 12"/>

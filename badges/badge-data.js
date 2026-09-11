@@ -72,6 +72,15 @@ export const BEACON_BADGES = [
     hint: "Be useful in the community without farming it. Real help counts more than volume.",
   },
   {
+    id: "badge-hunter",
+    name: "Badge Hunter",
+    tag: "Special",
+    tone: "gold",
+    icon: "BH",
+    summary: "Found and collected a special Beacon badge.",
+    hint: "Awarded manually for discovering a hidden badge path.",
+  },
+  {
     id: "bug-hunter",
     name: "Bug Hunter",
     tag: "Report",

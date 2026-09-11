@@ -74,6 +74,7 @@ const BADGE_CATALOG = {
   prestige: { name: "Prestige", description: "You unlocked Beacon Prestige." },
   staff: { name: "Staff", description: "You are part of the Beacon team." },
   helper: { name: "Helper", description: "Your help made a real difference to the community." },
+  "badge-hunter": { name: "Badge Hunter", description: "You found and collected a special Beacon badge." },
   "bug-hunter": { name: "Bug Hunter", description: "You reported a confirmed Beacon bug." },
   "server-booster": { name: "Server Booster", description: "You boosted the official Beacon server." },
   witness: { name: "Witness", description: "You were present for a special Beacon moment." },
