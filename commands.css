@@ -954,3 +954,5 @@ code {
 .commands-home-modern .preview-caption strong { font-size: .9rem; font-weight: 700; }
 .commands-home-modern .preview-caption span { font-size: .76rem; }
 .commands-home-modern .commands-footer { margin-top: 0; }
+.commands-home-modern .commands-home-wrap { display: block; max-width: 760px; padding-top: 52px; }
+.commands-home-modern .commands-directory { max-width: 620px; margin: 0 auto; }
