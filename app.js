@@ -242,12 +242,9 @@ let discordSessionPromise = null;
 authRequiredLinks.forEach((link) => link.addEventListener("click", async (event) => {
   if (isDiscordSignedIn) return;
   event.preventDefault();
-  await discordSessionPromise;
-  if (isDiscordSignedIn) {
-    window.location.assign(link.href);
-    return;
-  }
-  showAuthRequired();
+  const target = new URL(link.href, window.location.origin);
+  const next = target.pathname + target.search + target.hash;
+  window.location.assign(`/api/auth/discord/login?next=${encodeURIComponent(next)}`);
 }));
 
 discordLogout?.addEventListener("click", async () => {
