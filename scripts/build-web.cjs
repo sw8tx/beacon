@@ -32,6 +32,23 @@ function copyPublic(relative, types) {
 
 for (const file of files) copyPublic(file, publicTypes);
 for (const directory of directories) copyPublic(directory, directory === 'assets' ? assetTypes : publicTypes);
+const sharedCommandFooter = '<footer class="site-footer commands-site-footer"><div class="footer-brand"><a href="/"><img src="/assets/beacon-logo.png?v=92" width="32" height="32" alt=""><strong>Beacon</strong></a><span>Built with ♥ by a solo developer</span></div><nav class="footer-legal" aria-label="Legal navigation"><a href="/tos">Terms of Use</a><a href="/privacy">Privacy Policy</a><a href="/copyright">Copyright Dispute</a><a href="/gdpr">GDPR Notice</a><a href="/cookies">Cookie Policy</a><a href="/eula">EULA</a><a href="/imprint/">Imprint</a></nav><p class="footer-rights">© 2026 Beacon. All rights reserved. Beacon is not affiliated with Discord Inc.</p></footer>';
+function addFooterToCommandPages(directory) {
+  const absolute = path.join(output, directory);
+  if (!fs.existsSync(absolute)) return;
+  for (const name of fs.readdirSync(absolute)) {
+    const entry = path.join(absolute, name);
+    const stat = fs.lstatSync(entry);
+    if (stat.isDirectory()) addFooterToCommandPages(path.join(directory, name));
+    else if (name.endsWith('.html')) {
+      const html = fs.readFileSync(entry, 'utf8');
+      if (html.includes('class="commands-page"') && !html.includes('commands-site-footer')) {
+        fs.writeFileSync(entry, html.replace('</body>', `${sharedCommandFooter}<script src="/site-runtime.js?v=120"></script></body>`));
+      }
+    }
+  }
+}
+addFooterToCommandPages('commands');
 const badgeRuntime = transformSync(fs.readFileSync(path.join(root, 'badges', 'badges.js'), 'utf8'), {
   minify: true,
   legalComments: 'none',
