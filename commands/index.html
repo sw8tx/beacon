@@ -3,52 +3,87 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Explore Beacon Discord bot commands for tickets, moderation, automation and community management." />
-    <title>Beacon Commands</title>
+    <meta name="theme-color" content="#11100e" />
+    <meta name="description" content="Browse every Beacon Discord bot command." />
+    <title>Commands | Beacon</title>
     <link rel="icon" type="image/png" href="/assets/beacon-logo.png?v=92" />
-    <link rel="stylesheet" href="/commands.css?v=7" />
+    <link rel="stylesheet" href="/commands.css?v=8" />
     <link rel="stylesheet" href="/cmd-page.css?v=1" />
   </head>
-  <body class="commands-page">
+  <body class="commands-page commands-home-modern">
     <nav class="commands-nav" aria-label="Beacon commands navigation">
-      <a class="commands-brand" href="https://beacon-bot.site/">
-        <img src="/assets/beacon-logo.png?v=92" width="34" height="34" alt="" />
-        <span>Beacon</span>
-      </a>
-      <a class="commands-back" href="https://beacon-bot.site/">Back to Beacon</a>
+      <a class="commands-brand" href="/"><img src="/assets/beacon-logo.png?v=92" width="34" height="34" alt="" /><span>Beacon</span></a>
+      <a class="commands-back" href="/">Back to Beacon</a>
     </nav>
 
-    <main class="commands-shell">
-      <section class="commands-doc">
-        <nav class="commands-tabs" aria-label="Command pages">
-          <a href="/commands/welcome/">Welcome</a><a href="/commands/sticky/">Sticky Notes</a><a href="/commands/automod/">Automod</a><a href="/commands/tickets/">Tickets</a>
-          <a href="/commands/emoji-steal/">Emoji Steal</a>
-          <a href="/commands/purge/">Purge</a><a href="/commands/honeypot/">Honeypot</a><a href="/commands/polls/">Polls</a>
-        </nav>
-        <h1>Beacon Commands</h1>
-        <p class="doc-lead">Pick the command section you want. Each page is split out so the docs stay centered, readable, and not squeezed into the sidebar.</p>
+    <main class="commands-home-wrap">
+      <section class="commands-home-hero">
+        <div class="home-kicker"><span></span> Command centre</div>
+        <h1>Everything your server needs.<br /><i>One command away.</i></h1>
+        <p>Set up the essentials, keep conversations tidy, and give your community better tools. Choose a command to see how it works in Discord.</p>
+        <div class="home-actions"><a class="home-action-primary" href="/commands/welcome/">Explore Welcome</a><a class="home-action-secondary" href="#directory">Browse all commands <span>↓</span></a></div>
+        <div class="home-metrics" aria-label="Command statistics"><span><b>60+</b> commands</span><span><b>8</b> command areas</span><span><b>24/7</b> automation</span></div>
+      </section>
 
-        <div class="commands-home-grid">
-          <a class="commands-home-card" href="/commands/welcome/"><strong>Welcome</strong><p>Post a Components V2 welcome panel with a button, custom copy, and an uploaded thumbnail.</p></a>
-          <a class="commands-home-card" href="/commands/sticky/"><strong>Sticky Notes</strong><p>Keep important messages at the bottom of a channel with automatic delete-and-repost behavior and a media library.</p></a>
-          <a class="commands-home-card" href="/commands/automod/"><strong>Automod</strong><p>Moderate spam, links, images, and spam pings with warnings, timeouts, DMs, and audit logs.</p></a>
-          <a class="commands-home-card" href="/commands/tickets/">
-            <strong>Tickets</strong>
-            <p>Setup, panels, claiming, closing, transcripts, and the ticket flow staff will use every day.</p>
-          </a>
-          <a class="commands-home-card" href="/commands/emoji-steal/">
-            <strong>Emoji Steal</strong>
-            <p>Single and bulk emoji stealing with keep-name options, confirmation, and result previews.</p>
-          </a>
-          <a class="commands-home-card" href="/commands/purge/">
-            <strong>Purge</strong>
-            <p>Fast message cleanup commands for recent messages, users, bots, links, invites, files, embeds, and text matches.</p>
-          </a>
-          <a class="commands-home-card" href="/commands/honeypot/"><strong>Honeypot</strong><p>Protect a decoy channel from spam bots with configurable moderation, ban actions and message cleanup.</p></a>
-          <a class="commands-home-card" href="/commands/polls/"><strong>Polls</strong><p>Create live Components V2 polls with multiple options, participant counts, voting and automatic expiry.</p></a>
+      <aside class="commands-directory" id="directory" aria-label="Command directory">
+        <div class="directory-topline"><div><small>BEACON LIBRARY</small><h2>Find a command</h2></div><span class="directory-count" id="directory-count">60+</span></div>
+        <label class="directory-search"><span aria-hidden="true">⌕</span><input id="command-search" type="search" placeholder="Search commands" autocomplete="off" /></label>
+        <div class="directory-list">
+          <section class="directory-group"><h3>Welcome <em>5</em></h3>
+            <a class="directory-command" href="/commands/welcome/"><code>/welcome-create</code><span>Post a welcome panel</span><b>↗</b></a><a class="directory-command" href="/commands/welcome/"><code>/welcome-configure</code><span>Edit text, buttons and thumbnail</span><b>↗</b></a><a class="directory-command" href="/commands/welcome/"><code>/welcome-preview</code><span>Preview the current panel</span><b>↗</b></a><a class="directory-command" href="/commands/welcome/"><code>/welcome-remove</code><span>Remove the welcome panel</span><b>↗</b></a>
+          </section>
+          <section class="directory-group"><h3>Sticky Notes <em>4</em></h3>
+            <a class="directory-command" href="/commands/sticky/"><code>/sticky-create</code><span>Pin a message to the bottom</span><b>↗</b></a><a class="directory-command" href="/commands/sticky/"><code>/sticky-configure</code><span>Update copy and media</span><b>↗</b></a><a class="directory-command" href="/commands/sticky/"><code>/sticky-list</code><span>Open your sticky library</span><b>↗</b></a><a class="directory-command" href="/commands/sticky/"><code>/sticky-remove</code><span>Remove a sticky note</span><b>↗</b></a>
+          </section>
+          <section class="directory-group"><h3>Automod &amp; Security <em>10</em></h3>
+            <a class="directory-command" href="/commands/automod/"><code>/automod-enable</code><span>Turn moderation on</span><b>↗</b></a><a class="directory-command" href="/commands/automod/"><code>/automod-configure</code><span>Choose rules and actions</span><b>↗</b></a><a class="directory-command" href="/commands/automod/"><code>/automod-disable</code><span>Pause moderation safely</span><b>↗</b></a><a class="directory-command" href="/commands/automod/"><code>/automod-status</code><span>Check active protection</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/honeypot-setup</code><span>Set up a bot trap channel</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/honeypot-configure</code><span>Configure the trap response</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/honeypot-disable</code><span>Disable the honeypot</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/ban</code><span>Ban a server member</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/timeout</code><span>Temporarily restrict a member</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/unban</code><span>Remove a server ban</span><b>↗</b></a>
+          </section>
+          <section class="directory-group"><h3>Tickets <em>12</em></h3>
+            <a class="directory-command" href="/commands/tickets/"><code>/ticket-setup</code><span>Create a ticket system</span><b>↗</b></a><a class="directory-command" href="/commands/tickets/"><code>/ticket-panel</code><span>Post the ticket panel</span><b>↗</b></a><a class="directory-command" href="/commands/tickets/"><code>/ticket-claim</code><span>Claim a ticket</span><b>↗</b></a><a class="directory-command" href="/commands/tickets/"><code>/ticket-close</code><span>Close and archive a ticket</span><b>↗</b></a><a class="directory-command" href="/commands/tickets/"><code>/ticket-add</code><span>Add a member to a ticket</span><b>↗</b></a><a class="directory-command" href="/commands/tickets/"><code>/ticket-remove</code><span>Remove a member</span><b>↗</b></a><a class="directory-command" href="/commands/tickets/"><code>/ticket-rename</code><span>Rename the current ticket</span><b>↗</b></a><a class="directory-command" href="/commands/tickets/"><code>/ticket-info</code><span>View ticket details</span><b>↗</b></a>
+          </section>
+          <section class="directory-group"><h3>Community <em>14</em></h3>
+            <a class="directory-command" href="/commands/polls/"><code>/poll-create</code><span>Create a live poll</span><b>↗</b></a><a class="directory-command" href="/commands/polls/"><code>/poll-edit</code><span>Edit an active poll</span><b>↗</b></a><a class="directory-command" href="/commands/polls/"><code>/poll-delete</code><span>Delete a poll</span><b>↗</b></a><a class="directory-command" href="/commands/emoji-steal/"><code>/emoji-steal</code><span>Bring an emoji to your server</span><b>↗</b></a><a class="directory-command" href="/commands/emoji-steal/"><code>/emoji-steal-bulk</code><span>Copy a full emoji set</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/rolepanel</code><span>Build a self-role panel</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/event</code><span>Create a community event</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/rank</code><span>View a member profile</span><b>↗</b></a>
+          </section>
+          <section class="directory-group"><h3>Tools &amp; Cleanup <em>15</em></h3>
+            <a class="directory-command" href="/commands/purge/"><code>/purge</code><span>Clean recent messages</span><b>↗</b></a><a class="directory-command" href="/commands/purge/"><code>/purge-user</code><span>Remove a member's messages</span><b>↗</b></a><a class="directory-command" href="/commands/purge/"><code>/purge-bots</code><span>Remove bot messages</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/serverinfo</code><span>Show server information</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/member</code><span>Show member information</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/leaderboard</code><span>View server rankings</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/status</code><span>Check Beacon services</span><b>↗</b></a>
+          </section>
+        </div>
+        <p class="directory-empty" id="directory-empty">No commands match that search.</p>
+      </aside>
+
+      <section class="commands-previews" aria-label="Command previews">
+        <div class="previews-heading"><div><small>SEE IT IN DISCORD</small><h2>Made for the way your server works.</h2></div><a href="/commands/welcome/">View all guides <span>→</span></a></div>
+        <div class="preview-grid">
+          <a class="preview-card" href="/commands/welcome/"><div class="preview-window"><div class="preview-bar"><span></span><span></span><span></span><label># welcome</label></div><div class="preview-chat"><div class="preview-avatar">✦</div><div><b>Beacon <small>APP</small></b><p><strong>New Member</strong></p><p class="preview-muted">Welcome <mark>@member</mark> to <mark>Beacon-Bot.site</mark></p><div class="preview-buttons"><button>Our Website ↗</button><button>Status Site ↗</button></div></div></div></div><div class="preview-caption"><strong>Welcome panels</strong><span>Personal, polished, yours →</span></div></a>
+          <a class="preview-card" href="/commands/sticky/"><div class="preview-window sticky-preview"><div class="preview-bar"><span></span><span></span><span></span><label># rules</label></div><div class="preview-chat"><div class="preview-avatar">✦</div><div><b>Beacon <small>APP</small></b><p><strong>Read this first</strong></p><p class="preview-muted">The important message stays right at the bottom.</p><div class="preview-sticky-id">Sticky · Beacon-Bot.site <i>ID 1842</i></div></div></div></div><div class="preview-caption"><strong>Sticky notes</strong><span>Always in the right place →</span></div></a>
+          <a class="preview-card" href="/commands/automod/"><div class="preview-window automod-preview"><div class="preview-bar"><span></span><span></span><span></span><label># moderation</label></div><div class="preview-chat"><div class="preview-avatar">✦</div><div><b>Beacon <small>APP</small></b><p><strong>Automod configured</strong></p><p class="preview-muted">Rules <em>spam · links · images</em></p><p class="preview-muted">Action <em>timeout · 10s</em></p><div class="preview-toast">Member notified by DM</div></div></div></div><div class="preview-caption"><strong>Automod that explains itself</strong><span>Clear actions, quiet channels →</span></div></a>
         </div>
       </section>
     </main>
+
+    <footer class="commands-footer"><div class="footer-brand"><img src="/assets/beacon-logo.png?v=92" width="30" height="30" alt="" /><strong>Beacon</strong><span>Discord tools for communities.</span></div><div class="footer-links"><a href="/">Home</a><a href="/commands/">Commands</a><a href="/status/">Status</a><a href="/terms/">Terms</a><a href="/privacy/">Privacy</a></div><small>© 2026 Beacon Bot</small></footer>
+    <script>
+      const search = document.getElementById('command-search');
+      const rows = Array.from(document.querySelectorAll('.directory-command'));
+      const groups = Array.from(document.querySelectorAll('.directory-group'));
+      const empty = document.getElementById('directory-empty');
+      const count = document.getElementById('directory-count');
+      search.addEventListener('input', function () {
+        const query = this.value.trim().toLowerCase();
+        let visible = 0;
+        groups.forEach(function (group) {
+          let groupVisible = 0;
+          group.querySelectorAll('.directory-command').forEach(function (row) {
+            const match = !query || row.textContent.toLowerCase().includes(query);
+            row.hidden = !match;
+            if (match) groupVisible += 1;
+          });
+          group.hidden = groupVisible === 0;
+          visible += groupVisible;
+        });
+        empty.hidden = visible !== 0;
+        count.textContent = query ? visible : '60+';
+      });
+    </script>
   </body>
 </html>
