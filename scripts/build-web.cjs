@@ -11,7 +11,7 @@ fs.rmSync(output, { recursive: true, force: true });
 fs.mkdirSync(output);
 
 const files = ['index.html', '404.html', 'styles.css', '404.css', 'marquee.css', 'commands-page.css', 'commands.css', 'legal.css', 'prestige.css', 'prestige.js', 'dmca-validation.html'];
-const directories = ['assets', 'badges', 'commands', 'cookies', 'copyright', 'eula', 'gdpr', 'prestige', 'privacy', 'status', 'tos'];
+const directories = ['assets', 'badges', 'commands', 'welcome', 'cookies', 'copyright', 'eula', 'gdpr', 'prestige', 'privacy', 'status', 'tos'];
 const assetTypes = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.ico', '.avif', '.woff', '.woff2', '.ttf']);
 const publicTypes = new Set(['.html', '.css', '.js', ...assetTypes]);
 
