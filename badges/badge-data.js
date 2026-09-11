@@ -73,6 +73,7 @@ export const BEACON_BADGES = [
   },
   {
     id: "badge-hunter",
+    assetId: "bug-hunter",
     name: "Badge Hunter",
     tag: "Special",
     tone: "gold",

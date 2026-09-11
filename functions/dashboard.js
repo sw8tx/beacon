@@ -13,6 +13,26 @@ function escapeHtml(value) {
   }[character]));
 }
 
+async function sendManualBadgeDm(env, userId) {
+  const botToken = String(env.DISCORD_BOT_TOKEN || env.DISCORD_TOKEN || env.BOT_TOKEN || env.TOKEN || "").replace(/^Bot\s+/i, "").trim();
+  if (!botToken) return;
+  try {
+    const dmResponse = await fetch("https://discord.com/api/v10/users/@me/channels", {
+      method: "POST",
+      headers: { authorization: `Bot ${botToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ recipient_id: userId }),
+    });
+    if (!dmResponse.ok) return;
+    const dm = await dmResponse.json();
+    await fetch(`https://discord.com/api/v10/channels/${dm.id}/messages`, {
+      method: "POST",
+      headers: { authorization: `Bot ${botToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ embeds: [{ color: 0xff9c1b, title: "Badge achieved", description: "## Badge Hunter\nYou found and collected a special Beacon badge.\n\n*A special Beacon badge was awarded to your profile.*", thumbnail: { url: "https://badges.beacon-bot.site/assets/badges/bug-hunter.png?v=2" }, footer: { text: "Beacon · Community OS" } }] }),
+    });
+  } catch (_) {
+  }
+}
+
 async function getDashboardServers(env, discordAccessToken, request) {
   const { botToken } = getConfig(env);
   if (!discordAccessToken) return [];
@@ -93,9 +113,10 @@ async function getUnlockedBadgeIds(env, userId) {
   `).bind(userId, "beacon-member").run();
 
   for (const award of manualBadgesForUser(userId)) {
-    await env.STATUS_DB.prepare(
+    const awardResult = await env.STATUS_DB.prepare(
       "INSERT OR IGNORE INTO badge_unlocks (user_id, badge_id) VALUES (?, ?)"
     ).bind(userId, award.badgeId).run();
+    if (awardResult?.meta?.changes) await sendManualBadgeDm(env, userId);
   }
 
   const rows = await env.STATUS_DB.prepare(`
@@ -110,7 +131,7 @@ async function getUnlockedBadgeIds(env, userId) {
 function renderBadgeCard(badge, unlocked) {
   const stateClass = unlocked ? " is-unlocked" : " is-locked";
   const stateLabel = unlocked ? "Unlocked" : "Locked";
-  const png = `/assets/badges/${escapeHtml(badge.id)}.png?v=2`;
+  const png = `/assets/badges/${escapeHtml(badge.assetId || badge.id)}.png?v=2`;
   return `
     <article class="dash-badge dash-badge--${escapeHtml(badge.tone)}${stateClass}">
       <div class="dash-badge-icon" aria-hidden="true">

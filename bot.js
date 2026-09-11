@@ -235,7 +235,8 @@ async function getFetch() {
 }
 
 function badgeAssetUrl(badgeId) {
-  return `${BADGES_URL.replace(/\/$/, "")}/assets/badges/${badgeId}.png?v=2`;
+  const assetId = badgeId === "badge-hunter" ? "bug-hunter" : badgeId;
+  return `${BADGES_URL.replace(/\/$/, "")}/assets/badges/${assetId}.png?v=2`;
 }
 
 async function grantBadge(userId, badgeId, source, reason) {

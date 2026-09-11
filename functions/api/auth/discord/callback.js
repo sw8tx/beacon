@@ -1,4 +1,5 @@
 import { avatarUrl, createCookie, createSession, errorResponse, getConfig, getCookie, verifyOauthState } from "./_shared.js";
+import { manualBadgesForUser } from "../../../../badges/manual-awards.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token";
@@ -25,7 +26,7 @@ async function grantBeaconMember(env, userId) {
   return Boolean(result?.meta?.changes);
 }
 
-async function sendBadgeDm(env, user, token) {
+async function sendBadgeDm(env, user, token, badge = BEACON_BADGE) {
   const botToken = String(env.DISCORD_BOT_TOKEN || env.DISCORD_TOKEN || env.BOT_TOKEN || env.TOKEN || "").replace(/^Bot\s+/i, "").trim();
   if (!botToken) return;
   try {
@@ -42,9 +43,9 @@ async function sendBadgeDm(env, user, token) {
       body: JSON.stringify({
         embeds: [{
           color: 0xff9c1b,
-          title: "Badge unlocked",
-          description: `## ${BEACON_BADGE.name}\n${BEACON_BADGE.description}\n\n*${BEACON_BADGE.reason}*`,
-          thumbnail: { url: `https://badges.beacon-bot.site/assets/badges/${BEACON_BADGE.id}.png?v=2` },
+          title: "Badge achieved",
+          description: `## ${badge.name}\n${badge.description}\n\n*${badge.reason}*`,
+          thumbnail: { url: `https://badges.beacon-bot.site/assets/badges/${badge.id === "badge-hunter" ? "bug-hunter" : badge.id}.png?v=2` },
           footer: { text: "Beacon · Community OS" },
         }],
         components: [{ type: 1, components: [
@@ -134,6 +135,28 @@ export async function onRequestGet({ request, env }) {
     const session = await createSession(user, sessionSecret, { discordAccessToken: token.access_token });
     const newBadge = await grantBeaconMember(env, user.id).catch(() => false);
     if (newBadge) await sendBadgeDm(env, user, token.access_token);
+    for (const award of manualBadgesForUser(user.id)) {
+      if (!env.STATUS_DB) continue;
+      await env.STATUS_DB.prepare(`
+        CREATE TABLE IF NOT EXISTS badge_unlocks (
+          user_id TEXT NOT NULL,
+          badge_id TEXT NOT NULL,
+          unlocked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (user_id, badge_id)
+        )
+      `).run();
+      const result = await env.STATUS_DB.prepare(
+        "INSERT OR IGNORE INTO badge_unlocks (user_id, badge_id) VALUES (?, ?)"
+      ).bind(user.id, award.badgeId).run();
+      if (result?.meta?.changes) {
+        await sendBadgeDm(env, user, token.access_token, {
+          id: award.badgeId,
+          name: "Badge Hunter",
+          description: "You found and collected a special Beacon badge.",
+          reason: "A special Beacon badge was awarded to your profile.",
+        });
+      }
+    }
     const next = getCookie(request, "beacon_login_next");
     const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
     const headers = new Headers({ Location: new URL(safeNext, request.url).toString() });
