@@ -987,5 +987,6 @@ code {
 @media (max-width: 760px) { .commands-site-navbar { flex-wrap: wrap; padding-inline: 16px; }.commands-site-navbar .navbar-links { order: 3; flex-basis: 100%; margin: 4px 0 0; gap: 15px; }.commands-site-navbar .navbar-actions { margin-left: auto; }.commands-site-navbar .navbar-button--prestige { display: none; }.commands-site-footer { padding-inline: 24px; } }
 .commands-page { display: flex; flex-direction: column; min-height: 100vh; }
 .commands-page > main { flex: 1 0 auto; width: 100%; }
+.commands-page > .commands-site-footer { margin-top: auto; }
 .command-detail-card .usage-link { color: #79b4fa; font-weight: 800; text-decoration: none; }
 .command-detail-card .usage-link:hover { color: #a8d0ff; text-decoration: underline; }
