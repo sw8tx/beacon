@@ -7,7 +7,7 @@
     <meta name="description" content="Browse every Beacon Discord bot command." />
     <title>Commands | Beacon</title>
     <link rel="icon" type="image/png" href="/assets/beacon-logo.png?v=92" />
-    <link rel="stylesheet" href="/commands.css?v=12" />
+    <link rel="stylesheet" href="/commands.css?v=13" />
     <link rel="stylesheet" href="/cmd-page.css?v=3" />
   </head>
   <body class="commands-page commands-home-modern">
@@ -17,10 +17,21 @@
     </nav>
 
     <main class="commands-home-wrap">
+      <header class="commands-page-heading"><h1>Commands</h1><p>List of bot commands</p></header>
       <aside class="commands-directory" id="directory" aria-label="Command directory">
         <div class="directory-topline"><div><small>BEACON LIBRARY</small><h2>Find a command</h2></div><span class="directory-count" id="directory-count">60+</span></div>
         <label class="directory-search"><span aria-hidden="true">⌕</span><input id="command-search" type="search" placeholder="Search commands" autocomplete="off" /></label>
-        <div class="directory-list">
+        <div class="directory-layout">
+          <nav class="directory-categories" aria-label="Command categories">
+            <button class="is-active" type="button" data-category="Welcome">Welcome</button>
+            <button type="button" data-category="Sticky Notes">Sticky Notes</button>
+            <button type="button" data-category="Automod &amp; Security">Automod</button>
+            <button type="button" data-category="Tickets">Tickets</button>
+            <button type="button" data-category="Community">Community</button>
+            <button type="button" data-category="Tools &amp; Cleanup">Tools</button>
+          </nav>
+          <div class="directory-list">
+            <div class="directory-table-head"><span>Command</span><span>Description</span><span>Usage</span></div>
           <section class="directory-group"><h3>Welcome <em>5</em></h3>
             <a class="directory-command" href="/commands/welcome/"><code>/welcome-create</code><span>Post a welcome panel</span><b>↗</b></a><a class="directory-command" href="/commands/welcome/"><code>/welcome-configure</code><span>Edit text, buttons and thumbnail</span><b>↗</b></a><a class="directory-command" href="/commands/welcome/"><code>/welcome-preview</code><span>Preview the current panel</span><b>↗</b></a><a class="directory-command" href="/commands/welcome/"><code>/welcome-remove</code><span>Remove the welcome panel</span><b>↗</b></a>
           </section>
@@ -39,6 +50,7 @@
           <section class="directory-group"><h3>Tools &amp; Cleanup <em>15</em></h3>
             <a class="directory-command" href="/commands/purge/"><code>/purge</code><span>Clean recent messages</span><b>↗</b></a><a class="directory-command" href="/commands/purge/"><code>/purge-user</code><span>Remove a member's messages</span><b>↗</b></a><a class="directory-command" href="/commands/purge/"><code>/purge-bots</code><span>Remove bot messages</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/serverinfo</code><span>Show server information</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/member</code><span>Show member information</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/leaderboard</code><span>View server rankings</span><b>↗</b></a><a class="directory-command" href="#directory"><code>/status</code><span>Check Beacon services</span><b>↗</b></a>
           </section>
+          </div>
         </div>
         <p class="directory-empty" id="directory-empty">No commands match that search.</p>
       </aside>
@@ -50,24 +62,38 @@
       const search = document.getElementById('command-search');
       const rows = Array.from(document.querySelectorAll('.directory-command'));
       const groups = Array.from(document.querySelectorAll('.directory-group'));
+      const categories = Array.from(document.querySelectorAll('.directory-categories button'));
       const empty = document.getElementById('directory-empty');
       const count = document.getElementById('directory-count');
-      search.addEventListener('input', function () {
-        const query = this.value.trim().toLowerCase();
+      let selectedCategory = 'Welcome';
+      function refreshDirectory() {
+        const query = search.value.trim().toLowerCase();
         let visible = 0;
         groups.forEach(function (group) {
+          const categoryMatch = group.querySelector('h3').firstChild.textContent.trim() === selectedCategory;
           let groupVisible = 0;
           group.querySelectorAll('.directory-command').forEach(function (row) {
-            const match = !query || row.textContent.toLowerCase().includes(query);
+            const match = categoryMatch && (!query || row.textContent.toLowerCase().includes(query));
             row.hidden = !match;
             if (match) groupVisible += 1;
           });
-          group.hidden = groupVisible === 0;
+          group.hidden = !categoryMatch;
           visible += groupVisible;
         });
         empty.hidden = visible !== 0;
-        count.textContent = query ? visible : '60+';
+        count.textContent = query ? visible : (visible + '');
+      }
+      categories.forEach(function (button) {
+        button.addEventListener('click', function () {
+          selectedCategory = this.dataset.category;
+          categories.forEach(function (item) { item.classList.toggle('is-active', item === button); });
+          refreshDirectory();
+        });
       });
+      search.addEventListener('input', function () {
+        refreshDirectory();
+      });
+      refreshDirectory();
     </script>
   </body>
 </html>

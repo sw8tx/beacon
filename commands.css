@@ -956,3 +956,27 @@ code {
 .commands-home-modern .commands-footer { margin-top: 0; }
 .commands-home-modern .commands-home-wrap { display: block; max-width: 760px; padding-top: 52px; }
 .commands-home-modern .commands-directory { max-width: 620px; margin: 0 auto; }
+.commands-home-modern .commands-home-wrap { max-width: 1180px; padding: 12px 24px 90px; }
+.commands-page-heading { margin: 0 0 30px 48px; }
+.commands-page-heading h1 { margin: 0; color: #f5f6f2; font-size: 1.8rem; letter-spacing: -.035em; }
+.commands-page-heading p { margin: 5px 0 0; color: #777b88; font-size: .92rem; }
+.commands-home-modern .commands-directory { max-width: none; margin: 0; padding: 0; background: transparent; border: 0; box-shadow: none; }
+.commands-home-modern .directory-topline { display: none; }
+.commands-home-modern .directory-search { width: 100%; max-width: 520px; margin: 0 0 16px 250px; background: #181a20; border-color: #24262d; }
+.commands-home-modern .directory-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 14px; align-items: start; }
+.commands-home-modern .directory-categories { display: flex; flex-direction: column; gap: 2px; padding: 14px 0; background: #181a20; border: 1px solid #202229; border-radius: 3px; }
+.commands-home-modern .directory-categories button { border: 0; border-left: 3px solid transparent; padding: 10px 14px; color: #d7d9df; background: transparent; text-align: left; font: 700 .84rem "DM Sans", system-ui, sans-serif; cursor: pointer; }
+.commands-home-modern .directory-categories button:hover { color: #fff; background: #202229; }
+.commands-home-modern .directory-categories button.is-active { border-left-color: #d52955; color: #fff; background: #c92752; }
+.commands-home-modern .directory-list { max-height: none; margin: 0; padding: 0; overflow: visible; background: #181a20; border: 1px solid #202229; border-radius: 3px; }
+.commands-home-modern .directory-table-head { display: grid; grid-template-columns: 160px minmax(180px, 1fr) 180px; padding: 14px 18px 11px; color: #f1f2f5; font-size: .78rem; font-weight: 800; border-bottom: 1px solid #292b32; }
+.commands-home-modern .directory-group { padding: 0; border: 0; }
+.commands-home-modern .directory-group h3 { display: none; }
+.commands-home-modern .directory-command { grid-template-columns: 160px minmax(180px, 1fr) 180px; gap: 0; min-height: 62px; margin: 0; padding: 12px 18px; border-bottom: 1px solid #292b32; border-radius: 0; font-size: .82rem; }
+.commands-home-modern .directory-command code { color: #00c9af; font-size: .82rem; }
+.commands-home-modern .directory-command span { color: #f1f2f5; font-size: .82rem; font-weight: 700; }
+.commands-home-modern .directory-command::after { content: attr(href); color: #777b88; font-size: .82rem; }
+.commands-home-modern .directory-command b { display: none; }
+.commands-home-modern .directory-empty { background: #181a20; margin: 0; }
+.commands-home-modern .commands-footer { max-width: 1180px; padding-inline: 24px; background: #0d0f14; border-top-color: #202229; }
+@media (max-width: 760px) { .commands-home-modern .directory-search { margin-left: 0; }.commands-home-modern .directory-layout { grid-template-columns: 1fr; }.commands-home-modern .directory-categories { display: grid; grid-template-columns: repeat(3, 1fr); }.commands-home-modern .directory-categories button { border-left: 0; border-bottom: 3px solid transparent; }.commands-home-modern .directory-categories button.is-active { border-bottom-color: #d52955; }.commands-home-modern .directory-table-head { grid-template-columns: 1fr 16px; }.commands-home-modern .directory-table-head span:last-child { display: none; }.commands-home-modern .directory-command { grid-template-columns: 1fr 16px; }.commands-home-modern .directory-command::after { display: none; }.commands-home-modern .directory-command span { display: block; }.commands-page-heading { margin-left: 0; } }
