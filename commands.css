@@ -934,3 +934,23 @@ code {
 .commands-footer { border-top: 1px solid #2c2923; max-width: 1240px; margin: 0 auto; padding: 25px 32px 34px; display: flex; align-items: center; gap: 25px; color: #817a70; font-size: .82rem; }.footer-brand { display: flex; align-items: center; gap: 9px; margin-right: auto; }.footer-brand img { object-fit: contain; }.footer-brand strong { color: #f4f0e8; }.footer-brand span { margin-left: 5px; }.footer-links { display: flex; gap: 18px; }.footer-links a { color: #a9a197; text-decoration: none; }.footer-links a:hover { color: #d7a514; }.commands-footer > small { white-space: nowrap; }
 @media (max-width: 900px) { .commands-home-wrap { grid-template-columns: 1fr; gap: 50px; padding-top: 52px; }.commands-home-hero { padding-top: 0; }.commands-directory { max-width: none; }.directory-list { max-height: none; }.preview-grid { grid-template-columns: 1fr; }.preview-window { min-height: 0; }.commands-footer { align-items: flex-start; flex-wrap: wrap; }.footer-brand { flex-basis: 100%; }.footer-links { order: 2; } }
 @media (max-width: 560px) { .commands-home-wrap { padding-inline: 18px; }.commands-home-hero h1 { font-size: 3.1rem; }.directory-command { grid-template-columns: 1fr 16px; }.directory-command span { display: none; }.commands-footer { padding-inline: 18px; }.footer-links { flex-wrap: wrap; gap: 10px 16px; }.footer-brand span { display: none; } }
+
+.commands-home-modern .commands-home-hero h1 { max-width: none; margin-top: 18px; font-size: clamp(2.8rem, 5vw, 4.7rem); letter-spacing: -.045em; }
+.commands-home-modern .commands-home-hero h1 i { display: none; }
+.commands-home-modern .home-kicker { color: #a9a197; }
+.commands-home-modern .home-kicker span { width: 6px; height: 6px; background: #a9a197; box-shadow: none; }
+.commands-home-modern .commands-home-hero > p { max-width: 570px; font-size: 1rem; line-height: 1.65; }
+.commands-home-modern .home-action-primary { color: #171512; background: #d7a514; }
+.commands-home-modern .home-action-secondary { color: #c2bbb0; border-color: #3a352c; }
+.commands-home-modern .home-note { display: flex; gap: 10px; align-items: baseline; margin-top: 43px; padding-top: 17px; border-top: 1px solid #302c26; max-width: 570px; color: #817a70; font-size: .84rem; }
+.commands-home-modern .home-note strong { color: #d7a514; font-size: .76rem; text-transform: uppercase; letter-spacing: .1em; }
+.commands-home-modern .commands-previews { border-top: 1px solid #302c26; padding-top: 34px; }
+.commands-home-modern .previews-heading h2 { font-size: 1.65rem; font-weight: 700; }
+.commands-home-modern .previews-heading a { color: #b7afa4; font-size: .86rem; font-weight: 600; }
+.commands-home-modern .preview-card { padding: 0; background: transparent; border: 0; border-radius: 0; }
+.commands-home-modern .preview-card:hover { transform: none; border: 0; }
+.commands-home-modern .preview-window { border-radius: 6px; box-shadow: none; }
+.commands-home-modern .preview-caption { padding: 12px 0 0; }
+.commands-home-modern .preview-caption strong { font-size: .9rem; font-weight: 700; }
+.commands-home-modern .preview-caption span { font-size: .76rem; }
+.commands-home-modern .commands-footer { margin-top: 0; }
