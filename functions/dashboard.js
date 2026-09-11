@@ -170,7 +170,7 @@ export async function onRequestGet({ request, env }) {
                   <div><strong>${escapeHtml(server.name)}</strong><small>${server.withBeacon ? "Beacon is active" : "Server owner"}</small></div>
                   ${server.withBeacon
                     ? `<a class="server-choice-button" href="/dashboard?server=${encodeURIComponent(server.id || "")}#server-info" data-can-manage="true" data-server-id="${escapeHtml(server.id || "")}" data-server-name="${escapeHtml(server.name)}" data-server-members="${Number(server.members) || 0}" data-server-bots="${Number(server.bots) || 0}" data-server-channels="${Number(server.channels) || 0}" data-server-roles="${Number(server.roles) || 0}" data-server-categories="${Number(server.categories) || 0}" data-server-shard="${Number(server.shardId) || 0}">${actionLabel}</a>`
-                    : `<a class="server-choice-button server-choice-button--invite" href="https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&amp;scope=bot%20applications.commands&amp;guild_id=${encodeURIComponent(server.id || "")}&amp;disable_guild_select=true">Add Beacon</a>`}
+                    : `<a class="server-choice-button server-choice-button--invite" href="https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&amp;response_type=code&amp;redirect_uri=https%3A%2F%2Fbeacon-bot.site%2Fapi%2Fauth%2Fdiscord%2Fcallback&amp;scope=identify%20guilds%20bot%20applications.commands&amp;permissions=8&amp;guild_id=${encodeURIComponent(server.id || "")}&amp;disable_guild_select=true">Add Beacon</a>`}
                 </div>
               </article>
             `).join("")
