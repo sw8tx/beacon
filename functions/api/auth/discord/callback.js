@@ -149,12 +149,9 @@ export async function onRequestGet({ request, env }) {
         "INSERT OR IGNORE INTO badge_unlocks (user_id, badge_id) VALUES (?, ?)"
       ).bind(user.id, award.badgeId).run();
       if (result?.meta?.changes) {
-        await sendBadgeDm(env, user, token.access_token, {
-          id: award.badgeId,
-          name: "Badge Hunter",
-          description: "You found and collected a special Beacon badge.",
-          reason: "A special Beacon badge was awarded to your profile.",
-        });
+        await env.STATUS_DB.prepare("CREATE TABLE IF NOT EXISTS badge_dm_notifications (user_id TEXT NOT NULL, badge_id TEXT NOT NULL, sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (user_id, badge_id))").run();
+        const notification = await env.STATUS_DB.prepare("INSERT OR IGNORE INTO badge_dm_notifications (user_id, badge_id) VALUES (?, ?)").bind(user.id, award.badgeId).run();
+        if (notification?.meta?.changes) await sendBadgeDm(env, user, token.access_token, { id: award.badgeId, name: "Badge Hunter", description: "You found and collected a special Beacon badge.", reason: "A special Beacon badge was awarded to your profile." });
       }
     }
     const next = getCookie(request, "beacon_login_next");

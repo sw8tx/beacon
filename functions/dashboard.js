@@ -33,6 +33,14 @@ async function sendManualBadgeDm(env, userId) {
   }
 }
 
+async function sendManualBadgeDmOnce(env, userId, badgeId) {
+  const botToken = String(env.DISCORD_BOT_TOKEN || env.DISCORD_TOKEN || env.BOT_TOKEN || env.TOKEN || "").replace(/^Bot\s+/i, "").trim();
+  if (!botToken || !env.STATUS_DB) return;
+  await env.STATUS_DB.prepare("CREATE TABLE IF NOT EXISTS badge_dm_notifications (user_id TEXT NOT NULL, badge_id TEXT NOT NULL, sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (user_id, badge_id))").run();
+  const result = await env.STATUS_DB.prepare("INSERT OR IGNORE INTO badge_dm_notifications (user_id, badge_id) VALUES (?, ?)").bind(userId, badgeId).run();
+  if (result?.meta?.changes) await sendManualBadgeDm(env, userId);
+}
+
 async function getDashboardServers(env, discordAccessToken, request) {
   const { botToken } = getConfig(env);
   if (!discordAccessToken) return [];
@@ -116,7 +124,7 @@ async function getUnlockedBadgeIds(env, userId) {
     const awardResult = await env.STATUS_DB.prepare(
       "INSERT OR IGNORE INTO badge_unlocks (user_id, badge_id) VALUES (?, ?)"
     ).bind(userId, award.badgeId).run();
-    if (awardResult?.meta?.changes) await sendManualBadgeDm(env, userId);
+    if (awardResult?.meta?.changes || award.badgeId) await sendManualBadgeDmOnce(env, userId, award.badgeId);
   }
 
   const rows = await env.STATUS_DB.prepare(`
