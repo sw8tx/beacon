@@ -309,6 +309,7 @@ function publicStats(stats) {
     startedAt: stats.startedAt,
     updatedAt: stats.updatedAt,
     servers: (Array.isArray(stats.servers) ? stats.servers : []).map((server) => ({
+      id: server.id,
       name: server.name,
       members: server.members,
       iconUrl: server.iconUrl,
