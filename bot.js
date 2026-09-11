@@ -251,7 +251,7 @@ async function grantBadge(userId, badgeId, source, reason) {
         Authorization: `Bearer ${STATS_AUTH_TOKEN}`,
         "X-Stats-Secret": STATS_AUTH_TOKEN,
       },
-      body: JSON.stringify({ userId: String(userId), badgeId, source, reason }),
+      body: JSON.stringify({ userId: String(userId), badgeId, source, reason, notify: false }),
     });
     if (!response.ok) return false;
     const payload = await response.json().catch(() => null);

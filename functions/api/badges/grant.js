@@ -1,3 +1,5 @@
+import { BEACON_BADGES } from "../../../badges/badge-data.js";
+
 const VALID_BADGES = new Set([
   "beacon-member", "pioneer", "beacon-developer", "verified", "donator", "prestige",
   "staff", "helper", "badge-hunter", "bug-hunter", "server-booster", "witness", "the-beacon",
@@ -27,6 +29,26 @@ async function ensureTable(db) {
   `).run();
 }
 
+async function sendBadgeDm(env, userId, badgeId, reason) {
+  const token = botToken(env);
+  if (!token) return false;
+  const badge = BEACON_BADGES.find((item) => item.id === badgeId) || { name: badgeId, summary: "A new Beacon badge was added to your profile." };
+  try {
+    const dmResponse = await fetch("https://discord.com/api/v10/users/@me/channels", { method: "POST", headers: { authorization: `Bot ${token}`, "content-type": "application/json" }, body: JSON.stringify({ recipient_id: userId }) });
+    if (!dmResponse.ok) return false;
+    const dm = await dmResponse.json();
+    const assetId = badge.assetId || badge.id;
+    const messageResponse = await fetch(`https://discord.com/api/v10/channels/${dm.id}/messages`, {
+      method: "POST",
+      headers: { authorization: `Bot ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ embeds: [{ color: 0xff9c1b, title: "Badge achieved", description: `## ${badge.name}\n${badge.summary}\n\n*${reason || "A new badge was added to your Beacon profile."}*`, thumbnail: { url: `https://badges.beacon-bot.site/assets/badges/${assetId}.png?v=2` }, footer: { text: "Beacon · Community OS" } }], components: [{ type: 1, components: [{ type: 2, style: 5, label: "View dashboard", url: "https://beacon-bot.site/dashboard" }, { type: 2, style: 5, label: "View all badges", url: "https://badges.beacon-bot.site/" }] }] }),
+    });
+    return messageResponse.ok;
+  } catch (_) {
+    return false;
+  }
+}
+
 export async function onRequestPost({ request, env }) {
   if (!authorized(request, env)) return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   if (!env.STATUS_DB) return Response.json({ ok: false, error: "Badge database is unavailable" }, { status: 503 });
@@ -44,10 +66,14 @@ export async function onRequestPost({ request, env }) {
   const result = await env.STATUS_DB.prepare(
     "INSERT OR IGNORE INTO badge_unlocks (user_id, badge_id) VALUES (?, ?)"
   ).bind(userId, badgeId).run();
+  const awarded = Boolean(result?.meta?.changes);
+  const notify = input?.notify !== false;
+  const dmSent = awarded && notify ? await sendBadgeDm(env, userId, badgeId, String(input?.reason || "").slice(0, 500)) : false;
 
   return Response.json({
     ok: true,
-    awarded: Boolean(result?.meta?.changes),
+    awarded,
+    dmSent,
     userId,
     badgeId,
     source: String(input?.source || "system").slice(0, 80),
