@@ -46,11 +46,15 @@ async function getDashboardServers(env, discordAccessToken, request) {
         } catch (_) {
         }
       }
+      const permissionBits = BigInt(String(guild.permissions || "0"));
+      const isOwner = Boolean(guild.owner);
+      const canManage = isOwner || (permissionBits & 0x20n) === 0x20n || (permissionBits & 0x8n) === 0x8n;
       return {
         id: String(guild.id),
         name: guild.name || "Discord server",
-        owner: guild.owner ? "Server owner" : "Member",
-        isOwner: Boolean(guild.owner),
+        owner: isOwner ? "Server owner" : (canManage ? "Server manager" : "Member"),
+        isOwner,
+        canManage,
         members: Number(guild.approximate_member_count) || 0,
         bots: Number(syncedServers.get(String(guild.id))?.bots) || 0,
         channels: Number(syncedServers.get(String(guild.id))?.channels) || 0,
@@ -63,7 +67,7 @@ async function getDashboardServers(env, discordAccessToken, request) {
       };
     }));
     return [...new Map(servers.map((server) => [server.id, server])).values()]
-      .filter((server) => server.isOwner)
+      .filter((server) => server.canManage)
       .sort((left, right) => Number(right.withBeacon) - Number(left.withBeacon));
   } catch (_) {
     return [];
@@ -145,7 +149,7 @@ export async function onRequestGet({ request, env }) {
   const requestedServerParam = new URL(request.url).searchParams.get("server") || "";
   const requestedServerId = requestedServerParam.split("/")[0];
   const requestedSection = requestedServerParam.split("/")[1] || "";
-  const requestedServer = liveSelectionServers.find((server) => server.id === requestedServerId && server.withBeacon && server.isOwner);
+  const requestedServer = liveSelectionServers.find((server) => server.id === requestedServerId && server.withBeacon && server.canManage);
   const selectedServer = requestedServer || liveSelectionServers[0];
   const resolvedServerName = selectedServer?.name || serverName;
   const resolvedServerIcon = selectedServer?.iconUrl || "";
@@ -155,7 +159,7 @@ export async function onRequestGet({ request, env }) {
   const initialDashboardSection = ["server-info", "customize-bot", "command-configs", "server-configs", "dashboard-history", "statistics", "badges"].includes(requestedSection)
     ? requestedSection
     : "server-info";
-  const canManageResolvedServer = Boolean(liveSelectionServers[0]?.withBeacon && liveSelectionServers[0]?.isOwner);
+  const canManageResolvedServer = Boolean(liveSelectionServers[0]?.withBeacon && liveSelectionServers[0]?.canManage);
   const renderServerChoices = (servers, actionLabel) => servers.length
     ? servers.map((server) => `
               <article class="server-choice">
@@ -171,8 +175,8 @@ export async function onRequestGet({ request, env }) {
               </article>
             `).join("")
     : `<p class="server-choice-empty">No servers in this group yet.</p>`;
-  const serversWithBeacon = dashboardSelectionServers.filter((server) => server.withBeacon && server.isOwner);
-  const serversWithoutBeacon = dashboardSelectionServers.filter((server) => !server.withBeacon && server.isOwner);
+  const serversWithBeacon = dashboardSelectionServers.filter((server) => server.withBeacon && server.canManage);
+  const serversWithoutBeacon = dashboardSelectionServers.filter((server) => !server.withBeacon && server.canManage);
   const unlockedIds = await getUnlockedBadgeIds(env, session.user.id);
   const unlockedBadges = BEACON_BADGES.filter((badge) => unlockedIds.has(badge.id));
   const lockedBadges = BEACON_BADGES.filter((badge) => !unlockedIds.has(badge.id));
