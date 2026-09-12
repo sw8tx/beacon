@@ -2,7 +2,7 @@ import { BEACON_BADGES } from "../../../badges/badge-data.js";
 
 const VALID_BADGES = new Set([
   "beacon-member", "pioneer", "beacon-developer", "verified", "donator", "prestige",
-  "staff", "helper", "badge-hunter", "bug-hunter", "server-booster", "witness", "the-beacon",
+  "staff", "helper", "bug-hunter", "golden-bug-hunter", "server-booster", "witness", "the-beacon",
   "beacons-princess", "found-the-light", "not-found", "lost-signal", "night-owl",
   "command-relic", "prismatic-key", "lucky-signal",
 ]);
@@ -61,21 +61,24 @@ export async function onRequestPost({ request, env }) {
   if (!/^\d{17,22}$/.test(userId) || !VALID_BADGES.has(badgeId)) {
     return Response.json({ ok: false, error: "Invalid userId or badgeId" }, { status: 400 });
   }
+  const confirmedBugCount = Math.max(0, Math.min(1000, Math.floor(Number(input?.confirmedBugCount) || 0)));
+  const effectiveBadgeId = badgeId === "bug-hunter" && confirmedBugCount >= 3 ? "golden-bug-hunter" : badgeId;
 
   await ensureTable(env.STATUS_DB);
   const result = await env.STATUS_DB.prepare(
     "INSERT OR IGNORE INTO badge_unlocks (user_id, badge_id) VALUES (?, ?)"
-  ).bind(userId, badgeId).run();
+  ).bind(userId, effectiveBadgeId).run();
   const awarded = Boolean(result?.meta?.changes);
   const notify = input?.notify !== false;
-  const dmSent = awarded && notify ? await sendBadgeDm(env, userId, badgeId, String(input?.reason || "").slice(0, 500)) : false;
+  const dmSent = awarded && notify ? await sendBadgeDm(env, userId, effectiveBadgeId, String(input?.reason || (effectiveBadgeId === "golden-bug-hunter" ? "Three or more genuine Beacon bug reports were confirmed." : "A genuine Beacon bug report was confirmed.")).slice(0, 500)) : false;
 
   return Response.json({
     ok: true,
     awarded,
     dmSent,
     userId,
-    badgeId,
+    badgeId: effectiveBadgeId,
+    confirmedBugCount,
     source: String(input?.source || "system").slice(0, 80),
     reason: String(input?.reason || "").slice(0, 500),
   }, { headers: { "cache-control": "no-store" } });

@@ -45,7 +45,7 @@ async function sendBadgeDm(env, user, token, badge = BEACON_BADGE) {
           color: 0xff9c1b,
           title: "Badge achieved",
           description: `## ${badge.name}\n${badge.description}\n\n*${badge.reason}*`,
-          thumbnail: { url: `https://badges.beacon-bot.site/assets/badges/${badge.id === "badge-hunter" ? "bug-hunter" : badge.id}.png?v=2` },
+          thumbnail: { url: `https://badges.beacon-bot.site/assets/badges/${badge.id}.png?v=3` },
           footer: { text: "Beacon · Community OS" },
         }],
         components: [{ type: 1, components: [
@@ -151,7 +151,7 @@ export async function onRequestGet({ request, env }) {
       if (result?.meta?.changes) {
         await env.STATUS_DB.prepare("CREATE TABLE IF NOT EXISTS badge_dm_notifications (user_id TEXT NOT NULL, badge_id TEXT NOT NULL, sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (user_id, badge_id))").run();
         const notification = await env.STATUS_DB.prepare("INSERT OR IGNORE INTO badge_dm_notifications (user_id, badge_id) VALUES (?, ?)").bind(user.id, award.badgeId).run();
-        if (notification?.meta?.changes) await sendBadgeDm(env, user, token.access_token, { id: award.badgeId, name: "Badge Hunter", description: "You found and collected a special Beacon badge.", reason: "A special Beacon badge was awarded to your profile." });
+        if (notification?.meta?.changes) await sendBadgeDm(env, user, token.access_token, { id: award.badgeId, name: award.badgeId === "golden-bug-hunter" ? "Golden Bug Hunter" : "Bug Hunter", description: award.badgeId === "golden-bug-hunter" ? "You found multiple confirmed Beacon bugs and helped improve Beacon." : "You reported a confirmed Beacon bug.", reason: award.badgeId === "golden-bug-hunter" ? "Several genuine bug reports were confirmed and your hunter level was upgraded." : "A genuine Beacon bug report was confirmed." });
       }
     }
     const next = getCookie(request, "beacon_login_next");

@@ -13,7 +13,7 @@ function escapeHtml(value) {
   }[character]));
 }
 
-async function sendManualBadgeDm(env, userId) {
+async function sendManualBadgeDm(env, userId, badgeId = "bug-hunter") {
   const botToken = String(env.DISCORD_BOT_TOKEN || env.DISCORD_TOKEN || env.BOT_TOKEN || env.TOKEN || "").replace(/^Bot\s+/i, "").trim();
   if (!botToken) return;
   try {
@@ -27,7 +27,7 @@ async function sendManualBadgeDm(env, userId) {
     await fetch(`https://discord.com/api/v10/channels/${dm.id}/messages`, {
       method: "POST",
       headers: { authorization: `Bot ${botToken}`, "content-type": "application/json" },
-      body: JSON.stringify({ embeds: [{ color: 0xff9c1b, title: "Badge achieved", description: "## Badge Hunter\nYou found and collected a special Beacon badge.\n\n*A special Beacon badge was awarded to your profile.*", thumbnail: { url: "https://badges.beacon-bot.site/assets/badges/bug-hunter.png?v=2" }, footer: { text: "Beacon · Community OS" } }] }),
+      body: JSON.stringify({ embeds: [{ color: badgeId === "golden-bug-hunter" ? 0xffc31c : 0x42bfff, title: "Badge achieved", description: badgeId === "golden-bug-hunter" ? "## Golden Bug Hunter\nYou found multiple confirmed Beacon bugs and helped improve Beacon.\n\n*Several genuine reports were confirmed.*" : "## Bug Hunter\nYou reported a confirmed Beacon bug.\n\n*A genuine Beacon report was confirmed and your badge was added.*", thumbnail: { url: `https://badges.beacon-bot.site/assets/badges/${badgeId === "golden-bug-hunter" ? "golden-bug-hunter" : "bug-hunter-blue"}.png?v=3` }, footer: { text: "Beacon · Badge system" } }] }),
     });
   } catch (_) {
   }
@@ -38,7 +38,7 @@ async function sendManualBadgeDmOnce(env, userId, badgeId) {
   if (!botToken || !env.STATUS_DB) return;
   await env.STATUS_DB.prepare("CREATE TABLE IF NOT EXISTS badge_dm_notifications (user_id TEXT NOT NULL, badge_id TEXT NOT NULL, sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (user_id, badge_id))").run();
   const result = await env.STATUS_DB.prepare("INSERT OR IGNORE INTO badge_dm_notifications (user_id, badge_id) VALUES (?, ?)").bind(userId, badgeId).run();
-  if (result?.meta?.changes) await sendManualBadgeDm(env, userId);
+  if (result?.meta?.changes) await sendManualBadgeDm(env, userId, badgeId);
 }
 
 async function getDashboardServers(env, discordAccessToken, request) {

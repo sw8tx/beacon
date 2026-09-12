@@ -47,13 +47,11 @@ export const BADGE_ICONS = {
     <path fill="url(#helper-a)" d="M8 30l13-17 12 7-13 20z"/><path fill="url(#helper-b)" d="M31 18l9-5 16 11-12 16-11-2-8 7-9-7 11-12z"/>
     <path stroke="#ffd34d" stroke-width="5" stroke-linecap="round" d="M22 42l7 8M16 39l7 9M36 40l-8 10"/>
   `),
-  "badge-hunter": svg(`
-    <circle cx="28" cy="28" r="17" fill="none" stroke="#ffc31c" stroke-width="6"/><path stroke="#ffc31c" stroke-width="7" stroke-linecap="round" d="M41 41l12 12"/><path fill="#ffc31c" d="M28 16l4 9 10 1-8 7 3 10-9-5-9 5 3-10-8-7 10-1z"/>
-  `),
   "bug-hunter": svg(`
-    <defs><linearGradient id="bug-g" x1="12" y1="8" x2="52" y2="56"><stop stop-color="#3ea83a"/><stop offset="1" stop-color="#155c17"/></linearGradient></defs>
-    <circle cx="28" cy="28" r="17" fill="none" stroke="url(#bug-g)" stroke-width="6"/><path stroke="url(#bug-g)" stroke-width="7" stroke-linecap="round" d="M41 41l12 12"/>
-    <ellipse cx="28" cy="28" rx="8" ry="11" fill="#176a19"/><path stroke="#1f8a22" stroke-width="3" stroke-linecap="round" d="M20 28h16M22 20l-6-5M34 20l6-5M22 36l-6 5M34 36l6 5M28 17v22"/>
+    <circle cx="28" cy="28" r="17" fill="none" stroke="#42bfff" stroke-width="5"/><path stroke="#42bfff" stroke-width="6" stroke-linecap="round" d="M41 41l12 12"/><circle cx="28" cy="28" r="9" fill="#0f397c" stroke="#b8edff" stroke-width="2"/><path stroke="#b8edff" stroke-width="3" stroke-linecap="round" d="M21 21l14 14M35 21L21 35"/>
+  `),
+  "golden-bug-hunter": svg(`
+    <circle cx="28" cy="28" r="17" fill="none" stroke="#ffc31c" stroke-width="5"/><path stroke="#ffc31c" stroke-width="6" stroke-linecap="round" d="M41 41l12 12"/><circle cx="28" cy="28" r="9" fill="#704900" stroke="#fff0a3" stroke-width="2"/><path stroke="#fff0a3" stroke-width="3" stroke-linecap="round" d="M21 21l14 14M35 21L21 35"/><path fill="#fff0a3" d="M28 8l2 5h5l-4 3 2 5-5-3-5 3 2-5-4-3h5z"/>
   `),
   "server-booster": svg(`
     <defs><linearGradient id="boost-g" x1="14" y1="8" x2="50" y2="56"><stop stop-color="#ff63cf"/><stop offset="1" stop-color="#e13ba8"/></linearGradient></defs>

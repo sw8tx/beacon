@@ -1,5 +1,5 @@
 export const MANUAL_BADGE_AWARDS = [
-  { userId: "1125936586899587095", badgeId: "badge-hunter", discordBadgeId: "1548057337313493182" },
+  { userId: "1125936586899587095", badgeId: "golden-bug-hunter", discordBadgeId: "1548057337313493182" },
 ];
 
 export function manualBadgesForUser(userId) {
