@@ -1,4 +1,4 @@
-:root { --bg: #070808; --panel: #111414; --line: rgba(255,255,255,.1); --text: #f5f3ea; --muted: #a4aaa6; --accent: #31b6e6; }
+:root { --bg: #070808; --panel: #111414; --line: rgba(255,255,255,.1); --text: #f5f3ea; --muted: #a4aaa6; --accent: #ffc31c; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { min-width: 320px; margin: 0; color: var(--text); background: #242424; font: 16px/1.7 "DM Sans", system-ui, sans-serif; }
