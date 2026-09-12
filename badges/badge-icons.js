@@ -76,11 +76,6 @@ export const BADGE_ICONS = {
     <path fill="url(#err-g)" d="M32 6l27 48H5z"/>
     <path stroke="#fff" stroke-width="6" stroke-linecap="round" d="M32 22v15"/><circle cx="32" cy="46" r="3.5" fill="#fff"/>
   `),
-  "lost-signal": svg(`
-    <defs><linearGradient id="lost-g" x1="10" y1="10" x2="54" y2="54"><stop stop-color="#8b51ff"/><stop offset="1" stop-color="#5b25be"/></linearGradient></defs>
-    <path fill="none" stroke="url(#lost-g)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" d="M8 32c10-17 38-17 48 0-10 17-38 17-48 0zM19 48L49 16"/>
-    <circle cx="32" cy="32" r="9" fill="url(#lost-g)" opacity=".9"/>
-  `),
   "night-owl": svg(`
     <defs><linearGradient id="owl-g" x1="13" y1="7" x2="51" y2="57"><stop stop-color="#2c85ff"/><stop offset="1" stop-color="#0058c7"/></linearGradient></defs>
     <path fill="url(#owl-g)" d="M17 19l8-8 7 8 7-8 8 8v20c0 12-7 19-15 19S17 51 17 39z"/>

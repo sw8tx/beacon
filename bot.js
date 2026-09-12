@@ -82,7 +82,6 @@ const BADGE_CATALOG = {
   "beacons-princess": { name: "Beacon's Princess", description: "A rare Beacon badge was unlocked." },
   "found-the-light": { name: "Found the Light", description: "You found a hidden Beacon interaction." },
   "not-found": { name: "404", description: "You found something that should not be there." },
-  "lost-signal": { name: "Lost Signal", description: "You discovered a hidden Beacon path." },
   "night-owl": { name: "Night Owl", description: "You kept building while everyone else was asleep." },
   "command-relic": { name: "Command Relic", description: "Your long-term command pattern unlocked this relic." },
   "prismatic-key": { name: "Prismatic Key", description: "Different Beacon systems lined up for you." },

@@ -1,5 +1,5 @@
-import { BEACON_BADGES } from "./badge-data.js?v=4";
-import { iconForBadge } from "./badge-icons.js?v=4";
+import { BEACON_BADGES } from "./badge-data.js?v=5";
+import { iconForBadge } from "./badge-icons.js?v=5";
 
 const grid = document.querySelector("#badge-grid");
 
@@ -14,7 +14,7 @@ function escapeHtml(value) {
 }
 
 function badgeCard(badge) {
-  const png = `/assets/badges/${escapeHtml(badge.assetId || badge.id)}.png?v=4`;
+  const png = `/assets/badges/${escapeHtml(badge.assetId || badge.id)}.png?v=5`;
   return `
     <article class="badge-card badge-card--${escapeHtml(badge.tone)}">
       <div class="badge-symbol" aria-hidden="true">

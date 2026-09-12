@@ -3,7 +3,7 @@ import { BEACON_BADGES } from "../../../badges/badge-data.js";
 const VALID_BADGES = new Set([
   "beacon-member", "pioneer", "beacon-developer", "verified", "donator", "prestige",
   "staff", "helper", "bug-hunter", "golden-bug-hunter", "server-booster", "witness", "the-beacon",
-  "beacons-princess", "found-the-light", "not-found", "lost-signal", "night-owl",
+  "beacons-princess", "found-the-light", "not-found", "night-owl",
   "command-relic", "prismatic-key", "lucky-signal",
 ]);
 

@@ -146,15 +146,6 @@ export const BEACON_BADGES = [
     hint: "A wrong turn can still count, but only if you do more than stare at the error.",
   },
   {
-    id: "lost-signal",
-    name: "Lost Signal",
-    tag: "Hidden",
-    tone: "violet",
-    icon: "LS",
-    summary: "Discovered a hidden command, page or state most users never see.",
-    hint: "A command exists where most people stop typing. Find the silence after the signal.",
-  },
-  {
     id: "night-owl",
     name: "Night Owl",
     tag: "Activity",
