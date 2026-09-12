@@ -43,7 +43,7 @@ async function sendBadgeDm(env, user, token, badge = BEACON_BADGE) {
       body: JSON.stringify({
         embeds: [{
           color: 0xff9c1b,
-          title: "Badge achieved",
+          title: "Badge unlocked",
           description: `## ${badge.name}\n${badge.description}\n\n*${badge.reason}*`,
           thumbnail: { url: `https://badges.beacon-bot.site/assets/badges/${badge.id}.png?v=3` },
           footer: { text: "Beacon · Community OS" },
