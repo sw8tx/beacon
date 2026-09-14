@@ -4,6 +4,7 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ChannelType,
   ContainerBuilder,
   MessageFlags,
   PermissionFlagsBits,
@@ -56,13 +57,28 @@ function announcementContainer() {
     );
 }
 
-function candidateChannels(guild) {
-  return guild.channels.cache.filter((channel) => {
-    if (!channel.isTextBased() || typeof channel.send !== "function" || (typeof channel.isThread === "function" && channel.isThread())) return false;
-    if (![0, 5].includes(channel.type)) return false; // GuildText / GuildAnnouncement
-    const permissions = channel.permissionsFor(guild.members.me);
-    return permissions?.has(PermissionFlagsBits.ViewChannel) && permissions.has(PermissionFlagsBits.SendMessages);
-  });
+function isWritableAnnouncementChannel(guild, channel) {
+  if (!channel || typeof channel.send !== "function") return false;
+  if (![ChannelType.GuildText, ChannelType.GuildAnnouncement].includes(channel.type)) return false;
+  if (typeof channel.isThread === "function" && channel.isThread()) return false;
+
+  const me = guild.members.me;
+  const permissions = me && typeof channel.permissionsFor === "function"
+    ? channel.permissionsFor(me)
+    : null;
+  return Boolean(
+    channel.isTextBased?.() &&
+    permissions?.has(PermissionFlagsBits.ViewChannel) &&
+    permissions.has(PermissionFlagsBits.SendMessages)
+  );
+}
+
+async function candidateChannels(guild) {
+  // Refresh the channel objects. On startup the cache can contain partial or
+  // stale entries, which do not always expose TextChannel#send yet.
+  const fetched = await guild.channels.fetch().catch(() => null);
+  const collection = fetched || guild.channels.cache;
+  return [...collection.values()].filter((channel) => isWritableAnnouncementChannel(guild, channel));
 }
 
 async function handleExisting(guild, record) {
@@ -82,21 +98,36 @@ async function postAnnouncement(guild) {
   const record = state[guild.id];
   if (record && await handleExisting(guild, record)) return false;
 
-  const channels = [...candidateChannels(guild)];
+  const channels = await candidateChannels(guild);
   if (!channels.length) {
     console.warn(`[announcement] No writable text channel in ${guild.name} (${guild.id})`);
     return false;
   }
 
-  const channel = channels[Math.floor(Math.random() * channels.length)];
-  const message = await channel.send({
-    components: [announcementContainer()],
-    flags: MessageFlags.IsComponentsV2,
-  }).catch((error) => {
-    console.error(`[announcement] Could not post in ${guild.name}: ${error.message}`);
-    return null;
-  });
-  if (!message) return false;
+  let channel = null;
+  let message = null;
+  for (const candidate of channels) {
+    // Fetch the individual channel once more so the send call always uses a
+    // fully hydrated Discord.js channel object.
+    const freshChannel = await guild.channels.fetch(candidate.id).catch(() => null);
+    if (!isWritableAnnouncementChannel(guild, freshChannel)) continue;
+
+    try {
+      message = await freshChannel.send({
+        components: [announcementContainer()],
+        flags: MessageFlags.IsComponentsV2,
+      });
+      channel = freshChannel;
+      break;
+    } catch (error) {
+      console.warn(`[announcement] Could not post in ${guild.name} #${freshChannel.name || freshChannel.id}: ${error.message}`);
+    }
+  }
+
+  if (!message || !channel) {
+    console.error(`[announcement] Could not post in any writable channel in ${guild.name} (${guild.id})`);
+    return false;
+  }
 
   state[guild.id] = {
     channelId: channel.id,
