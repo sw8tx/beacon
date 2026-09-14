@@ -12,6 +12,7 @@ const {
 } = require("discord.js");
 
 const STATE_FILE = path.join(__dirname, "announcement-state.json");
+const ANNOUNCEMENT_VERSION = 2;
 const EMOJI = "<:beacon:1549063970734735422>";
 const SUPPORT_URL = "https://discord.gg/chWbkz8Gfj";
 const SITE_URL = "https://beacon-bot.site/";
@@ -40,12 +41,25 @@ function announcementContainer() {
     .addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
         `## ${EMOJI} Beacon security update\n\n` +
-        "Beacon wurde vorübergehend kompromittiert. Das Problem ist behoben, " +
-        "der betroffene Account wurde aus dem Team entfernt und gebannt. " +
-        "Wir haben weitere Schutzmaßnahmen eingeleitet und entschuldigen uns für die Umstände."
+        "We want to be transparent about a recent security incident involving Beacon. " +
+        "For a limited period of time, an account connected to the Beacon team was compromised. " +
+        "The incident has been contained and the affected account has been removed from the team and banned.\n\n" +
+        `${EMOJI} **What happened**\n` +
+        "An unauthorized person gained access to the affected account and used that access in a way that did not represent Beacon or its team. " +
+        "We are treating this seriously and have reviewed the relevant access, account activity and connected systems.\n\n" +
+        `${EMOJI} **How we fixed it**\n` +
+        "The compromised account was disabled, removed from the team and banned. Access was reviewed and additional protection measures were introduced, including stronger credential handling, tighter permissions and improved monitoring. " +
+        "We are also continuing to review logs and connected services for anything unusual.\n\n" +
+        `${EMOJI} **What you should do**\n` +
+        "Please ignore suspicious messages, links or direct messages claiming to be from Beacon. Do not share passwords, tokens or recovery codes. " +
+        "If you noticed anything suspicious, report it through our support server.\n\n" +
+        `${EMOJI} **Remaining risks**\n` +
+        "No active compromise is currently known. As with any online service, phishing, stolen sessions and impersonation remain possible risks. " +
+        "We will continue monitoring the situation and will publish further updates if anything important changes.\n\n" +
+        "We are sorry for the concern and disruption this may have caused. Thank you for your patience while we strengthen Beacon's security."
       ),
       new TextDisplayBuilder().setContent(
-        `Updates und Hilfe: [Support-Server](${SUPPORT_URL})`
+        `Updates and help: [Support Server](${SUPPORT_URL})`
       )
     )
     .addActionRowComponents(
@@ -82,6 +96,19 @@ async function candidateChannels(guild) {
 }
 
 async function handleExisting(guild, record) {
+  if (record.version !== ANNOUNCEMENT_VERSION) {
+    if (record.channelId && record.messageId) {
+      const oldChannel = await guild.channels.fetch(record.channelId).catch(() => null);
+      const oldMessage = oldChannel?.messages
+        ? await oldChannel.messages.fetch(record.messageId).catch(() => null)
+        : null;
+      if (oldMessage) await oldMessage.delete().catch(() => null);
+    }
+    delete state[guild.id];
+    saveState();
+    return false;
+  }
+
   if (record.deleted || !record.channelId || !record.messageId) return true;
   const channel = guild.channels.cache.get(record.channelId) || await guild.channels.fetch(record.channelId).catch(() => null);
   if (!channel?.isTextBased()) return false;
@@ -130,6 +157,7 @@ async function postAnnouncement(guild) {
   }
 
   state[guild.id] = {
+    version: ANNOUNCEMENT_VERSION,
     channelId: channel.id,
     messageId: message.id,
     postedAt: new Date().toISOString(),
