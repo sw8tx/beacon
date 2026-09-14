@@ -17,6 +17,11 @@ const EMOJI = "<:beacon:1549063970734735422>";
 const SUPPORT_URL = "https://discord.gg/chWbkz8Gfj";
 const SITE_URL = "https://beacon-bot.site/";
 const STATUS_URL = "https://status.beacon-bot.site/";
+const LEGACY_MARKERS = [
+  "beacon security update",
+  "vorübergehend kompromittiert",
+  "temporarily compromised",
+];
 
 function loadState() {
   try {
@@ -95,6 +100,29 @@ async function candidateChannels(guild) {
   return [...collection.values()].filter((channel) => isWritableAnnouncementChannel(guild, channel));
 }
 
+async function deleteLegacyAnnouncements(guild) {
+  const botId = guild.members.me?.id;
+  if (!botId) return;
+
+  const channels = await guild.channels.fetch().catch(() => null);
+  if (!channels) return;
+
+  for (const channel of channels.values()) {
+    if (![ChannelType.GuildText, ChannelType.GuildAnnouncement].includes(channel?.type)) continue;
+    if (!channel.messages?.fetch) continue;
+
+    const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+    if (!messages) continue;
+    for (const message of messages.values()) {
+      if (message.author?.id !== botId) continue;
+      const searchable = `${message.content || ""} ${JSON.stringify(message.components || [])}`.toLowerCase();
+      if (!LEGACY_MARKERS.some((marker) => searchable.includes(marker))) continue;
+      await message.delete().catch(() => null);
+      console.log(`[announcement] Deleted legacy announcement in ${guild.name} #${channel.name || channel.id}`);
+    }
+  }
+}
+
 async function handleExisting(guild, record) {
   if (record.version !== ANNOUNCEMENT_VERSION) {
     if (record.channelId && record.messageId) {
@@ -124,6 +152,7 @@ async function handleExisting(guild, record) {
 async function postAnnouncement(guild) {
   const record = state[guild.id];
   if (record && await handleExisting(guild, record)) return false;
+  if (!record) await deleteLegacyAnnouncements(guild);
 
   const channels = await candidateChannels(guild);
   if (!channels.length) {
