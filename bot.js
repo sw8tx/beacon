@@ -31,7 +31,6 @@ const {
   ThumbnailBuilder,
   StringSelectMenuBuilder,
 } = require("discord.js");
-const { postAnnouncements, postAnnouncement, handleAnnouncementButton } = require("./announcement.js");
 
 if (typeof dns.setDefaultResultOrder === "function") {
   dns.setDefaultResultOrder("ipv4first");
@@ -3839,7 +3838,6 @@ client.once("clientReady", async () => {
     await registerCommands();
     await syncServerBoosterBadges().catch((error) => console.error(`[badges] Booster sync failed: ${error.message}`));
     await syncDiscordStats();
-    await postAnnouncements(client);
     scheduleExistingPolls();
     await postStartupStatus();
   } catch (err) {
@@ -3899,7 +3897,6 @@ client.on("guildCreate", async (guild) => {
   } catch (err) {
     console.error(`[commands] Failed to sync guild commands for ${guild.id}: ${err.message}`);
   }
-  await postAnnouncement(guild).catch((error) => console.error(`[announcement] Failed for ${guild.name} (${guild.id}): ${error.message}`));
   await syncDiscordStats(); // Immediately sync stats
 });
 
@@ -4053,7 +4050,6 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     if (interaction.isButton()) {
-      if (await handleAnnouncementButton(interaction, client)) return;
       await handleButton(interaction);
       return;
     }
