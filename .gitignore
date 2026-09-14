@@ -2,6 +2,7 @@
 node_modules/
 .wrangler/
 beacon-data.json
+announcement-state.json
 /beacon-logo.png
 .deploy-web-*/
 .deploy-functions-debug/
