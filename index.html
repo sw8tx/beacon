@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#3557ec" />
-    <meta name="description" content="Beacon – Moderation und Bot-Anpassung für deine Discord-Community." />
+    <meta name="description" content="Beacon." />
     <title>Beacon</title>
     <link rel="icon" type="image/png" href="/assets/beacon-new-logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/home.css?v=1" />
+    <link rel="stylesheet" href="/home.css?v=2" />
   </head>
   <body>
     <main>
@@ -27,31 +27,23 @@
         </svg>
       </div>
 
-      <section class="showcase" aria-label="Beacon Funktionen">
-        <article class="showcase__row">
-          <div class="showcase__copy">
-            <span class="showcase__eyebrow">MODERATION</span>
-            <h1>Clean up your server fast</h1>
-            <p>Keep conversations focused with simple moderation commands. <code>/purge</code> removes up to 99 recent messages, while <code>/purge-user</code> clears recent messages from one selected user.</p>
-            <a class="showcase__button" href="/commands/purge/">Explore moderation <span aria-hidden="true">↗</span></a>
-          </div>
-          <div class="showcase__visual">
-            <img src="/assets/purge-feature.png?v=2" alt="Preview of the purge and purge-user commands" loading="lazy" />
-          </div>
-        </article>
-
-        <article class="showcase__row showcase__row--reverse">
-          <div class="showcase__visual">
-            <img src="/assets/customize-feature.png?v=2" alt="Preview of the Customize Bot dashboard" loading="lazy" />
-          </div>
-          <div class="showcase__copy">
-            <span class="showcase__eyebrow">CUSTOMIZATION</span>
-            <h2>Customize your bot</h2>
-            <p>Give your bot a personality that fits your community. Update its avatar, banner and bio from one clean dashboard, then save the changes when everything feels right.</p>
-            <a class="showcase__button" href="/dashboard#customize-bot">Customize your bot <span aria-hidden="true">↗</span></a>
-          </div>
-        </article>
-      </section>
     </main>
+    <footer class="home-footer">
+      <div class="home-footer__inner">
+        <a class="home-footer__dmca" href="/copyright/" aria-label="DMCA Protected – Copyright-Informationen">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 20 5v6c0 5-3.4 8.8-8 11-4.6-2.2-8-6-8-11V5l8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+          <span>DMCA Protected</span>
+        </a>
+        <nav class="home-footer__links" aria-label="Rechtliche Informationen">
+          <a href="/tos/">Terms</a>
+          <a href="/privacy/">Privacy</a>
+          <a href="/copyright/">Copyright</a>
+          <a href="/gdpr/">GDPR</a>
+          <a href="/cookies/">Cookies</a>
+          <a href="/eula/">EULA</a>
+        </nav>
+        <p>© 2026 Beacon. All rights reserved. Beacon is not affiliated with Discord Inc.</p>
+      </div>
+    </footer>
   </body>
 </html>
