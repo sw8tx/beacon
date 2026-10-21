@@ -3,14 +3,14 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#3557ec" />
+    <meta name="theme-color" content="#26364b" />
     <meta name="description" content="Beacon." />
     <title>Beacon</title>
     <link rel="icon" type="image/png" href="/assets/beacon-new-logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/home.css?v=4" />
+    <link rel="stylesheet" href="/home.css?v=5" />
   </head>
   <body>
     <header class="home-header">
@@ -24,14 +24,31 @@
     </header>
     <main>
       <section class="intro" aria-label="Beacon">
+        <svg class="intro__ornaments" viewBox="0 0 1440 700" preserveAspectRatio="xMidYMid slice" fill="none" aria-hidden="true" focusable="false">
+          <defs>
+            <pattern id="home-dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="3" fill="#d9e8ff" /></pattern>
+          </defs>
+          <path d="M100 133c0-11 12-18 21-12l111 66c10 6 10 20 0 26l-111 66c-9 6-21-1-21-12Z" stroke="#d9e8ff" stroke-width="7" opacity=".28" />
+          <circle cx="338" cy="192" r="48" stroke="#d9e8ff" stroke-width="20" opacity=".25" />
+          <path d="M162 442h72m-36-36v72" stroke="#d9e8ff" stroke-width="20" stroke-linecap="round" opacity=".34" />
+          <path d="m285 560 99-99m-51 118 91-91" stroke="#d9e8ff" stroke-width="7" stroke-linecap="round" opacity=".3" />
+          <rect x="394" y="402" width="176" height="136" fill="url(#home-dots)" opacity=".23" transform="rotate(-22 394 402)" />
+          <path d="M658 124v29m-15-14h30" stroke="#e8f0ff" stroke-width="5" stroke-linecap="round" opacity=".42" />
+          <path d="M808 536v24m-12-12h24" stroke="#e8f0ff" stroke-width="4" stroke-linecap="round" opacity=".33" />
+          <rect x="947" y="121" width="146" height="124" fill="url(#home-dots)" opacity=".2" transform="rotate(16 947 121)" />
+          <path d="M1030 440c35-36 57 18 91-18s55 14 91-22" stroke="#d9e8ff" stroke-width="12" stroke-linecap="round" opacity=".27" />
+          <circle cx="1287" cy="244" r="89" stroke="#d9e8ff" stroke-width="29" opacity=".22" />
+          <path d="m1139 551 104-104m-58 131 97-97" stroke="#d9e8ff" stroke-width="7" stroke-linecap="round" opacity=".27" />
+          <path d="m970 313 16-31 16 31 31 16-31 16-16 31-16-31-31-16Z" stroke="#e8f0ff" stroke-width="5" opacity=".27" />
+        </svg>
         <img class="intro__logo" src="/assets/beacon-new-logo.png" alt="Beacon" width="220" height="220" />
       </section>
 
       <div class="wave" aria-hidden="true">
-        <svg viewBox="0 0 1440 160" preserveAspectRatio="none" focusable="false">
-          <path fill="#e6edff" d="M0 25C220 55 390 9 590 36c213 29 379 25 562-2 112-17 202-19 288-12v138H0Z" />
-          <path fill="#a9c5ff" d="M0 67c220-23 355-10 559 13 228 26 364-19 566-21 124-1 221 8 315 28v73H0Z" />
-          <path fill="#3557ec" d="M0 91c206-18 365 3 564 23 241 25 408-28 614-23 103 2 186 14 262 23v46H0Z" />
+        <svg viewBox="0 0 1440 180" preserveAspectRatio="none" focusable="false">
+          <path fill="#93a6bd" d="M0 38c214-51 407 36 655 17 270-21 489-74 785-20v145H0Z" />
+          <path fill="#657c9a" d="M0 77c186-56 381-2 590 7 275 12 554-78 850-28v124H0Z" />
+          <path fill="#26364b" d="M0 125c233-75 410-25 666-3 309 26 498-77 774-30v88H0Z" />
         </svg>
       </div>
 
