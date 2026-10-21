@@ -11,8 +11,8 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
 .wave svg { display: block; width: 100%; height: 100%; }
 .home-footer { padding: 32px 24px 34px; background: #3557ec; }
 .home-footer__inner { display: grid; grid-template-columns: auto 1fr; gap: 26px 48px; align-items: center; width: min(100%, 1120px); margin: 0 auto; }
-.home-footer__dmca { display: inline-flex; width: max-content; min-height: 40px; gap: 9px; align-items: center; padding: 0 13px; border: 1px solid rgba(255,255,255,.65); border-radius: 7px; font-size: .78rem; font-weight: 700; letter-spacing: .02em; text-decoration: none; }
-.home-footer__dmca:hover { background: rgba(255,255,255,.12); }
+.home-footer .dmca-badge { display: block; width: 120px; line-height: 0; }
+.home-footer .dmca-badge img { display: block; max-width: 100%; height: auto; }
 .home-footer__links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px 23px; }
 .home-footer__links a { color: #eef2ff; font-size: .82rem; font-weight: 600; text-decoration: none; }
 .home-footer__links a:hover { text-decoration: underline; text-underline-offset: 3px; }
